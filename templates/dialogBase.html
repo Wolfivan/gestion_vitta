@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .soft-glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .modal-enter {
+            animation: modalFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#dbd9d9",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f5f3f3",
+                        "outline": "#71787e",
+                        "primary-container": "#487a9c",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#c9e6ff",
+                        "surface-container-highest": "#e4e2e2",
+                        "on-secondary-fixed-variant": "#334d38",
+                        "on-tertiary-fixed-variant": "#474742",
+                        "on-tertiary-container": "#fdffdd",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#4e6953",
+                        "surface": "#fbf9f8",
+                        "on-primary-fixed-variant": "#104b6b",
+                        "on-primary-fixed": "#001e2f",
+                        "background": "#fbf9f8",
+                        "tertiary-container": "#76756f",
+                        "inverse-primary": "#9bccf2",
+                        "outline-variant": "#c1c7ce",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e4e2e2",
+                        "inverse-on-surface": "#f2f0f0",
+                        "on-background": "#1b1c1c",
+                        "secondary-container": "#c9e7cc",
+                        "surface-tint": "#306384",
+                        "tertiary-fixed-dim": "#c9c6c0",
+                        "tertiary": "#5d5c57",
+                        "on-surface-variant": "#41474d",
+                        "inverse-surface": "#303030",
+                        "secondary-fixed-dim": "#b0ceb4",
+                        "secondary-fixed": "#cceacf",
+                        "primary-fixed-dim": "#9bccf2",
+                        "on-tertiary-fixed": "#1c1c18",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#062010",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#e5e2db",
+                        "surface-container": "#efeded",
+                        "surface-bright": "#fbf9f8",
+                        "on-primary-container": "#fcfcff",
+                        "on-surface": "#1b1c1c",
+                        "primary": "#2d6182",
+                        "surface-container-high": "#eae8e7",
+                        "secondary": "#4a654f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "24px",
+                        "container-padding-mobile": "20px",
+                        "container-padding-desktop": "40px",
+                        "stack-sm": "8px",
+                        "gutter": "16px",
+                        "unit": "8px",
+                        "stack-lg": "48px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-xl-mobile": ["Inter"],
+                        "headline-xl": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["22px", {"lineHeight": "30px", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "headline-xl-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen relative overflow-hidden">
+<!-- BACKGROUND CONTENT (SIMULATED HOME SCREEN {{DATA:SCREEN:SCREEN_13}}) -->
+<div class="fixed inset-0 z-0 overflow-hidden">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding-mobile py-stack-sm bg-surface/80 backdrop-blur-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="spa">spa</span>
+<span class="font-headline-md text-headline-md font-medium text-primary">Vitta Mind</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</header>
+<!-- Main Canvas Content -->
+<main class="pt-24 px-container-padding-mobile max-w-lg mx-auto space-y-stack-lg">
+<section class="space-y-stack-sm">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Hola, Amara</h1>
+<p class="text-on-surface-variant">¿Cómo te sientes hoy?</p>
+</section>
+<div class="grid grid-cols-2 gap-gutter">
+<div class="aspect-square bg-surface-container rounded-xl flex flex-col justify-center items-center p-4 text-center">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="light_mode">light_mode</span>
+<span class="font-label-md text-label-md">Mañana</span>
+</div>
+<div class="aspect-square bg-surface-container rounded-xl flex flex-col justify-center items-center p-4 text-center">
+<span class="material-symbols-outlined text-secondary mb-2" data-icon="eco">eco</span>
+<span class="font-label-md text-label-md">Calma</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-stack-md rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)]">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-label-md text-label-md">Tu racha</h3>
+<span class="text-secondary font-bold">5 días</span>
+</div>
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-secondary w-3/4 h-full"></div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-surface/90 backdrop-blur-xl rounded-t-xl shadow-[0px_-4px_20px_rgba(0,0,0,0.04)]">
+<div class="flex flex-col items-center justify-center text-primary font-medium after:content-[''] after:w-1 after:h-1 after:bg-secondary after:rounded-full after:mt-1">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Inicio</span>
+</div>
+<div class="flex flex-col items-center justify-center text-outline">
+<span class="material-symbols-outlined" data-icon="self_improvement">self_improvement</span>
+<span class="font-label-sm text-label-sm">Sesiones</span>
+</div>
+<div class="flex flex-col items-center justify-center text-outline">
+<span class="material-symbols-outlined" data-icon="auto_graph">auto_graph</span>
+<span class="font-label-sm text-label-sm">Progreso</span>
+</div>
+<div class="flex flex-col items-center justify-center text-outline">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm">Perfil</span>
+</div>
+</nav>
+</div>
+<!-- MODAL OVERLAY -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center px-container-padding-mobile bg-on-background/20 backdrop-blur-sm transition-all duration-500" id="modal-overlay">
+<!-- MODAL DIALOG -->
+<div class="modal-enter soft-glass w-full max-w-sm rounded-[32px] p-stack-lg shadow-[0px_10px_30px_rgba(0,0,0,0.08)] flex flex-col items-center text-center">
+<!-- Illustration / Natural Element -->
+<div class="relative w-32 h-32 mb-stack-md flex items-center justify-center">
+<!-- Soft Glow behind illustration -->
+<div class="absolute inset-0 bg-secondary/10 rounded-full blur-2xl scale-125"></div>
+<img class="w-full h-full object-contain relative z-10" data-alt="A highly detailed, minimalist 3D render of a stylized sage green plant with soft, rounded leaves in a clean ceramic pot. The lighting is ethereal and soft, creating a tranquil atmosphere against a pristine white studio background. The visual style is modern, restorative, and calming, aligning with a premium wellness app aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9p3D7ESCSDh791cwQFpavYqg6obli6sRTrxyttn5e0YTpO2k6TBLNEEWJ1vpONrBmRqNEF3hcL8J8m8mnEVH3SfRek8x3XsXi5e9_u2NEg2f1nvg97c8mW1s3Sk5K-3d9dTPiOfYMwuhb98KDbS641Te1tHyFIuged8xfAnemDLQ58f7HNIr9wz21-8aOUqOEDEin-sVrVRl74vhYArHF-8azOQuYux4xeep_gmGpFP_yCyPSyvU-"/>
+</div>
+<!-- Content -->
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-stack-sm">¡Descubre lo nuevo!</h2>
+<p class="text-on-surface-variant font-body-md mb-stack-lg leading-relaxed">
+                Nuevas sesiones de meditación guiada para el sueño profundo diseñadas para ayudarte a descansar plenamente.
+            </p>
+<!-- Actions -->
+<div class="w-full space-y-3">
+<button class="w-full py-4 bg-primary text-on-primary rounded-full font-label-md text-label-md shadow-md active:scale-95 transition-all duration-200">
+                    Explorar ahora
+                </button>
+<button class="w-full py-4 text-primary font-label-md text-label-md hover:bg-primary/5 rounded-full active:scale-95 transition-all duration-200" id="close-modal">
+                    Más tarde
+                </button>
+</div>
+</div>
+</div>
+<script>
+        // Simple Interaction logic
+        const modalOverlay = document.getElementById('modal-overlay');
+        const closeBtn = document.getElementById('close-modal');
+
+        closeBtn.addEventListener('click', () => {
+            modalOverlay.style.opacity = '0';
+            modalOverlay.style.pointerEvents = 'none';
+            document.body.style.overflow = 'auto';
+        });
+
+        // Add subtle parallax effect to the modal on mouse move (Desktop only)
+        if (window.innerWidth > 768) {
+            modalOverlay.addEventListener('mousemove', (e) => {
+                const modal = modalOverlay.querySelector('.modal-enter');
+                const x = (window.innerWidth / 2 - e.pageX) / 50;
+                const y = (window.innerHeight / 2 - e.pageY) / 50;
+                modal.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+            });
+        }
+    </script>
+</body></html>

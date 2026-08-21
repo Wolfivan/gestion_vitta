@@ -1,0 +1,732 @@
+{
+  "project": "vittalmind",
+  "description": "App móvil de salud mental y bienestar emocional. Expo (React Native) + Node.js API + PostgreSQL.",
+  "rules": {
+    "one_feature_at_a_time": true,
+    "require_tests_to_close": true,
+    "valid_status": ["pending", "in_progress", "done", "blocked"]
+  },
+  "features": [
+    {
+      "id": 1,
+      "name": "database_schema",
+      "title": "Esquema de base de datos con anonimato",
+      "description": "Migraciones PostgreSQL con tabla usuarios_auth (id_usuario, email_google, nombre_completo, id_anonimo UUIDv4) y patrón de desacoplamiento de identidad.",
+      "acceptance": [
+        "Existe Backend/src/database/migrations/ con migración inicial",
+        "Tabla usuarios_auth con columnas id_usuario (PK), email_google, nombre_completo, id_anonimo (UUIDv4)",
+        "id_anonimo se genera aleatoriamente al insertar",
+        "Script de migración ejecutable via npm run migrate"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 2,
+      "name": "backend_scaffold",
+      "title": "Backend scaffold: Node.js + Express + TypeScript",
+      "description": "Estructura base del backend con capas claras: routes, controllers, services, middleware, models, database.",
+      "acceptance": [
+        "package.json con scripts dev, build, start, lint, test",
+        "tsconfig.json con configuración estricta",
+        "Estructura: routes/, controllers/, services/, middleware/, models/, database/, utils/",
+        "Endpoint GET /health que responde { status: 'ok' }",
+        "Manejo centralizado de errores (error handler middleware)",
+        "Variables de entorno vía dotenv (.env.example)"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 3,
+      "name": "app_scaffold",
+      "title": "App scaffold: Expo + TypeScript",
+      "description": "Estructura base del frontend con capas claras: screens, components, services, hooks, navigation, types.",
+      "acceptance": [
+        "Proyecto Expo con TypeScript funcionando",
+        "Estructura: screens/, components/, services/, hooks/, navigation/, types/, constants/",
+        "React Navigation configurado con stack navegador",
+        "Pantalla splash/bienvenida funcional",
+        "Servicio base HTTP con headers JWT (services/api.ts)"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 4,
+      "name": "google_auth_backend",
+      "title": "Autenticación Google - Backend",
+      "description": "Endpoint POST /auth/google que valida token de Google, crea/recupera usuario y devuelve JWT firmado con id_anonimo.",
+      "acceptance": [
+        "POST /auth/google recibe { token: string }",
+        "Valida token contra Google OAuth2 API",
+        "Crea usuario en usuarios_auth si no existe",
+        "Genera JWT firmado con id_anonimo (no email ni id_usuario)",
+        "JWT expira en 24h",
+        "Tests de integración del endpoint"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 5,
+      "name": "google_auth_frontend",
+      "title": "Autenticación Google - Frontend",
+      "description": "Pantalla de login con Google via expo-auth-session, envía token al backend, almacena JWT en SecureStore.",
+      "acceptance": [
+        "Pantalla Login con botón 'Iniciar sesión con Google'",
+        "Flujo OAuth via expo-auth-session",
+        "Envía token a POST /auth/google",
+        "Almacena JWT en expo-secure-store",
+        "Redirige a pantalla principal tras login exitoso",
+        "Incluye disclaimer legal en pantalla de login"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 6,
+      "name": "biometric_lock",
+      "title": "Protección biométrica local",
+      "description": "Protección biométrica opcional (expo-local-authentication) tras login para desbloquear sesión en el dispositivo.",
+      "acceptance": [
+        "Prompt post-login preguntando si activar bloqueo biométrico",
+        "Pantalla de bloqueo con autenticación biométrica al reabrir app",
+        "Fallback a PIN/código si biometría no disponible",
+        "Opción de desactivar en Configuración"
+      ],
+      "status": "blocked"
+    },
+    {
+      "id": 7,
+      "name": "panic_button",
+      "title": "Botón de Pánico y Contención Inmediata",
+      "description": "Botón de alto contraste en pantalla principal que despliega modal de contención offline-first con líneas de emergencia y red profesional.",
+      "acceptance": [
+        "Botón rojo/solemne visible en pantalla principal",
+        "Modal de carga inmediata con líneas de emergencia locales precargadas",
+        "Linking.openURL('tel:...') al pulsar un número",
+        "Botón secundario para contactar psicólogos de guardia",
+        "Funciona offline (números precargados)"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 8,
+      "name": "cnv_translator",
+      "title": "Traductor de Comunicación No Violenta (IA)",
+      "description": "Herramienta que transforma textos reactivos en sugerencias de comunicación asertiva usando OpenAI.",
+      "acceptance": [
+        "Backend: POST /tools/cnv-translate con prompt clínico estructurado",
+        "Backend: Conecta con OpenAI gpt-4o-mini",
+        "Frontend: Pantalla con campo de texto y botón 'Traducir'",
+        "Frontend: Muestra sugerencia CNV con resaltado de diferencias",
+        "Frontend: Indicador de carga mientras la IA procesa"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 9,
+      "name": "psychoeducation",
+      "title": "Módulo de Psicoeducación en Pareja",
+      "description": "Tarjetas de aprendizaje dinámicas servidas desde el backend como JSON estructurado.",
+      "acceptance": [
+        "Backend: GET /psychoeducation devuelve JSON con tarjetas (título, cuerpo, recursos)",
+        "Backend: Endpoint admin PUT /psychoeducation para actualizar contenido",
+        "Frontend: Vista que renderiza tarjetas desde JSON",
+        "Frontend: Diseño de tarjetas limpio y navegable"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 10,
+      "name": "relationship_timeline",
+      "title": "Línea del Tiempo Personal con Efecto 3D",
+      "description": "Línea del tiempo personal con efecto de profundidad 3D. Los eventos más antiguos se ven más pequeños/opacos (atrás) y los más nuevos más grandes/nítidos (al frente). El usuario comienza sin eventos y los va agregando. Cada hito captura: emoji de emoción predefinida, qué pasó (descripción) y cómo le hizo sentir (texto libre). Los eventos se persisten en backend. Cambios de día se marcan con divisores visuales y variación de color en las tarjetas.",
+      "acceptance": [
+        "Backend: Migración 005_create_timeline_events.sql ejecutable",
+        "Backend: POST /timeline crea hito con emoji, emocion_label, descripcion, sentimiento",
+        "Backend: GET /timeline devuelve eventos del usuario ordenados por fecha DESC",
+        "Backend: DELETE /timeline/:id elimina solo eventos propios",
+        "Backend: Tests de integración para CRUD de timeline",
+        "Frontend: TimelineScreen con ScrollView y efecto 3D (escala + opacidad por posición)",
+        "Frontend: AddMilestoneModal con emoji picker + 2 TextInputs + botón guardar",
+        "Frontend: TimelineDayDivider entre días diferentes con fecha formateada",
+        "Frontend: Colores alternos por día en las tarjetas",
+        "Frontend: Mensaje de estado vacío cuando no hay eventos",
+        "Frontend: Long press en evento → confirmación → eliminar",
+        "Frontend: Bottom tab Herramientas navega a TimelineScreen",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 11,
+      "name": "disclaimer_legal",
+      "title": "Descargo de Responsabilidad (Disclaimer Legal)",
+      "description": "Pantalla obligatoria post-registro con texto legal, mensaje de seguridad y checkbox de aceptación. Endpoint POST /auth/disclaimer protegido con JWT.",
+      "acceptance": [
+        "Backend: POST /auth/disclaimer protegido con authMiddleware que actualiza acepto_disclaimer",
+        "Pantalla obligatoria post-login cuando requiresDisclaimer = true",
+        "Texto legal: 'Esta aplicación es una herramienta tecnológica de soporte...'",
+        "Texto seguridad: 'Hacemos todo lo posible por mantener tus datos seguros...'",
+        "Checkbox de aceptación + botón 'Continuar' deshabilitado hasta aceptar",
+        "Al aceptar, redirige a HomeTabs",
+        "Sección en ProfileScreen para consultar disclaimer (placeholder)",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 12,
+      "name": "email_password_auth",
+      "title": "Autenticación por email y contraseña",
+      "description": "Registro y login con email/contraseña junto al Google OAuth existente. Nueva migración, endpoints, servicio de password, pantalla de registro y login funcional.",
+      "acceptance": [
+        "Backend: Migración 002_add_local_auth.sql renombra email_google a email y agrega password_hash + auth_provider",
+        "Backend: POST /auth/register con validación y hash bcrypt",
+        "Backend: POST /auth/login con verificación de credenciales y detección de provider",
+        "Backend: express-async-errors para manejo de errores en async controllers",
+        "Backend: Tests de integración para register y login (32 tests en total)",
+        "Frontend: RegisterScreen con nombre, email, contraseña y confirmación",
+        "Frontend: Login email/password funcional en WelcomeScreen",
+        "Frontend: auth-service con loginWithEmail y register",
+        "Frontend: Navegación Welcome ↔ Register en el stack no autenticado",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 13,
+      "name": "home_redesign_bottom_tabs",
+      "title": "Rediseño HomeScreen + Bottom Tabs",
+      "description": "HomeScreen rediseñada según templates/home.html con hero, featured card, grid de módulos escalable, quote card, bottom tab navigator con 4 tabs y placeholder screens.",
+      "acceptance": [
+        "HomeScreen con hero 'Hola, bienvenido' + subtítulo",
+        "FeaturedCard 'Tu meditación del día' con badge y botón play",
+        "Grid de módulos dinámico desde array (solo Parejas visible)",
+        "Agregar un módulo = solo añadir entrada al array, sin cambiar JSX",
+        "Quote card con cita inspiradora",
+        "BottomTabNavigator con 4 tabs: Home, Exercises, Journal, Profile",
+        "Pantallas placeholder para Exercises, Journal, Profile",
+        "PanicButton + PanicModal visibles en HomeScreen",
+        "Colores tertiary agregados a constants",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 14,
+      "name": "docker_preprod",
+      "title": "Entorno pre-producción con Docker",
+      "description": "Dockerfile multi-stage + docker-compose con PostgreSQL 16 para ejecutar el backend localmente simulando Hostinger. Incluye seed de usuario test para explorar la app sin deploy.",
+      "acceptance": [
+        "Dockerfile multi-stage que compila TypeScript y corre con node:20-alpine",
+        "docker-compose.yml con servicios api (backend) y db (postgres:16)",
+        "Seed automático que crea usuario test@vittal.com / test1234",
+        "Migraciones se ejecutan automáticamente al iniciar el contenedor",
+        "Backend responde en http://localhost:3000 tras docker compose up -d",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 15,
+      "name": "tools_tab_nav_back",
+      "title": "Tab Herramientas + Botón Volver en Traductor",
+      "description": "Reemplazar tab 'Exercises' por 'Herramientas' apuntando a ToolsScreen, mover Tools a bottom tab, agregar botón de retroceso en AcertiveTranslateScreen.",
+      "acceptance": [
+        "Bottom tab muestra 'Herramientas' en lugar de 'Exercises'",
+        "Tab 'Herramientas' navega a ToolsScreen (menú de herramientas)",
+        "Bottom tab visible en ToolsScreen",
+        "Botón 'Volver' funcional en AcertiveTranslateScreen",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 16,
+      "name": "profile_logout",
+      "title": "Botón de Cerrar Sesión en Perfil",
+      "description": "Agregar botón de logout en ProfileScreen con AuthContext para compartir estado de autenticación en toda la app.",
+      "acceptance": [
+        "Botón 'Cerrar sesión' visible en ProfileScreen",
+        "Alert de confirmación antes de cerrar sesión",
+        "Al confirmar, redirige a WelcomeScreen",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 17,
+      "name": "auth_401_interceptor",
+      "title": "Interceptor de 401 para logout automático",
+      "description": "Cuando el backend responde 401 (token expirado/inválido), el frontend limpia el token y redirige al login automáticamente. Evita que el usuario quede atrapado en un estado de fallo permanente.",
+      "acceptance": [
+        "api.ts detecta response.status === 401 y llama clearToken()",
+        "api.ts expone setOnUnauthorized(handler) para registrar callback",
+        "use-auth.ts registra callback que setea isAuthenticated = false",
+        "El navegador redirige a WelcomeScreen automáticamente al recibir 401",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 18,
+      "name": "cnv_translate_gemini_fallback",
+      "title": "Fallback a Gemini gem en Traductor Asertivo",
+      "description": "Cuando el Traductor CNV falla, mostrar mensaje amigable con botón para abrir un gem de Gemini como alternativa. También incluir un botón discreto en la interfaz para acceder directamente al gem sin esperar un error.",
+      "acceptance": [
+        "Constante GEMINI_GEM_URL en constants/index.ts",
+        "Mensaje de error amigable cuando falla la IA",
+        "Botón 'Abrir en Gemini' en el mensaje de error que abre el gem in-app",
+        "Botón discreto accesible en la UI para acceder directamente al gem",
+        "expo-web-browser abre el link sin salir de la app",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 19,
+      "name": "dialog_redesign",
+      "title": "Rediseño de diálogos al estilo dialogBase.html",
+      "description": "Reemplazar Alert.alert nativos y AddMilestoneModal por diálogos custom con glass effect, border-radius 32px, sombra elevada, animación fade+scale, botones apilados verticalmente. Incluye ConfirmDialog (multi-acción) e InfoDialog (informativo). Simplificar AddMilestoneModal a emotion picker + 1 campo de texto.",
+      "acceptance": [
+        "Componente ConfirmDialog reutilizable con glass effect y animación fade+scale",
+        "Componente InfoDialog para alertas informativas de 1 botón",
+        "AddMilestoneModal rediseñada: centrada, glass card, borderRadius 32px, solo emotion + descripción",
+        "TimelineScreen usa ConfirmDialog en vez de Alert.alert",
+        "ProfileScreen usa ConfirmDialog en vez de Alert.alert",
+        "WelcomeScreen usa InfoDialog en vez de Alert.alert",
+        "PanicModal usa InfoDialog en vez de Alert.alert",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 20,
+      "name": "professionals_directory",
+      "title": "Directorio de Profesionales con Contacto",
+      "description": "Reemplazar FeaturedCard de meditación en Home por sección 'Agenda tu cita con un profesional'. Pantalla dedicada con lista de profesionales cargada desde PostgreSQL. Cada profesional muestra nombre, especialidad, descripción y botones de contacto por WhatsApp y Email. Los datos incluyen teléfono y correo en la tabla profesionales.",
+      "acceptance": [
+        "Backend: Migración 006_create_profesionales.sql con tabla profesionales (id, nombre, especialidad, descripcion, telefono, email, activo, created_at)",
+        "Backend: Migración 007_seed_profesionales.sql con datos de ejemplo",
+        "Backend: GET /professionals devuelve lista de profesionales activos",
+        "Backend: GET /professionals/:id devuelve profesional por ID",
+        "Frontend: ProfessionalCard component con nombre, especialidad, descripción y acciones expandibles",
+        "Frontend: ProfessionalsScreen con lista completa de profesionales",
+        "Frontend: HomeScreen reemplaza FeaturedCard por tarjeta 'Agenda tu cita' que navega a ProfessionalsScreen",
+        "Frontend: Botones WhatsApp y Email abren Linking con mensaje prellenado",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 21,
+      "name": "professionals_crud_swagger",
+      "title": "CRUD de Profesionales + Documentación Swagger",
+      "description": "Endpoints RESTful completos para gestión de profesionales (crear, actualizar, eliminar, buscar todos, buscar por nombre) con documentación Swagger interactiva. Incluye fix pre-existente de tipos en app.ts.",
+      "acceptance": [
+        "Backend: POST /professionals crea profesional (requiere JWT)",
+        "Backend: PUT /professionals/:id actualiza profesional (requiere JWT)",
+        "Backend: DELETE /professionals/:id soft delete (requiere JWT)",
+        "Backend: GET /professionals retorna todos (activo + inactivo)",
+        "Backend: GET /professionals/search?name=xxx busca por nombre ILIKE",
+        "Backend: Todos los endpoints documentados con Swagger JSDoc",
+        "Backend: Fix app.ts: simplificado swagger setup (tipos + window)",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 22,
+      "name": "psychoeducation_paged_ui",
+      "title": "Rediseño Psicoeducación: paginado horizontal estilo YouVersion",
+      "description": "Transformar la pantalla de contenido psicoeducativo de scroll vertical largo a paginado horizontal con swipe, flechas, dots y barra de progreso. Cada bloque = una página.",
+      "acceptance": [
+        "FlatList horizontal con pagingEnabled en topic-screen",
+        "Cada bloque se renderiza como página independiente",
+        "Barra de progreso animada en la parte superior",
+        "Dot indicators debajo de la barra",
+        "Flechas izq/der con contador de página",
+        "Swipe horizontal funciona con momentum",
+        "Bloques con contenido largo tienen scroll vertical interno",
+        "Botón PDF aparece solo en última página con respuestas",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 23,
+      "name": "psychoeducation_pdf_per_form",
+      "title": "PDF solo para formularios, descargable por formulario",
+      "description": "Mover botón PDF de la última página global a dentro de cada bloque FORMULARIO/FORMULARIO_PAREJA. El PDF incluye solo los datos de ese formulario específico.",
+      "acceptance": [
+        "Botón PDF eliminado de la última página global",
+        "Botón 'Descargar respuestas en PDF' aparece en bloques FORMULARIO y FORMULARIO_PAREJA al completar",
+        "PDF generado contiene solo el formulario actual y sus respuestas",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 24,
+      "name": "psychoeducation_topic_author",
+      "title": "Autor en tarjetas de psicoeducación",
+      "description": "Agregar campo autor a los temas de psicoeducación, migración, seed, backend model/service, frontend types y UI para mostrar 'Escrito por {autor}' en la lista de temas disponibles. Renombrar primer tema de 'Psicoeducación para parejas' a 'El amor' (autor: John Emanuel Pérez Gómez).",
+      "acceptance": [
+        "Migration 011_add_autor_to_temas.sql agrega columna autor",
+        "Seed 004 y 010 incluyen autor en todos los temas",
+        "Backend model IPsychoeducationTopic incluye autor",
+        "Backend service mapea autor en getCategoryDetail",
+        "Frontend type IPsychoeducationTopic incluye autor",
+        "HomeScreen muestra 'Escrito por {autor}' en cada tarjeta de tema",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 25,
+      "name": "exportar_pdf_flag",
+      "title": "Flag exportar_pdf en cuerpo_json para FORMULARIO_PAREJA",
+      "description": "Agregar campo opcional exportar_pdf en el JSON de bloques FORMULARIO_PAREJA para controlar desde la base de datos si se muestra el botón de descarga de PDF. Solo se muestra si exportar_pdf: true.",
+      "acceptance": [
+        "Backend model IFormularioParejaContent incluye exportar_pdf?: boolean",
+        "Frontend type IFormularioParejaContent incluye exportar_pdf?: boolean",
+        "Botón PDF en FORMULARIO_PAREJA solo aparece si data.exportar_pdf === true",
+        "Migration 013 actualiza bloques FORMULARIO_PAREJA existentes con exportar_pdf: true",
+        "Seed 010 incluye exportar_pdf: true en el JSON del FORMULARIO_PAREJA",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 26,
+      "name": "export_timeline_pdf",
+      "title": "Exportar línea del tiempo a PDF horizontal",
+      "description": "Botón para exportar la línea del tiempo a PDF con orientación landscape, grid de 3 columnas, agrupado por mes.",
+      "acceptance": [
+        "Botón 'PDF' visible en el header de TimelineScreen cuando hay eventos",
+        "PDF generado en orientación landscape",
+        "Grid de 3 columnas con cards por evento",
+        "Eventos agrupados por mes con separador visual",
+        "Cada card muestra: emoji, emoción, fecha, hora, descripción y sentimiento (si existe)",
+        "Disclaimer legal incluido al final del PDF",
+        "Comparte el PDF vía share sheet nativo",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 27,
+      "name": "persistent_session",
+      "title": "Sesión persistente con Refresh Tokens",
+      "description": "Implementar refresh token mechanism para evitar que la sesión se cierre al expirar el JWT. Access token (1h) + Refresh token (30d) con renovación automática.",
+      "acceptance": [
+        "Backend: Migración 014_create_refresh_tokens.sql",
+        "Backend: POST /auth/refresh intercambia refresh token por nuevo par access+refresh",
+        "Backend: auth-middleware distingue TokenExpiredError de otros errores JWT",
+        "Backend: Login/register devuelven refreshToken además de jwt",
+        "Frontend: api.ts interceptor intenta refresh automático al recibir 401 antes de hacer logout",
+        "Frontend: Silent refresh al abrir la app si el access token expiró",
+        "Frontend: TAuthResponse incluye refreshToken",
+        "Tests de integración para POST /auth/refresh",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 27,
+      "name": "reset_timeline",
+      "title": "Empezar nueva línea del tiempo",
+      "description": "Opción para reiniciar la línea del tiempo borrando todos los hitos actuales, con opción de exportar a PDF antes de borrar. Incluye diálogo de confirmación con 3 opciones: exportar y borrar, solo borrar, o cancelar.",
+      "acceptance": [
+        "Backend: DELETE /timeline/all borra todos los eventos del usuario autenticado",
+        "Frontend: Botón 'Empezar nueva línea del tiempo' al final del scroll (solo visible con eventos)",
+        "Frontend: ConfirmDialog con 3 acciones: Exportar PDF y borrar / Solo borrar / Cancelar",
+        "Flujo 'Exportar PDF y borrar': genera PDF, espera share, luego borra eventos",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 28,
+      "name": "app_version_check",
+      "title": "Notificación de nuevas versiones disponibles",
+      "description": "Endpoint GET /app/version que informa si hay actualización disponible. Modal bloqueante si mandatory, informativo si no. Check al abrir la app.",
+      "acceptance": [
+        "Backend: GET /app/version devuelve latestVersion, minimumVersion, storeUrl, mandatory",
+        "Backend: Config desde variables de entorno en config.ts",
+        "Frontend: useAppUpdate hook compara versión actual vs latest/minimum",
+        "Frontend: Modal bloqueante sin opción de cerrar si mandatory es true",
+        "Frontend: Modal informativo con 'Actualizar ahora' / 'Más tarde' si mandatory es false",
+        "Frontend: Check se ejecuta durante el splash/loading inicial",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 29,
+      "name": "wordpress_plugin_psicoeducacion",
+      "title": "Plugin WordPress para gestión de contenido psicoeducativo",
+      "description": "Plugin WordPress que actúa como UI administrativa para gestionar categorías, temas y bloques de psicoeducación. Se comunica con los endpoints admin existentes del backend Node.js via HTTP + JWT.",
+      "acceptance": [
+        "Existe plugins/vittalmind-psicoeducacion/vittalmind-psicoeducacion.php con header WordPress",
+        "Menú 'VittalMind Psicoeducación' en el admin de WordPress con subpáginas Dashboard, Categorías, Temas, Bloques y Configuración",
+        "Página de login que autentica contra POST /auth/login del backend y almacena JWT",
+        "CRUD de categorías: listar, crear, editar, eliminar via API admin",
+        "CRUD de temas: listar, crear, editar, eliminar asociados a categoría via API admin",
+        "CRUD de bloques: listar, crear, editar, eliminar con formularios dinámicos por tipoComponente (TEXTO, TABLA_COMPARATIVA, CUESTIONARIO, EJERCICIO_DIDACTICO, FORMULARIO, FORMULARIO_PAREJA)",
+        "Dashboard con resumen del contenido existente",
+        "Configuración para URL del backend API",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 30,
+      "name": "reactivate_google_login",
+      "title": "Re-activar login con Google tras publicación",
+      "description": "Configurar OAuth de Google en producción y volver a activar el login con Google. Requiere crear las credenciales en Google Cloud Console (Web Client ID para backend, Android/iOS Client ID para Expo), actualizar GOOGLE_CLIENT_ID en el backend, actualizar app.json con los client IDs, y poner GOOGLE_AUTH_ENABLED=true.",
+      "acceptance": [
+        "Credenciales OAuth creadas en Google Cloud Console (Web, Android con SHA-1 de producción, iOS)",
+        "GOOGLE_CLIENT_ID real en el .env del backend",
+        "app.json con Android/iOS client IDs",
+        "GOOGLE_AUTH_ENABLED=true en constants/index.ts",
+        "Divider 'O continúa con' y botón Google visibles de nuevo en WelcomeScreen",
+        "Flujo completo probado: Google login → JWT → endpoints protegidos",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 31,
+      "name": "hostinger_deploy_entry",
+      "title": "Entry point server.js para deploy en Hostinger",
+      "description": "Wrapper server.js en la raíz del backend que registra tsconfig-paths para resolver los aliases @/* contra dist/ y arranca dist/index.js (Hostinger fija server.js como entry file). Ejecuta npm run build automáticamente si dist/index.js no existe. El script start apunta a node server.js.",
+      "acceptance": [
+        "Existe Backend/server.js que registra tsconfig-paths (@/* -> dist/*) y requiere dist/index.js",
+        "server.js ejecuta npm run build automáticamente si dist/index.js no existe",
+        "package.json start = node server.js",
+        "npm run build && node server.js arranca y GET /health responde 200 { status: 'ok' }",
+        "npm start funciona",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 32,
+      "name": "wordpress_plugin_deploy_fixes",
+      "title": "Fixes plugin WordPress para deploy y CRUD completo",
+      "description": "Correcciones para que el plugin de psicoeducación quede listo para desplegar: el campo autor de temas no se persistía (controller backend lo descartaba), la edición de bloques estaba rota (mismatch camelCase vs snake_case en PUT admin/blocks), los listados de temas/categorías/bloques mostraban columnas vacías por leer campos con el naming incorrecto, y la métrica 'Tipos de bloque' del dashboard era un stub.",
+      "acceptance": [
+        "Backend: adminCreateTopic y adminUpdateTopic reciben y persisten autor",
+        "Backend: adminUpdateBlock acepta payload camelCase del plugin (tipoComponente, tituloBloque, cuerpoJson) y mantiene compatibilidad snake_case",
+        "Backend: GET /psychoeducation/:slug incluye categoriaId en cada tema; GET /psychoeducation/:slug/:temaId incluye temaId en cada bloque",
+        "Plugin topics.js: listado y edición usan descripcionBreve, bloquesCount y categoriaId",
+        "Plugin blocks.js: listado, edición y populate usan tituloBloque, tipoComponente, cuerpoJson y temaId",
+        "Plugin categories.js y dashboard.php usan temasCount",
+        "Dashboard: métrica 'Tipos de bloque' cuenta tipos reales de los bloques",
+        "Tests backend: 10 nuevos tests para endpoints admin de topics y blocks",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 33,
+      "name": "wordpress_plugin_login_connectivity",
+      "title": "Conectividad del login del plugin WordPress",
+      "description": "El login del plugin fallaba en producción sin petición alguna al backend: vmp_api_url quedaba en el default http://localhost:3000 y la página Configuración (donde se corrige) estaba bloqueada detrás del login del backend. Se cambia el default a https://app.vittaminds.com, se desbloquea la página Configuración sin auth del backend, el login muestra el estado HTTP real o el error de red en vez del mensaje genérico, y se endurece el check de conexión con nonce + manage_options. Además, el JS del plugin dependía del `$` global (no disponible en wp-admin por jQuery.noConflict) y de escHtml solo definida en categories.js, lo que colgaba Categorías/Temas/Bloques/Dashboard; se envuelve todo en IIFE con jQuery, se comparte VMP.escHtml y los errores AJAX se muestran en pantalla en vez de colgarse.",
+      "acceptance": [
+        "vmp_api_url default = https://app.vittaminds.com en activate() y get_api_url()",
+        "Página Configuración accesible sin autenticarse contra el backend (mantiene manage_options)",
+        "Login muestra estado HTTP real o error de red en vez del genérico",
+        "wp_ajax_vmp_check_connection valida nonce y manage_options",
+        "JS del plugin no usa el `$` global (IIFE con jQuery) — Categorías/Temas/Bloques/Dashboard cargan en producción",
+        "escHtml compartida via VMP.escHtml en admin.js",
+        "VMP.api.* con .fail visible y handlers AJAX responden HTTP 200 con success/data (errores visibles, sin cuelgues)",
+        "Handlers AJAX llaman a get/delete sin $body (evita TypeError de firma bool $auth -> HTTP 500)",
+        "Listado de bloques se completa contando por tema y por categoría (1ª categoría con 2 temas) — renderiza tabla y dropdowns",
+        "Modales sin IDs duplicados (template cacheado + .remove()) — los campos de contenido aparecen al elegir tipo y save() lee el formulario visible",
+        "Petición de bloques por tema usa la ruta completa /psychoeducation/{slug}/{temaId} en listado, edición y dashboard (antes 404 por prefijo faltante)",
+        "VMP_VERSION = 1.0.4 (cache-busting)",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 34,
+      "name": "password_reset_security_questions",
+      "title": "Olvidé mi contraseña sin correo (preguntas de seguridad)",
+      "description": "Recuperación de contraseña basada en preguntas de seguridad (2-3) sin envío de email. El usuario configura preguntas al registrarse; para resetear responde email + preguntas, recibe un token de reset temporal y define una nueva contraseña. Respuestas con hash bcrypt y límite de intentos anti-fuerza bruta.",
+      "acceptance": [
+        "Backend: Migración 015_create_security_questions.sql crea tabla preguntas_seguridad",
+        "Backend: GET /auth/security-questions devuelve banco de preguntas (público)",
+        "Backend: POST /auth/security-questions guarda 2-3 preguntas con hash bcrypt (requiere JWT)",
+        "Backend: POST /auth/password/questions devuelve las preguntas del usuario (o vacío, anti-enumeración)",
+        "Backend: POST /auth/password/verify-answers valida respuestas, limita intentos (5/15min → 429) y devuelve reset token de 10 min",
+        "Backend: POST /auth/password/reset actualiza password_hash y revoca refresh tokens",
+        "Backend: Cuentas Google sin password no pueden resetear (mensaje genérico)",
+        "Backend: Tests de integración para el flujo completo",
+        "Frontend: services/api.ts excluye /auth/password* del auto-refresh 401",
+        "Frontend: services/auth.ts con 5 métodos nuevos",
+        "Frontend: ForgotPasswordScreen con 3 pasos (email → preguntas → nueva contraseña)",
+        "Frontend: SecurityQuestionsScreen de setup (onboarding post-registro y desde perfil)",
+        "Frontend: Link '¿Olvidaste tu contraseña?' navega a ForgotPasswordScreen",
+        "Frontend: requiresSecuritySetup en use-auth guía el setup tras registrarse",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 35,
+      "name": "account_profile_edit",
+      "title": "Editar datos de cuenta y cambiar contraseña",
+      "description": "En el perfil, opciones para modificar los datos de la cuenta y la contraseña. Usuarios locales pueden editar nombre y email (con chequeo de unicidad); usuarios Google solo nombre (su email es read-only). Cambio de contraseña requiere la contraseña actual, invalida otras sesiones y emite tokens nuevos para mantener la sesión activa.",
+      "acceptance": [
+        "Backend: GET /auth/me devuelve nombre, email y authProvider del usuario autenticado",
+        "Backend: PUT /auth/me actualiza nombre y/o email (unicidad, email Google bloqueado, validación de formato)",
+        "Backend: POST /auth/change-password verifica contraseña actual (bcrypt), valida la nueva (>= 6), limita intentos (5/15min → 429), revoca refresh tokens e emite tokens nuevos",
+        "Backend: Cuentas Google no pueden cambiar contraseña (WRONG_PROVIDER)",
+        "Backend: Swagger documenta los 3 endpoints",
+        "Backend: Tests de integración para get/update profile y change-password",
+        "Frontend: services/auth.ts con getMe, updateProfile y changePassword (guarda tokens nuevos)",
+        "Frontend: ProfileScreen muestra nombre y email del usuario",
+        "Frontend: EditProfileScreen con nombre + email (email read-only en cuentas Google)",
+        "Frontend: ChangePasswordScreen con contraseña actual, nueva y confirmación",
+        "Docs: excepción de privacidad documentada en architecture.md para GET/PUT /auth/me",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 36,
+      "name": "security_questions_classic_bank",
+      "title": "Banco de preguntas de seguridad con preguntas clásicas",
+      "description": "Reemplazar el banco de preguntas de seguridad (SECURITY_QUESTIONS_BANK) por las preguntas clásicas ('¿Cómo se llamó tu primera mascota?', '¿Dónde nació uno de tus padres?', etc.). El banco sigue viviendo en el código del backend y las respuestas se guardan en la BD (preguntas_seguridad).",
+      "acceptance": [
+        "SECURITY_QUESTIONS_BANK contiene las 10 preguntas clásicas",
+        "GET /auth/security-questions devuelve las preguntas clásicas",
+        "Test de integración verifica que '¿Dónde nació uno de tus padres?' está en la respuesta",
+        "Sin cambios en BD ni en frontend",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 37,
+      "name": "fix_profile_network_show_password_keyboard",
+      "title": "Fixes: network error en perfil, mostrar/ocultar contraseña y teclado",
+      "description": "Tres correcciones de UX/errores: (1) el 'network error' al entrar a los datos del perfil se debía a que el backend de producción no tenía los endpoints de /auth/me, /auth/change-password y /auth/security-questions (404 → HTML → 'Network error'); se endurece el parseo de errores en api.ts para mostrar el status real. (2) Toggle mostrar/ocultar contraseña en ChangePasswordScreen (las demás pantallas ya lo tenían). (3) El teclado tapa los inputs en ambos OS: se fija softwareKeyboardLayoutMode=resize en Android (New Architecture) y se usa automaticallyAdjustKeyboardInsets en los ScrollView de formularios en iOS.",
+      "acceptance": [
+        "change-password-screen.tsx: los 3 campos de contraseña tienen toggle de visibilidad (ojo)",
+        "app.json: android.softwareKeyboardLayoutMode = 'resize'",
+        "Formularios con ScrollView (welcome, register, forgot-password, security-questions, edit-profile, change-password) usan behavior undefined + automaticallyAdjustKeyboardInsets",
+        "acertive-translate-screen sin ScrollView conserva KAV padding + keyboardVerticalOffset",
+        "api.ts: si la respuesta no es JSON, el error muestra 'Error del servidor (status)' en vez de 'Network error'",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 38,
+      "name": "login_logo_and_keyboard_review",
+      "title": "Logo del login con icon-vittaminds y revisión de teclado en todas las pantallas",
+      "description": "Reemplazar el logo verde (globo) de la pantalla de login por el ícono icon-vittaminds.png (fondo blanco, contenedor blanco cuadrado redondeado alrededor). Además revisar que el teclado no tape lo que se escribe en ninguna pantalla en Android ni iOS: los formularios de la feature 37 ya usan ScrollView + automaticallyAdjustKeyboardInsets; faltan los ScrollView internos de los bloques de psicoeducación (content-block-form, content-block-exercise, content-block-couples-form) y del AddMilestoneModal.",
+      "acceptance": [
+        "App/src/components/logo.tsx renderiza icon-vittaminds.png en contenedor blanco cuadrado redondeado (ya no es el círculo verde con SVG de mundo)",
+        "WelcomeScreen (login) muestra el nuevo logo",
+        "content-block-form.tsx, content-block-exercise.tsx y content-block-couples-form.tsx usan automaticallyAdjustKeyboardInsets en su ScrollView (iOS)",
+        "add-milestone-modal.tsx usa automaticallyAdjustKeyboardInsets en su ScrollView (iOS)",
+        "Android sigue con softwareKeyboardLayoutMode = 'resize' en app.json",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 39,
+      "name": "android_15_edge_to_edge_keyboard",
+      "title": "Fix teclado en Android 15+ (edge-to-edge) con IME insets en la raíz nativa",
+      "description": "Android 15+ (targetSdk 35) impone edge-to-edge y windowSoftInputMode adjustResize ya no redimensiona la ventana, por lo que el teclado tapa todos los inputs en producción (traductor, timeline, psicoeducación, perfil, preguntas de seguridad, contraseñas). Los fixes JS de #37/#38 (automaticallyAdjustKeyboardInsets, KAV behavior undefined) no tienen efecto en Android. Solución: config plugin de Expo que registra un OnApplyWindowInsetsListener en MainActivity para aplicar WindowInsetsCompat.Type.ime() como padding inferior de la raíz cuando el teclado está visible (backport del fix de RN 0.86 #55855).",
+      "acceptance": [
+        "App/plugins/with-android-ime-insets.js existe como config plugin",
+        "app.json registra el plugin en plugins (se mantiene softwareKeyboardLayoutMode = 'resize')",
+        "npx expo prebuild --no-install genera MainActivity.kt con setupImeInsets() + OnApplyWindowInsetsListener",
+        "El teclado ya no tapa los inputs en Android 15+ con un build EAS nuevo",
+        "Sin cambios en el JSX de las pantallas (welcome, register, forgot-password, security-questions, edit-profile, change-password, acertive-translate, add-milestone-modal, content-block-*)",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 40,
+      "name": "keyboard_controller_migration",
+      "title": "Migrar manejo de teclado a react-native-keyboard-controller (opción B)",
+      "description": "Alternativa robusta al fix de IME insets (#39): migrar el manejo de teclado a react-native-keyboard-controller (KeyboardAwareScrollView + KeyboardAvoidingView) para animación nativa y scroll al input enfocado en todas las plataformas. Tarea dejada pendiente por el usuario para continuar después.",
+      "acceptance": [
+        "react-native-keyboard-controller instalado vía npx expo install (react-native-reanimated y react-native-worklets como peers)",
+        "Integrado como librería bundled de Expo SDK 54 (KeyboardProvider en App.tsx); no requiere config plugin (no existe en v1.18.5)",
+        "Formularios (welcome, register, forgot-password, security-questions, edit-profile, change-password) usan KeyboardAwareScrollView",
+        "Traductor, modal de timeline y bloques de psicoeducación manejan el teclado con keyboard-controller",
+        "Plugin IME insets (#39) eliminado: sin with-android-ime-insets en app.json, se conserva softwareKeyboardLayoutMode = 'resize'",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 42,
+      "name": "apple_signin",
+      "title": "Login con Apple (Sign In with Apple) para iOS",
+      "description": "Requisito de App Store (Guideline 4.8): al ofrecer Google login en iOS se debe ofrecer Sign in with Apple. Botón nativo oficial debajo del botón Google, identityToken verificado contra JWKS público de Apple en el backend, columna apple_sub como identificador estable y vinculación por email verificado con cuentas existentes.",
+      "acceptance": [
+        "expo-apple-authentication instalado vía npx expo install",
+        "app.json: ios.entitlements com.apple.developer.applesignin = Default",
+        "Backend: Migración 016_create_apple_auth.sql agrega apple_sub VARCHAR(64) UNIQUE NULL a usuarios_auth",
+        "Backend: services/apple-verifier.ts valida firma (JWKS https://appleid.apple.com/auth/keys cacheado), iss, aud (APPLE_BUNDLE_ID) y exp",
+        "Backend: findOrCreateAppleUser busca por apple_sub, vincula por email verificado o crea usuario auth_provider='apple'",
+        "Backend: POST /auth/apple documentado en Swagger y .env.example con APPLE_BUNDLE_ID",
+        "Backend: Tests de integración para /auth/apple (verificación mockeada)",
+        "Frontend: authService.loginWithApple + use-auth.loginWithApple reenviando nombre/email en cada login",
+        "Frontend: AppleAuthenticationButton nativo negro DEBAJO del botón Google, solo iOS y si isAvailableAsync()",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    },
+    {
+      "id": 43,
+      "name": "apple_token_revocation",
+      "title": "Revocación de tokens de Apple (server-to-server)",
+      "description": "Revocar los tokens de autorización de Apple cuando el usuario cierra sesión definitivamente o elimina su cuenta, usando el endpoint https://appleid.apple.com/auth/revoke. Requiere generar un client_secret JWT firmado con la llave privada AuthKey_6LN8F6WNQX.p8 (ES256).",
+      "acceptance": [
+        "La llave privada AuthKey_6LN8F6WNQX.p8 se carga SOLO desde variable de entorno APPLE_PRIVATE_KEY (contenido .p8 completo) o APPLE_PRIVATE_KEY_PATH; jamás se commitea al repositorio",
+        "Variables de entorno nuevas: APPLE_KEY_ID=6LN8F6WNQX, APPLE_TEAM_ID=<Team ID de Apple Developer>, APPLE_PRIVATE_KEY o APPLE_PRIVATE_KEY_PATH, documentadas en .env.example",
+        "Servicio apple-client-secret.ts que genera el client_secret JWT (ES256, iss=APPLE_TEAM_ID, iat/exp <= 180 días, sub=apple_sub del usuario, aud=https://appleid.apple.com) firmado con la .p8",
+        "Servicio apple-revoker.ts que llama POST https://appleid.apple.com/auth/revoke con client_secret y token (refresh_token de Apple si se almacenó)",
+        "Endpoint POST /auth/apple/logout protegido con JWT que revoca la autorización Apple del usuario autenticado (best-effort: no falla el logout si Apple responde error)",
+        "Al eliminar cuenta (cuando exista esa feature): revocar autorización Apple antes de borrar la fila de usuarios_auth",
+        "Para obtener refresh_token de Apple hay que pedir scope adicional response_mode=form_post en el flujo nativo o usar el flujo web; documentar limitación si no aplica al flujo nativo actual",
+        "Tests unitarios del generador de client_secret (mockeando la llave) y del llamador a /auth/revoke (mockeando fetch)",
+        "init.ps1 pasa al 100%"
+      ],
+      "conditions": [
+        "IMPLEMENTAR CUANDO: exista eliminación de cuenta in-app (App Store exige account deletion para apps con creación de cuentas; la revocación debe ejecutarse en ese flujo)",
+        "IMPLEMENTAR CUANDO: se necesite cumplir estrictamente la política de datos de Apple tras el rechazo de una revisión por no revocar sesiones",
+        "IMPLEMENTAR CUANDO: se agregue Sign in with Apple en Android/web (flujo OAuth con Services ID), donde la gestión del authorization code hace obligatorio el client_secret",
+        "NO IMPLEMENTAR ANTES: el login con Apple básico ya satisface la Guideline 4.8 sin revocación; Apple solo recomienda (no exige) revoke para apps nativas iOS simples",
+        "PRE-REQUISITOS: subir APPLE_PRIVATE_KEY al entorno seguro del VPS/Hostinger (nunca al repo), confirmar APPLE_TEAM_ID en Apple Developer → Membership details"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": 41,
+      "name": "wordpress_plugin_session_refresh",
+      "title": "Sesión del plugin WordPress: refresh token + TTL deslizante",
+      "description": "El plugin mostraba 'Missing or invalid authorization header' al editar contenido: la sesión del backend expiraba (transient 55 min no renovado, JWT 1h, sin auto-renovación). Se almacena el refreshToken del login, se renueva automáticamente ante 401 vía POST /auth/refresh con reintento único, se renueva el transient en cada petición exitosa (TTL deslizante), y los errores de sesión expirada se muestran con mensaje amigable en vez del texto crudo del backend.",
+      "acceptance": [
+        "class-api-client.php guarda jwt + refreshToken (transients separados) y renueva el TTL del jwt en cada respuesta exitosa autenticada",
+        "Ante 401 con auth: intenta POST /auth/refresh una vez y reintenta la petición original con el token nuevo",
+        "Si el refresh falla pero otro request en paralelo ya renovó, reintenta con el jwt fresco del transient",
+        "Si no hay token o el refresh falla definitivamente, devuelve mensaje amigable de sesión expirada (no el texto del backend)",
+        "class-auth.php handle_login guarda jwt + refreshToken; logout/unauthorized limpian ambos transients",
+        "VMP_VERSION = 1.0.5 (cache-busting)",
+        "init.ps1 pasa al 100%"
+      ],
+      "status": "done"
+    }
+  ]
+}

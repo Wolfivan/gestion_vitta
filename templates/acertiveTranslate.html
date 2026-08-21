@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Vitta Mind - Traductor Asertivo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#f2f0f0",
+                    "surface-container-highest": "#e4e2e2",
+                    "secondary": "#4a654f",
+                    "on-primary-fixed": "#001e2f",
+                    "inverse-primary": "#9bccf2",
+                    "secondary-container": "#c9e7cc",
+                    "surface-dim": "#dbd9d9",
+                    "primary-fixed": "#c9e6ff",
+                    "on-primary-fixed-variant": "#104b6b",
+                    "outline-variant": "#c1c7ce",
+                    "outline": "#71787e",
+                    "on-surface": "#1b1c1c",
+                    "inverse-surface": "#303030",
+                    "surface-bright": "#fbf9f8",
+                    "on-error": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed": "#1c1c18",
+                    "secondary-fixed": "#cceacf",
+                    "on-secondary-fixed": "#062010",
+                    "tertiary-container": "#76756f",
+                    "surface-variant": "#e4e2e2",
+                    "secondary-fixed-dim": "#b0ceb4",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#e5e2db",
+                    "primary": "#2d6182",
+                    "on-tertiary": "#ffffff",
+                    "surface-container": "#efeded",
+                    "primary-container": "#487a9c",
+                    "surface-container-high": "#eae8e7",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#334d38",
+                    "on-tertiary-container": "#fdffdd",
+                    "background": "#fbf9f8",
+                    "primary-fixed-dim": "#9bccf2",
+                    "error-container": "#ffdad6",
+                    "surface": "#fbf9f8",
+                    "surface-container-low": "#f5f3f3",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5d5c57",
+                    "on-tertiary-fixed-variant": "#474742",
+                    "on-surface-variant": "#41474d",
+                    "tertiary-fixed-dim": "#c9c6c0",
+                    "on-secondary-container": "#4e6953",
+                    "on-primary-container": "#fcfcff",
+                    "on-background": "#1b1c1c",
+                    "surface-tint": "#306384",
+                    "on-error-container": "#93000a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "24px",
+                    "stack-sm": "8px",
+                    "container-padding-mobile": "20px",
+                    "unit": "8px",
+                    "stack-lg": "48px",
+                    "gutter": "16px",
+                    "container-padding-desktop": "40px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-xl-mobile": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["22px", {"lineHeight": "30px", "fontWeight": "500"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-xl-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #fbf9f8;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .chat-bubble-user {
+            border-radius: 20px 20px 4px 20px;
+        }
+        .chat-bubble-ai {
+            border-radius: 4px 20px 20px 20px;
+        }
+        .soft-elevation {
+            box-shadow: 0px 4px 20px rgba(0,0,0,0.04);
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 flex justify-between items-center px-container-padding-mobile h-16 w-full">
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-semibold text-primary">Traductor Asertivo</h1>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container/20 border border-primary/10">
+<img class="w-full h-full object-cover" data-alt="A professional and friendly female user profile portrait with a warm, empathetic smile. The photo is taken in a brightly lit, modern environment with soft focus. She wears minimalist, professional attire. The overall mood is calm, trustworthy, and restorative, matching a premium mental health application's aesthetic with a light-mode color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZswp-gv4_ZHNVTZLMAhJHl5IEgudrhxgk1OWnIrsBAoaSn7NM1hbLbcZFI4ARQANRBciHuI7NFlrNywJvbHyVsXwqGQY5s-dnzZMSO-llHASY6JgIzg4Nxx1zWlw2imYNHJK_RANYoARvd84WB9nnZCC_swytou0--1cRugedlFvFDaKfcxGZRbkgYIV0fr2xn8_iKc7_WsVVFNf8JmippfM5AAToWUiY8Huoyi4gN-aa-1tHlROj"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 pt-24 pb-32 px-container-padding-mobile max-w-[1140px] mx-auto w-full flex flex-col gap-stack-md">
+<!-- Empathy Guide Intro -->
+<div class="flex flex-col items-center justify-center text-center py-stack-md animate-float">
+<div class="w-20 h-20 bg-secondary-container rounded-full flex items-center justify-center mb-4 soft-elevation">
+<span class="material-symbols-outlined text-secondary text-4xl" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</div>
+<p class="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-1">Guía de Empatía</p>
+<h2 class="font-headline-md text-headline-md text-on-surface-variant max-w-[300px]">Transforma tu mensaje</h2>
+</div>
+<!-- Chat History Container -->
+<div class="flex flex-col gap-stack-md" id="chat-container">
+<!-- AI Welcome Message -->
+<div class="flex gap-3 items-end">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary text-sm">auto_awesome</span>
+</div>
+<div class="chat-bubble-ai bg-white p-4 max-w-[85%] soft-elevation text-on-surface border border-surface-container">
+<p class="font-body-md text-body-md">Hola, cuéntame qué quieres comunicar y te ayudaré a expresarlo de forma empática.</p>
+</div>
+</div>
+<!-- Example Conversation Flow (Visual Aid) -->
+<div class="flex flex-col gap-4">
+<!-- User Message -->
+<div class="flex justify-end items-end gap-3 opacity-60">
+<div class="chat-bubble-user bg-primary p-4 max-w-[85%] soft-elevation text-on-primary">
+<p class="font-body-md text-body-md">"Estoy harto de que siempre llegues tarde y no te importe mi tiempo."</p>
+</div>
+</div>
+<!-- AI Translation Response -->
+<div class="flex gap-3 items-start">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center shrink-0 mt-1">
+<span class="material-symbols-outlined text-secondary text-sm">auto_awesome</span>
+</div>
+<div class="chat-bubble-ai bg-secondary-container/30 p-5 max-w-[85%] soft-elevation border border-secondary/10 flex flex-col gap-3">
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined text-sm">psychology</span>
+<span class="font-label-sm text-label-sm font-bold uppercase">Traducción Asertiva</span>
+</div>
+<p class="font-body-md text-body-md italic text-on-secondary-container">"Valoro mucho nuestro tiempo juntos y me siento algo frustrado cuando nos retrasamos. ¿Podríamos intentar coordinarnos mejor para la próxima vez?"</p>
+<div class="flex gap-2 mt-2">
+<button class="px-3 py-1.5 rounded-full bg-white text-secondary font-label-sm text-label-sm flex items-center gap-1 hover:bg-secondary-container transition-colors">
+<span class="material-symbols-outlined text-sm">content_copy</span> Copiar
+                            </button>
+<button class="px-3 py-1.5 rounded-full bg-white text-secondary font-label-sm text-label-sm flex items-center gap-1 hover:bg-secondary-container transition-colors">
+<span class="material-symbols-outlined text-sm">refresh</span> Re-intentar
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Input Area (Task Focused - No NavBar) -->
+<div class="fixed bottom-0 w-full bg-surface/90 backdrop-blur-lg px-container-padding-mobile pb-10 pt-4 z-50">
+<div class="max-w-[1140px] mx-auto flex items-end gap-3 bg-white p-2 rounded-3xl soft-elevation border border-surface-container">
+<textarea class="flex-1 bg-transparent border-none focus:ring-0 font-body-md text-body-md min-h-[50px] max-h-[150px] p-3 resize-none text-on-surface-variant placeholder:text-outline" id="message-input" placeholder="Escribe lo que sientes..."></textarea>
+<button class="bg-primary text-on-primary h-12 w-12 flex items-center justify-center rounded-2xl hover:bg-primary-container transition-all active:scale-95 shadow-md" id="translate-btn">
+<span class="material-symbols-outlined">auto_fix_high</span>
+</button>
+</div>
+<div class="text-center mt-3">
+<p class="font-label-sm text-label-sm text-outline">Vitta Mind AI puede cometer errores. Reflexiona antes de enviar.</p>
+</div>
+</div>
+<!-- Background Atmospheric Effect -->
+<div class="fixed inset-0 -z-10 pointer-events-none opacity-40">
+
+</div>
+<script>
+        // Micro-interactions for the chat
+        const input = document.getElementById('message-input');
+        const btn = document.getElementById('translate-btn');
+        const container = document.getElementById('chat-container');
+
+        // Auto-resize textarea
+        input.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Simple mock send function
+        btn.addEventListener('click', () => {
+            const text = input.value.trim();
+            if(!text) return;
+
+            // Append User Message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'flex justify-end items-end gap-3 animate-in fade-in slide-in-from-right-4 duration-500';
+            userMsg.innerHTML = `
+                <div class="chat-bubble-user bg-primary p-4 max-w-[85%] soft-elevation text-on-primary">
+                    <p class="font-body-md text-body-md">${text}</p>
+                </div>
+            `;
+            container.appendChild(userMsg);
+            
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Scroll to bottom
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+            // Simulate AI Thinking
+            setTimeout(() => {
+                const typing = document.createElement('div');
+                typing.className = 'flex gap-3 items-end animate-pulse';
+                typing.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-secondary text-sm">auto_awesome</span>
+                    </div>
+                    <div class="chat-bubble-ai bg-white p-3 soft-elevation text-outline italic font-label-md">
+                        Pensando asertivamente...
+                    </div>
+                `;
+                container.appendChild(typing);
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+                setTimeout(() => {
+                    typing.remove();
+                    const response = document.createElement('div');
+                    response.className = 'flex gap-3 items-start animate-in fade-in slide-in-from-left-4 duration-500';
+                    response.innerHTML = `
+                        <div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center shrink-0 mt-1">
+                            <span class="material-symbols-outlined text-secondary text-sm">auto_awesome</span>
+                        </div>
+                        <div class="chat-bubble-ai bg-secondary-container/30 p-5 max-w-[85%] soft-elevation border border-secondary/10 flex flex-col gap-3">
+                            <div class="flex items-center gap-2 text-secondary">
+                                <span class="material-symbols-outlined text-sm">psychology</span>
+                                <span class="font-label-sm text-label-sm font-bold uppercase">Traducción Asertiva</span>
+                            </div>
+                            <p class="font-body-md text-body-md italic text-on-secondary-container">"Entiendo que esta situación es difícil. Quizás podríamos buscar un momento para conversar tranquilamente sobre cómo nos sentimos al respecto."</p>
+                        </div>
+                    `;
+                    container.appendChild(response);
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 1500);
+            }, 800);
+        });
+    </script>
+</body></html>

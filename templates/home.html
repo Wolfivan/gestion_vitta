@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "primary-container": "#487a9c",
+                    "surface-container-high": "#eae8e7",
+                    "on-surface": "#1b1c1c",
+                    "surface-container-low": "#f5f3f3",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#c9e7cc",
+                    "outline": "#71787e",
+                    "on-surface-variant": "#41474d",
+                    "surface-container-highest": "#e4e2e2",
+                    "tertiary-fixed-dim": "#c9c6c0",
+                    "on-primary-fixed": "#001e2f",
+                    "on-primary-container": "#fcfcff",
+                    "on-error": "#ffffff",
+                    "inverse-surface": "#303030",
+                    "tertiary-fixed": "#e5e2db",
+                    "on-tertiary-fixed-variant": "#474742",
+                    "on-secondary-fixed-variant": "#334d38",
+                    "surface-container": "#efeded",
+                    "on-tertiary-fixed": "#1c1c18",
+                    "inverse-on-surface": "#f2f0f0",
+                    "surface-bright": "#fbf9f8",
+                    "on-tertiary-container": "#fdffdd",
+                    "outline-variant": "#c1c7ce",
+                    "primary-fixed-dim": "#9bccf2",
+                    "primary": "#2d6182",
+                    "primary-fixed": "#c9e6ff",
+                    "secondary": "#4a654f",
+                    "secondary-fixed-dim": "#b0ceb4",
+                    "error-container": "#ffdad6",
+                    "surface": "#fbf9f8",
+                    "on-error-container": "#93000a",
+                    "on-background": "#1b1c1c",
+                    "on-secondary-container": "#4e6953",
+                    "surface-dim": "#dbd9d9",
+                    "tertiary": "#5d5c57",
+                    "tertiary-container": "#76756f",
+                    "secondary-fixed": "#cceacf",
+                    "background": "#fbf9f8",
+                    "surface-tint": "#306384",
+                    "surface-variant": "#e4e2e2",
+                    "on-secondary-fixed": "#062010",
+                    "on-primary-fixed-variant": "#104b6b",
+                    "inverse-primary": "#9bccf2",
+                    "error": "#ba1a1a",
+                    "on-secondary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "24px",
+                    "container-padding-desktop": "40px",
+                    "container-padding-mobile": "20px",
+                    "stack-lg": "48px",
+                    "unit": "8px",
+                    "stack-sm": "8px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-xl-mobile": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-md": ["22px", {"lineHeight": "30px", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-xl-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fbf9f8; /* surface */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scroll-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+        }
+        .active-nav-indicator {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="text-on-surface overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-[0px_4px_20px_rgba(0,0,0,0.04)]">
+<div class="flex items-center justify-between px-container-padding-mobile h-16 w-full max-w-[1140px] mx-auto">
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container-low transition-colors active:scale-95 duration-200 rounded-full">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">Vitta Mind</h1>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant shadow-sm active:scale-95 transition-transform duration-200">
+<img class="w-full h-full object-cover" data-alt="A professional, warm portrait of a person in a serene setting, using a soft-focus background with natural morning light. The individual has a gentle smile, conveying trust and calm. The aesthetic is modern and clean, fitting a restorative minimalism design with muted tones and high-key lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUXi-yiHSK5mQf98_NPKXm3pCl1F-4KpQLVk1iKEcbnB2vVsT7vAms7zLhNvRQ0h5XF9O8F5pESAAkJk-EEch-4tBKoNe1V6JcYVv6zIqGJlh_sQ98Mriw8Tz3PfvpkqgXZcCMvFnjN-Yi3jeH6vExVS35TsdqXsYyN3eYwDdMKARbEkUEGRdDtwKGKB9t-lmNi1f8q8XwceEAyK-defz6kPEV3RSf3sFb3IM1yxfJYdu80u7Rm7Kb"/>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-container-padding-mobile max-w-[1140px] mx-auto min-h-screen">
+<!-- Welcome Hero Section -->
+<section class="mb-stack-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
+<h2 class="font-headline-xl-mobile text-headline-xl-mobile mb-2 text-on-surface">Hola, bienvenido</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md opacity-80">Encuentra un momento para conectar contigo mismo hoy.</p>
+</section>
+<!-- Daily Feature / Featured Bento -->
+<section class="mb-stack-lg grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<div class="md:col-span-12 relative overflow-hidden rounded-3xl h-48 md:h-64 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] bg-primary-container text-on-primary-container p-6 flex flex-col justify-end group cursor-pointer transition-all active:scale-[0.99]">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000" data-alt="A tranquil landscape featuring soft rolling hills under a pastel dawn sky. The colors transition from soft lavender to warm sand and serene blue. The style is minimalist and painterly, evoking a sense of deep peace and restorative calm. This background is designed to feel like a breath of fresh air for mental wellness." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgBD-bqsVII-cFfJA0DRvi6S83Nexvcbw1_ETFtCwwD9NSchHuHRn_CkZCfJO9Om3yVfd6rfampP7f9deSPE1FB89Pn5YS2ysEpNJzEJZ3cwBR7l6k2goxF5ZIMoQCi8gEvDem1yYqydQZWuJbukkFHSMzb1WjToALQpOAhepLBqNSNLtImKMCjGvMS5RDFsJ7eu-hYk5UDDM1uYn7igFTKv7jkgwL2NBJZbRsWg7RIsayJd5GwDLB"/>
+</div>
+<div class="relative z-10">
+<span class="font-label-sm text-label-sm uppercase tracking-widest bg-white/20 backdrop-blur-md px-3 py-1 rounded-full inline-block mb-3">Recomendado</span>
+<h3 class="font-headline-lg text-headline-lg mb-1">Tu meditación del día</h3>
+<p class="font-body-md text-body-md opacity-90">5 minutos para calmar la mente</p>
+</div>
+<div class="absolute top-6 right-6 z-10 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</section>
+<!-- Scalable Grid / Module Section -->
+<section class="mb-stack-lg">
+<div class="flex items-center justify-between mb-stack-sm">
+<h2 class="font-headline-md text-headline-md text-on-surface">Explorar</h2>
+<button class="text-primary font-label-md text-label-md flex items-center gap-1 hover:underline">
+                    Ver todo <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-gutter">
+<!-- Parejas -->
+<div class="group flex flex-col items-start p-5 bg-white rounded-3xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.08)] transition-all cursor-pointer active:scale-95">
+<div class="w-12 h-12 rounded-2xl bg-secondary-container/30 flex items-center justify-center mb-4 group-hover:bg-secondary-container/50 transition-colors">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<span class="font-headline-md text-headline-md text-on-surface text-[18px] mb-1">Parejas</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">12 actividades</p>
+</div>
+<!-- Ansiedad -->
+<div class="group flex flex-col items-start p-5 bg-white rounded-3xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.08)] transition-all cursor-pointer active:scale-95">
+<div class="w-12 h-12 rounded-2xl bg-primary-fixed/30 flex items-center justify-center mb-4 group-hover:bg-primary-fixed/50 transition-colors">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<span class="font-headline-md text-headline-md text-on-surface text-[18px] mb-1">Ansiedad</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">8 técnicas</p>
+</div>
+<!-- Sesiones -->
+<div class="group flex flex-col items-start p-5 bg-white rounded-3xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.08)] transition-all cursor-pointer active:scale-95">
+<div class="w-12 h-12 rounded-2xl bg-tertiary-fixed/30 flex items-center justify-center mb-4 group-hover:bg-tertiary-fixed/50 transition-colors">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">video_call</span>
+</div>
+<span class="font-headline-md text-headline-md text-on-surface text-[18px] mb-1">Sesiones</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">Agenda abierta</p>
+</div>
+<!-- Ejercicios -->
+<div class="group flex flex-col items-start p-5 bg-white rounded-3xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.08)] transition-all cursor-pointer active:scale-95">
+<div class="w-12 h-12 rounded-2xl bg-secondary-container/20 flex items-center justify-center mb-4 group-hover:bg-secondary-container/40 transition-colors">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">self_care</span>
+</div>
+<span class="font-headline-md text-headline-md text-on-surface text-[18px] mb-1">Ejercicios</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">Rutina diaria</p>
+</div>
+<!-- Scalability Hint (Hidden or Placeholder for scroll/expansion) -->
+<div class="group flex flex-col items-center justify-center p-5 bg-surface-container-low border-2 border-dashed border-outline-variant/30 rounded-3xl hover:border-outline-variant/60 transition-all cursor-pointer md:flex hidden">
+<span class="material-symbols-outlined text-outline-variant mb-2">add_circle</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Más pronto</span>
+</div>
+</div>
+</section>
+<!-- Quote of the Day -->
+<section class="mt-stack-lg p-stack-md rounded-3xl bg-surface-container-low italic text-center">
+<p class="font-body-lg text-body-lg text-on-surface-variant opacity-80 mb-2">"La paz mental no es estar a salvo de la tormenta, sino estar en paz dentro de ella."</p>
+<span class="font-label-sm text-label-sm not-italic text-primary">— Vitta Mind Journey</span>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-20 flex justify-around items-center px-container-padding-mobile pb-safe bg-surface/90 backdrop-blur-lg rounded-t-xl shadow-[0px_-4px_20px_rgba(0,0,0,0.04)] z-50">
+<!-- Home Active -->
+<a class="flex flex-col items-center justify-center text-primary bg-secondary-container/30 rounded-full px-4 py-1 hover:opacity-100 transition-all active:scale-98" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<!-- Exercises -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:opacity-100 transition-all active:scale-98" href="#">
+<span class="material-symbols-outlined">self_care</span>
+<span class="font-label-md text-label-md">Exercises</span>
+</a>
+<!-- Journal -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:opacity-100 transition-all active:scale-98" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="font-label-md text-label-md">Journal</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:opacity-100 transition-all active:scale-98" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<script>
+        // Simple Micro-interactions
+        document.querySelectorAll('a, button, div.cursor-pointer').forEach(el => {
+            el.addEventListener('click', function(e) {
+                // Future navigation logic
+            });
+        });
+
+        // Soft entry animations
+        window.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.group');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100 + (index * 50));
+            });
+        });
+    </script>
+</body></html>

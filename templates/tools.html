@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Vitta Mind - Herramientas de Parejas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-dot::after {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 4px;
+            background-color: #4a654f; /* secondary */
+            border-radius: 50%;
+            margin-top: 4px;
+        }
+        .tool-card-hover:active {
+            transform: scale(0.98);
+            transition: transform 0.15s ease-out;
+        }
+    </style>
+<!-- Tailwind Config Verbatim -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "surface": "#fbf9f8",
+                    "surface-container-low": "#f5f3f3",
+                    "background": "#fbf9f8",
+                    "primary-fixed-dim": "#9bccf2",
+                    "on-primary-container": "#fcfcff",
+                    "on-background": "#1b1c1c",
+                    "surface-tint": "#306384",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5d5c57",
+                    "on-tertiary-fixed-variant": "#474742",
+                    "on-surface-variant": "#41474d",
+                    "tertiary-fixed-dim": "#c9c6c0",
+                    "on-secondary-container": "#4e6953",
+                    "outline": "#71787e",
+                    "on-surface": "#1b1c1c",
+                    "inverse-surface": "#303030",
+                    "surface-bright": "#fbf9f8",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#f2f0f0",
+                    "surface-container-highest": "#e4e2e2",
+                    "secondary": "#4a654f",
+                    "on-primary-fixed": "#001e2f",
+                    "inverse-primary": "#9bccf2",
+                    "secondary-container": "#c9e7cc",
+                    "surface-dim": "#dbd9d9",
+                    "primary-fixed": "#c9e6ff",
+                    "on-primary-fixed-variant": "#104b6b",
+                    "outline-variant": "#c1c7ce",
+                    "on-tertiary": "#ffffff",
+                    "surface-container": "#efeded",
+                    "primary-container": "#487a9c",
+                    "surface-container-high": "#eae8e7",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#334d38",
+                    "on-tertiary-container": "#fdffdd",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed": "#1c1c18",
+                    "secondary-fixed": "#cceacf",
+                    "on-secondary-fixed": "#062010",
+                    "tertiary-container": "#76756f",
+                    "surface-variant": "#e4e2e2",
+                    "secondary-fixed-dim": "#b0ceb4",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#e5e2db",
+                    "primary": "#2d6182"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "24px",
+                    "container-padding-mobile": "20px",
+                    "stack-sm": "8px",
+                    "unit": "8px",
+                    "stack-lg": "48px",
+                    "gutter": "16px",
+                    "container-padding-desktop": "40px"
+            },
+            "fontFamily": {
+                    "headline-xl": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-xl-mobile": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-xl-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "headline-md": ["22px", {"lineHeight": "30px", "fontWeight": "500"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 flex justify-between items-center px-container-padding-mobile h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:bg-surface-container-low transition-colors p-2 rounded-full active:scale-95 duration-200">menu</button>
+<span class="font-headline-md text-headline-md font-semibold text-primary">Vitta Mind</span>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A professional close-up portrait of a calm person in a minimalist environment, soft natural lighting, reflecting a sense of well-being and serenity, clean light-mode aesthetic for a mental health application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdOUHsZ-OPLb_I5rnXIL1EIEtD-aO_p-YC6c6lL-PCuqQteYWDq2r34sAGxfsG9uEToxhE4JfxJOknWjtTaNlQS3VzJAngfSoMacGiwZEGTPiC36Ndi9SWqjSbPVlIAX5fEJ-M04gDffrPbkjtiWvtzLan5PYZkquZN99MeJbq3QmC0SFXNImNf6pR1qavJCDpWaGWfoJGw7t_etJE_PFriTMrbay0OgUPhAYbj4TSLQG0K8lsk05V"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-24 pb-32 px-container-padding-mobile max-w-[1140px] mx-auto w-full">
+<!-- Header Section -->
+<section class="mb-stack-lg">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary text-lg">favorite</span>
+<span class="font-label-md text-label-md text-secondary uppercase tracking-wider">Módulo de Parejas</span>
+</div>
+<h1 class="font-headline-xl-mobile text-headline-xl-mobile md:font-headline-xl md:text-headline-xl text-on-background">Herramientas de Parejas</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2 max-w-2xl">
+                Espacios diseñados para nutrir la conexión, la comunicación y el entendimiento mutuo.
+            </p>
+</section>
+<!-- Tools List -->
+<div class="flex flex-col gap-gutter">
+<!-- Tool 1: Traductor Asertivo -->
+<div class="tool-card-hover group bg-surface-container-lowest p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.08)] transition-all flex items-start gap-5 cursor-pointer">
+<div class="flex-shrink-0 w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-3xl">translate</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-center mb-1">
+<h3 class="font-headline-md text-headline-md text-on-surface">Traductor Asertivo</h3>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Transforma tus palabras en una comunicación empática y efectiva para evitar conflictos.</p>
+</div>
+</div>
+<!-- Tool 2: Psicoeducación -->
+<div class="tool-card-hover group bg-surface-container-lowest p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.08)] transition-all flex items-start gap-5 cursor-pointer">
+<div class="flex-shrink-0 w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-3xl">menu_book</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-center mb-1">
+<h3 class="font-headline-md text-headline-md text-on-surface">Psicoeducación</h3>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-secondary transition-colors">chevron_right</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Aprende sobre las dinámicas de las relaciones saludables y el crecimiento conjunto.</p>
+</div>
+</div>
+<!-- Tool 3: Mi Línea del Tiempo -->
+<div class="tool-card-hover group bg-surface-container-lowest p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_10px_30px_rgba(0,0,0,0.08)] transition-all flex items-start gap-5 cursor-pointer">
+<div class="flex-shrink-0 w-12 h-12 rounded-full bg-tertiary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-3xl">timeline</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-center mb-1">
+<h3 class="font-headline-md text-headline-md text-on-surface">Mi Línea del Tiempo</h3>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-tertiary transition-colors">chevron_right</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Explora y celebra los hitos y momentos significativos de vuestra historia de amor.</p>
+</div>
+</div>
+<!-- Featured Activity Visual (Atmospheric) -->
+<div class="mt-stack-lg relative h-48 rounded-2xl overflow-hidden shadow-sm group">
+<div class="absolute inset-0 bg-gradient-to-r from-primary/60 to-secondary/60 mix-blend-multiply z-10"></div>
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A serene, soft-focus cinematic shot of a couple walking together in a sun-drenched, tranquil garden during sunset. The lighting is warm and ethereal, conveying a sense of peace, companionship, and emotional safety. Restorative minimalist style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsB3tCrLSEbIny5Hqn1fxyP3_Xaf_s2ld76-SFPaoD8fdMJaRHIX3hqTGysWNhD6EDzJcXf3qPoOkzSicnoUkNjjPwgnmWM-kQHuOnVg3HauSBS2t4i16f97UF0hAHSBke9kOfxr_0b484oAmPcKov4LXRb6V2h5CNAFIb5BSBFP5GwcL_dqWAQpX1D2d4kq4p5ouI0GGddjQ27_a24Wd5p7qG8pboI10XAJFFEnX08vmMVv39BAVA"/>
+<div class="absolute bottom-0 left-0 p-6 z-20 text-white">
+<p class="font-label-sm text-label-sm uppercase tracking-widest opacity-80 mb-1">Actividad Recomendada</p>
+<h2 class="font-headline-md text-headline-md font-bold">Círculo de Gratitud Diaria</h2>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 backdrop-blur-lg bg-surface/90 shadow-[0px_-4px_20px_rgba(0,0,0,0.04)] flex justify-around items-center h-20 px-4 pb-safe w-full">
+<!-- Home -->
+<button class="flex flex-col items-center justify-center gap-1 text-on-surface-variant/70 hover:text-primary transition-all active:scale-98">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</button>
+<!-- Tools (Active) -->
+<button class="flex flex-col items-center justify-center gap-1 text-primary active-nav-dot transition-all active:scale-98">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">extension</span>
+<span class="font-label-md text-label-md">Tools</span>
+</button>
+<!-- Journal -->
+<button class="flex flex-col items-center justify-center gap-1 text-on-surface-variant/70 hover:text-primary transition-all active:scale-98">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="font-label-md text-label-md">Journal</span>
+</button>
+<!-- Profile -->
+<button class="flex flex-col items-center justify-center gap-1 text-on-surface-variant/70 hover:text-primary transition-all active:scale-98">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</button>
+</nav>
+<script>
+        // Micro-interaction for tool cards
+        document.querySelectorAll('.tool-card-hover').forEach(card => {
+            card.addEventListener('click', () => {
+                // Future navigation logic would go here
+                console.log('Navigating to tool detail...');
+            });
+        });
+
+        // Simple scroll behavior for header
+        let lastScroll = 0;
+        const header = document.querySelector('header');
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            if (currentScroll <= 0) {
+                header.classList.remove('shadow-sm');
+                return;
+            }
+            if (currentScroll > 10) {
+                header.classList.add('shadow-sm');
+            }
+            lastScroll = currentScroll;
+        });
+    </script>
+</body></html>

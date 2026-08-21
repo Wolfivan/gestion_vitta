@@ -1,0 +1,36 @@
+__pycache__/
+*.py[cod]
+.notes.json
+.notes_*.json
+*.tmp
+.DS_Store
+.venv/
+
+# Environment
+.env
+.env.local
+.env.production
+.env.docker
+
+# Credenciales OAuth locales (Google Cloud)
+DataConf/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+coverage/
+*.log
+.DS_Store
+
+# Repos con su propio control de versiones
+App/
+Backend/
+
+# Artefactos generados
+graphify-out/
+
+# Skills reinstalables (ver skills-lock.json)
+.agents/skills/

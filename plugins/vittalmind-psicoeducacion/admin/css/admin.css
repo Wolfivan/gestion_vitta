@@ -1,0 +1,283 @@
+.vmp-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.vmp-card h2 {
+    margin-top: 0;
+    font-size: 18px;
+}
+
+.vmp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.vmp-stat {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+}
+
+.vmp-stat h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin: 0 0 8px;
+}
+
+.vmp-stat .vmp-number {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.vmp-table-wrap {
+    overflow-x: auto;
+}
+
+.vmp-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.vmp-table th {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 2px solid #e2e8f0;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.vmp-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.vmp-table tr:hover td {
+    background: #f8fafc;
+}
+
+.vmp-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.vmp-badge-conciencia { background: #dbeafe; color: #1d4ed8; }
+.vmp-badge-aceptacion { background: #dcfce7; color: #15803d; }
+.vmp-badge-accion     { background: #fed7aa; color: #9a3412; }
+
+.vmp-badge-type {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.vmp-btn-sm {
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #d0d5dd;
+    background: #fff;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.vmp-btn-sm:hover {
+    background: #f8fafc;
+}
+
+.vmp-btn-danger {
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.vmp-btn-danger:hover {
+    background: #fef2f2;
+}
+
+.vmp-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99999;
+    overflow-y: auto;
+    padding: 40px 20px;
+}
+
+.vmp-modal-overlay.active {
+    display: block;
+}
+
+.vmp-modal {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 28px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.vmp-modal h2 {
+    margin-top: 0;
+    font-size: 20px;
+}
+
+.vmp-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.vmp-modal-close:hover {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.vmp-field {
+    margin-bottom: 16px;
+}
+
+.vmp-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: #334155;
+}
+
+.vmp-field input[type="text"],
+.vmp-field input[type="url"],
+.vmp-field input[type="number"],
+.vmp-field select,
+.vmp-field textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.vmp-field textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.vmp-field .vmp-help {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.vmp-form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.vmp-items-list {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.vmp-item-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: end;
+}
+
+.vmp-item-row input,
+.vmp-item-row select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.vmp-item-row .vmp-remove-item {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.vmp-add-item {
+    margin-top: 8px;
+}
+
+.vmp-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.vmp-toggle input { display: none; }
+
+.vmp-toggle .vmp-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #cbd5e1;
+    border-radius: 24px;
+    transition: 0.3s;
+}
+
+.vmp-toggle .vmp-slider:before {
+    content: "";
+    position: absolute;
+    width: 18px; height: 18px;
+    left: 3px; bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.vmp-toggle input:checked + .vmp-slider {
+    background: #2563eb;
+}
+
+.vmp-toggle input:checked + .vmp-slider:before {
+    transform: translateX(20px);
+}
+
+.vmp-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}

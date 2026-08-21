@@ -1,0 +1,41 @@
+{
+  "$schema_comment": "Hooks que automatizan la verificación. El harness los ejecuta, no el agente, así que no se pueden saltar.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd Backend 2>/dev/null && npm test 2>&1 | tail -5 || echo '[harness] Backend tests no disponibles'",
+            "description": "Tras editar o escribir archivos, corre los tests del backend y muestra el resumen."
+          },
+          {
+            "type": "command",
+            "command": "cd App 2>/dev/null && npm test 2>&1 | tail -5 || echo '[harness] App tests no disponibles'",
+            "description": "Tras editar o escribir archivos, corre los tests del frontend y muestra el resumen."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if (Test-Path 'init.ps1') { & '.\init.ps1' } else { ./init.sh } 2>&1 | Out-Null; if ($?) { Write-Output '[harness] init OK' } else { Write-Output '[harness] init FALLÓ — revisa la salida arriba' }",
+            "description": "Antes de cerrar la sesión, fuerza una verificación completa."
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(init*)",
+      "Bash(npm test*)",
+      "Bash(npm run*)",
+      "Bash(npx expo*)"
+    ]
+  }
+}
