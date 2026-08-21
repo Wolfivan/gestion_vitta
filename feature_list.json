@@ -8,6 +8,90 @@
   },
   "features": [
     {
+      "id": 45,
+      "name": "fix_textbox_wrap",
+      "title": "Fix: textos largos descuadran textboxes (timeline y psicoeducación)",
+      "description": "Al escribir textos muy largos en los textboxes (especialmente el modal de hitos de la línea del tiempo) el layout se descuadra en vez de hacer salto de línea. Causas: contentContainerStyle con alignItems center en el KeyboardAwareScrollView del modal (los TextInput multiline crecen horizontalmente), inputs sin tope de altura ni maxLength, y textos de TimelineCard sin flexShrink. Aplica también a los TextInputs de los bloques de psicoeducación.",
+      "acceptance": [
+        "add-milestone-modal.tsx: scrollContentContainer sin alignItems center; centrado por hijo con alignSelf",
+        "add-milestone-modal.tsx: TextInput multiline con alignSelf stretch, maxHeight con scroll interno y maxLength (descripcion 2000, sentimiento 1000)",
+        "timeline-card.tsx: descripcion, sentimiento y emocionLabel con flexShrink para wrap correcto",
+        "content-block-form.tsx, content-block-exercise.tsx y content-block-couples-form.tsx: TextInputs multiline con ancho restringido y maxLength razonable",
+        "Verificado manualmente con texto largo (con y sin espacios) en modal, tarjetas y bloques",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "pending"
+    },
+    {
+      "id": 46,
+      "name": "offline_cache_foundation",
+      "title": "Fundación offline-first: caché local SQLite + detección de conectividad",
+      "description": "Infraestructura para que la app funcione sin conexión. expo-sqlite como almacén local estructurado y @react-native-community/netinfo para detectar conectividad. Capa de repositorio con estrategia stale-while-revalidate: render instantáneo desde SQLite y revalidación en background contra la API cuando hay red. Indicador sutil de modo offline.",
+      "acceptance": [
+        "expo-sqlite y @react-native-community/netinfo instalados vía npx expo install",
+        "Servicio db.ts con esquema de tablas de caché (psychoeducation_cache, professionals) y fetched_at",
+        "Capa repositorio stale-while-revalidate usada por psychoeducation-service y professional-service",
+        "Hook use-connectivity que expone estado online/offline en toda la app",
+        "Pantallas renderizan datos cacheados al instante y revalidan en background si hay red",
+        "Indicador visual discreto cuando se muestra contenido cacheado sin conexión",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "pending"
+    },
+    {
+      "id": 47,
+      "name": "psychoeducation_offline",
+      "title": "Psicoeducación descargable para uso offline",
+      "description": "Botón para descargar temas o categorías completas de psicoeducación a SQLite. El contenido descargado es 100% legible sin internet. Invalidación por versión de contenido: el backend expone fecha/hash de actualización y la app refresca el pack cuando cambia.",
+      "acceptance": [
+        "Botón 'Descargar' por tema y por categoría que pre-descarga todos los bloques a SQLite",
+        "Sección/indicador de temas disponibles offline",
+        "Lectura completa offline de temas descargados (bloques, formularios, cuestionarios)",
+        "Backend expone updated_at o hash de contenido por tema/categoría",
+        "La app detecta contenido desactualizado y lo refresca al haber red",
+        "El progreso guardado offline se sincroniza al reconectar",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "pending"
+    },
+    {
+      "id": 48,
+      "name": "timeline_offline_sync",
+      "title": "Línea del tiempo offline-first con cola de sincronización",
+      "description": "CRUD de hitos funciona sin internet: escritura local optimista en SQLite + cola de operaciones pendientes que se sincroniza al recuperar conexión. Cada evento lleva UUID generado en cliente (migración backend agrega columna client_uuid única) para idempotencia. Política de conflictos: last-write-wins.",
+      "acceptance": [
+        "Migración backend: columna client_uuid UUID UNIQUE en timeline_events; API acepta y devuelve client_uuid",
+        "Eventos nuevos se crean localmente con UUID v4 y aparecen al instante en la UI",
+        "Tabla pending_ops (op_id, entidad, tipo, payload, created_at, attempts) persiste operaciones offline",
+        "Sync manager flusha la cola al abrir la app y ante reconexión (NetInfo), en orden FIFO",
+        "Create/update/delete idempotentes por client_uuid; conflictos resueltos last-write-wins",
+        "Indicador de estado de sync (pendiente/sincronizado) visible en la pantalla",
+        "PDF exportable también desde datos locales",
+        "Tests de integración backend para client_uuid e idempotencia",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "pending"
+    },
+    {
+      "id": 49,
+      "name": "perf_pass",
+      "title": "Pass de rendimiento: renders y animaciones",
+      "description": "Medición y optimización de rendimiento tras tener caché local: memoización de componentes pesados (TimelineCard, bloques), revisión del Animated.event con useNativeDriver false en TimelineScreen y FlatList de psicoeducación, y reducción de re-renders en hooks.",
+      "acceptance": [
+        "Medición documentada antes/después (tiempo de carga de pantallas clave, FPS de scroll)",
+        "TimelineCard y componentes de bloques memoizados donde aplique",
+        "Animaciones de scroll usan useNativeDriver o reanimated worklets",
+        "Sin regresiones visuales ni funcionales",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "media",
+      "status": "pending"
+    },
+    {
       "id": 1,
       "name": "database_schema",
       "title": "Esquema de base de datos con anonimato",
@@ -431,7 +515,7 @@
       "status": "done"
     },
     {
-      "id": 27,
+      "id": 44,
       "name": "reset_timeline",
       "title": "Empezar nueva línea del tiempo",
       "description": "Opción para reiniciar la línea del tiempo borrando todos los hitos actuales, con opción de exportar a PDF antes de borrar. Incluye diálogo de confirmación con 3 opciones: exportar y borrar, solo borrar, o cancelar.",
