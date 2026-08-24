@@ -811,6 +811,22 @@
         "init.ps1 pasa al 100%"
       ],
       "status": "done"
+    },
+    {
+      "id": 50,
+      "name": "fix_login_network_aborted",
+      "title": "Fix rechazo App Store: 'Aborted' al hacer login (timeout de red sin mapear)",
+      "description": "Apple rechazó la app (Guideline 2.1(a)): el revisor veía literalmente 'Aborted' al intentar iniciar sesión. Causa: request() en api.ts aborta cada petición a los API_TIMEOUT ms con AbortController; React Native traduce ese abort en un error cuyo message es 'Aborted', que se propaga crudo hasta authError de la pantalla de login (use-auth.ts copia error.message tal cual). El backend está detrás de Hostinger CDN (hcdn) y Apple revisa en redes solo-IPv6 (NAT64), donde el camino puede ser lento o colgar >10s. Fix en cliente: mapeo centralizado de errores de red/abort a mensaje amigable, reintento automático único ante fallo de red, AbortController fresco por intento (corrige bug latente: retryRequest reutilizaba el signal ya abortado del primer intento en el flujo de refresh 401) y timeout por defecto 15s.",
+      "acceptance": [
+        "api.ts: isNetworkError/mapNetworkError exportados; AbortError/'Aborted'/TypeError Network request failed -> mensaje amigable en español",
+        "api.ts: un reintento automático (backoff corto) cuando el fetch falla por red/timeout; cada intento usa su propio AbortController",
+        "api.ts: retryRequest del flujo 401-refresh ya no recibe signal externo (usa su propio controller)",
+        "constants/index.ts: API_TIMEOUT = 15000 (CNV translate conserva su timeout explícito de 60s)",
+        "App/__tests__/api-network.test.ts: timeout->mensaje amigable, fallo de red->reintento exitoso, error no-red se propaga sin reintento, errores HTTP preservados",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "done"
     }
   ]
 }
