@@ -827,6 +827,24 @@
       ],
       "priority": "alta",
       "status": "done"
+    },
+    {
+      "id": 51,
+      "name": "fix_guest_access",
+      "title": "Fix rechazo App Store: Guideline 5.1.1(v) — acceso sin registro",
+      "description": "Apple rechazó la app (Guideline 5.1.1(v)): 'The app requires users to register before accessing professionals'. La app bloqueaba todas las features detrás de isAuthenticated, incluyendo Professionals (endpoint público). Fix: modo invitado que permite acceso a features no basadas en cuenta (Professionals, Psicoeducación, Panic Button) mientras que features con datos personales (Journal, Timeline, Traductor) requieren login. Panic Button visible en todas las pantallas.",
+      "acceptance": [
+        "use-auth.ts: isGuest + enterGuestMode implementados",
+        "app-navigator.tsx: guest access (!isAuthenticated && !isGuest), Biblioteca tab, Panic global",
+        "welcome-screen.tsx: botón 'Ingresar como invitado'",
+        "tools-screen.tsx: modal login para Timeline y Traductor cuando guest",
+        "biblioteca-screen.tsx: lista categorías de psicoeducación (nuevo)",
+        "login-prompt-modal.tsx: modal overlay (nuevo)",
+        "psychoeducation-home-screen.tsx: acepta slug param",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "done"
     }
   ]
 }

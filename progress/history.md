@@ -1507,5 +1507,33 @@
 - **Cierre:** feature #42 marcada `done`. Feature #43 `apple_token_revocation` registrada como `pending` con acceptance, condiciones de implementación (cuándo sí, cuándo no) y pre-requisitos (.p8 solo por variable de entorno, APPLE_TEAM_ID).
 - **Pendiente usuario:** (1) verificar capability "Sign In with Apple" activada en App ID `com.vittalmind.app` (Apple Developer → Identifiers); (2) probar login Apple en simulador/dispositivo con Apple ID; (3) build EAS iOS nuevo (módulo nativo + entitlement requieren rebuild) y subir a App Store Connect.
 
+---
+
+## 2026-08-26 — Feature #51: Fix rechazo App Store — Guideline 5.1.1(v) acceso sin registro
+- **Agente:** big-pickle
+- **Contexto:** Apple rechazó la app (build 9, iPad Air 11" M3) porque requería registro para acceder a Professionals, una funcionalidad no basada en cuenta de usuario.
+- **Cambios:**
+
+  **Frontend (8 archivos, 2 nuevos):**
+  - `App/src/hooks/use-auth.ts` — agregado `isGuest: boolean` y `enterGuestMode: () => void`
+  - `App/App.tsx` — pasa `isGuest` y `onEnterGuestMode` a AppNavigator
+  - `App/src/navigation/app-navigator.tsx` — guest access (`!isAuthenticated && !isGuest`), Biblioteca tab (renombrado de Journal), Profile eliminado del tab bar, PanicButton + PanicModal visibles en todas las pantallas
+  - `App/src/screens/welcome-screen.tsx` — botón "Ingresar como invitado" debajo de Apple Auth
+  - `App/src/screens/tools-screen.tsx` — TOOLS con `requiresAuth`, modal login para Timeline y Traductor cuando guest
+  - `App/src/screens/psychoeducation-home-screen.tsx` — acepta `slug` desde route params
+  - `App/src/screens/biblioteca-screen.tsx` — **NUEVO** — lista categorías de psicoeducación
+  - `App/src/components/login-prompt-modal.tsx` — **NUEVO** — modal "Inicia sesión para continuar"
+
+- **Decisiones:**
+  - Profile tab eliminado (solo accesible autenticado).
+  - Journal → Biblioteca (muestra categorías de psicoeducación).
+  - Panic Button visible en todas las pantallas incluyendo invitado.
+  - Traductor Asertivo y Timeline requieren auth (modal para guest).
+  - Professionals, Psicoeducación y Panic accesibles sin registro.
+  - Backend sin cambios (endpoints de professionals/psychoeducation ya públicos).
+
+- **Verificación:** `init.ps1` 100%, `tsc --noEmit` limpio en App y Backend.
+
+
 
 
