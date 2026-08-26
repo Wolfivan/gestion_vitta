@@ -21,7 +21,7 @@
         "init.ps1 pasa al 100%"
       ],
       "priority": "alta",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 46,
@@ -38,7 +38,7 @@
         "init.ps1 pasa al 100%"
       ],
       "priority": "alta",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 47,
@@ -55,7 +55,7 @@
         "init.ps1 pasa al 100%"
       ],
       "priority": "alta",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 48,
@@ -74,7 +74,7 @@
         "init.ps1 pasa al 100%"
       ],
       "priority": "alta",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 49,
@@ -89,7 +89,7 @@
         "init.ps1 pasa al 100%"
       ],
       "priority": "media",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 1,

@@ -1534,6 +1534,60 @@
 
 - **Verificación:** `init.ps1` 100%, `tsc --noEmit` limpio en App y Backend.
 
+---
 
+## 2026-08-26 — Feature #45: Fix textos largos descuadran textboxes (timeline y psicoeducación)
+- **Agente:** big-pickle
+- **Plan:** Corregir que textos largos en TextInputs multiline descuadran el layout en vez de hacer wrap. Causas: alignItems center en el scroll container del modal, inputs sin maxLength/maxHeight, textos de TimelineCard sin flexShrink.
+- **Cambios:**
+
+  **Frontend (5 archivos):**
+  - `App/src/components/add-milestone-modal.tsx` — eliminado `alignItems: 'center'` de `scrollContentContainer`; agregado `maxLength={2000}` a descripcion, `maxLength={1000}` a sentimiento; agregado `maxHeight: 200` al estilo `textInput`
+  - `App/src/components/timeline-card.tsx` — agregado `flexShrink: 1` a estilos `emocionLabel`, `descripcion` y `sentimiento`
+  - `App/src/components/content-block-form.tsx` — agregado `maxLength={2000}` a TextInputItem multiline; agregado `maxHeight: 200` a estilo `textInputMultiline`
+  - `App/src/components/content-block-exercise.tsx` — agregado `maxLength={2000}` a draftInput; agregado `maxHeight: 250` a estilo `draftInput`
+  - `App/src/components/content-block-couples-form.tsx` — agregado `maxLength={2000}` a TextInput de reflexión; agregado `maxHeight: 200` a estilo `textInput`
+
+- **Verificación:** `init.ps1` al 100% (Backend y App tests OK).
+- **Cierre:** feature #45 marcada `done` en `feature_list.json`. Rama `development` creada.
+
+---
+
+## 2026-08-26 — Feature #46: Fundación offline-first (SQLite + NetInfo)
+- **Agente:** big-pickle
+- **Plan:** Implementar infraestructura para que la app funcione sin conexión. expo-sqlite como almacén local estructurado y @react-native-community/netinfo para detectar conectividad. Estrategia stale-while-revalidate.
+- **Cambios:**
+
+  **Dependencias:**
+  - `App/package.json` — agrega `expo-sqlite` y `@react-native-community/netinfo` vía `npx expo install`
+
+  **Servicios:**
+  - `App/src/services/db.ts` — **NUEVO**. Servicio SQLite con esquema de tablas: psychoeducation_categories, psychoeducation_topics, psychoeducation_blocks, professionals, timeline_events, pending_ops, app_config
+  - `App/src/services/cache.ts` — **NUEVO**. Capa de caché stale-while-revalidate con getFromCache, saveToCache, getOrFetch, getOrFetchArray
+  - `App/src/services/psychoeducation-service.ts` — actualizado para usar caché SQLite con stale-while-revalidate
+  - `App/src/services/professional-service.ts` — actualizado para usar caché SQLite
+
+  **Hooks:**
+  - `App/src/hooks/use-connectivity.ts` — **NUEVO**. Hook para detectar estado online/offline con NetInfo
+  - `App/src/hooks/use-psychoeducation.ts` — actualizado con funciones de favoritos
+
+  **Componentes:**
+  - `App/src/components/connectivity-indicator.tsx` — **NUEVO**. Indicador visual de modo offline
+  - `App/src/components/index.ts` — exporta ConnectivityIndicator
+
+  **Screens:**
+  - `App/src/screens/home-screen.tsx` — agrega ConnectivityIndicator
+
+  **Tests:**
+  - `App/jest.setup.ts` — mocks para @react-native-community/netinfo y expo-sqlite
+
+- **Decisiones:**
+  - JWT se mantiene en SecureStore (decisión del usuario)
+  - Estrategia cache: Favoritos (sin límite) + LRU (10 temas recientes)
+  - Límite almacenamiento: 50MB máximo para psicoeducación
+  - Backend sin cambios en esta feature
+
+- **Verificación:** `init.ps1` al 100% (Backend y App tests OK).
+- **Cierre:** feature #46 marcada `done` en `feature_list.json`.
 
 
