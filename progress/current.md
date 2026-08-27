@@ -5,41 +5,27 @@
 
 ## Feature en curso
 
-- **Feature:** #49 perf_pass
-- **Inicio:** 2026-08-26 11:30
+- **Feature:** Bugfix — Text overflow en timeline + Contexto en traductor asertivo
+- **Inicio:** 2026-08-26 12:00
 - **Agente:** big-pickle
 - **Estado:** done
 
 ## Hecho
 
-1. Actualizado `feature_list.json` de `pending` a `done`
-2. **Memoización de componentes con React.memo:**
-   - `TimelineCard` — Evita re-renders cuando props no cambian
-   - `TimelineDayDivider` — Componente puro memoizado
-   - `ContentBlockRenderer` — Dispatcher memoizado
-   - `ContentBlockText` — Contenido de texto memoizado
-   - `ContentBlockTable` — Tabla comparativa memoizada
-   - `PillarBadge` — Badge de pilar memoizado
-   - `ModuleCard` — Tarjeta de módulo memoizada
-3. **Eliminación de Animated.event innecesario:**
-   - Removido `Animated` import de react-native
-   - Removido `useRef(new Animated.Value(0))` 
-   - Removido `Animated.event` con `useNativeDriver: false` del ScrollView
-   - Removido `Animated.View` wrappers (ahora son `View` simples)
-   - **Razón:** El valor `scrollY` nunca se usaba en el render; el efecto 3D se calculaba estáticamente desde la posición del índice, no desde el scroll. El `Animated.event` solo consumía ciclos de JS innecesariamente.
-4. Verificado que `init.ps1` pasa al 100%
+### Parte 1: Corrección de text overflow en timeline
+1. **`App/src/components/timeline-card.tsx`** — Agregado `flex: 1` a estilos `descripcion` y `sentimiento` para que el texto se ajuste al ancho disponible dentro del flex row.
+2. **`App/src/components/add-milestone-modal.tsx`** — Cambiado `alignItems: 'center'` → `'stretch'` y agregado `flexShrink: 1` al diálogo para que los TextInput se estiren al ancho completo del contenedor.
 
-## Análisis de rendimiento
+### Parte 2: Contexto conversacional en traductor asertivo
+3. **`App/src/services/tools-service.ts`** — Agregada interfaz `ChatMessage`, cambiada firma de `cnvTranslate` para aceptar `history: ChatMessage[]`.
+4. **`App/src/screens/acertive-translate-screen.tsx`** — Agregada función `buildHistory` que extrae los últimos 6 mensajes (excluyendo welcome y errores) y los pasa a `cnvTranslate()`.
+5. **`Backend/src/controllers/tools-controller.ts`** — Extraído y validado `history` del request body.
+6. **`Backend/src/services/ai-service.ts`** — Cambiado `translateToCnv` para aceptar historial, construye array de mensajes con `system` + history truncado + `user`.
+7. **`Backend/src/services/ai-provider.ts`** — Exportado tipo `ChatMessage`, cambiado `generateWithFallback` para aceptar `ChatMessage[]` en vez de string.
+8. **`Backend/tests/ai-provider.test.ts`** — Actualizados tests para el nuevo formato de mensajes.
 
-**Antes:**
-- `Animated.event` con `useNativeDriver: false` en ScrollView ejecutaba callback en cada frame de scroll (16ms throttle) sin producir ninguna animación
-- 7 componentes sin `React.memo` se re-renderizaban en cada cambio de state del padre
-- `TimelineCard` con `formatTime()` se recalculaba en cada render
-
-**Después:**
-- Sin listener de scroll innecesario (0 ciclos de JS por frame de scroll)
-- Componentes memoizados solo se re-renderizan cuando sus props cambian
-- `TimelineCard` compara `event` y `dayIndex` con shallow equality
+### Verificación
+- `init.ps1` al 100% (Backend y App tests OK)
 
 ## Pendiente / siguiente sesión
 

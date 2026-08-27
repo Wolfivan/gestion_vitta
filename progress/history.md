@@ -1590,4 +1590,43 @@
 - **Verificación:** `init.ps1` al 100% (Backend y App tests OK).
 - **Cierre:** feature #46 marcada `done` en `feature_list.json`.
 
+## 2026-08-26 — Bugfix: Text overflow en timeline + Contexto en traductor asertivo
+
+- **Duración:** ~30 min
+- **Agente:** big-pickle
+- **Estado:** done
+
+### Problema 1: Text overflow en timeline
+Los TextInputs del modal de hitos (`add-milestone-modal.tsx`) y los Text de las tarjetas de timeline (`timeline-card.tsx`) no respetaban el ancho del contenedor — texto largo se desbordaba a la derecha.
+
+**Causa raíz:**
+- `timeline-card.tsx`: Los estilos `descripcion` y `sentimiento` tenían `flexShrink: 1` pero les faltaba `flex: 1` en un layout `flexDirection: 'row'`.
+- `add-milestone-modal.tsx`: El diálogo usaba `alignItems: 'center'` que causaba que el TextInput no se estirara al ancho completo.
+
+**Corrección:**
+- `App/src/components/timeline-card.tsx` — Agregado `flex: 1` a `descripcion` y `sentimiento`
+- `App/src/components/add-milestone-modal.tsx` — Cambiado `alignItems: 'center'` → `'stretch'`, agregado `flexShrink: 1` al diálogo
+
+### Problema 2: Traductor asertivo sin contexto conversacional
+Cada llamada al LLM era completamente stateless — el traductor "olvidaba" mensajes anteriores.
+
+**Causa raíz:**
+- Frontend enviaba solo `{ text }` al backend
+- Backend construía un solo prompt string con `CNV_PROMPT + text`
+- LLM recibía `messages: [{ role: 'user', content: prompt }]` — un único mensaje, cero historial
+
+**Corrección (5 archivos):**
+- `App/src/services/tools-service.ts` — Interfaz `ChatMessage`, `cnvTranslate(text, history)`
+- `App/src/screens/acertive-translate-screen.tsx` — `buildHistory()` extrae últimos 6 mensajes (excluye welcome/error)
+- `Backend/src/controllers/tools-controller.ts` — Extrae y valida `history` del body
+- `Backend/src/services/ai-service.ts` — `translateToCnv(text, history)` construye `system` + history + `user`
+- `Backend/src/services/ai-provider.ts` — `generateWithFallback(messages: ChatMessage[])` acepta array de mensajes
+
+**Decisiones:**
+- 6 mensajes (3 pares user/assistant) como máximo de historial — equilibrio entre contexto y costo de tokens
+- Persistencia solo en sesión (useState) — se pierde al cerrar la app
+- Tipo `ChatMessage` definido localmente en ai-provider.ts (no importable de openai v4.104.0 con `import type`)
+
+- **Verificación:** `init.ps1` al 100% (Backend y App tests OK).
+
 
