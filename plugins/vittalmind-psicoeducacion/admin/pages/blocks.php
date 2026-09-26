@@ -72,6 +72,7 @@
                 <option value="EJERCICIO_DIDACTICO">Ejercicio Didáctico</option>
                 <option value="FORMULARIO">Formulario</option>
                 <option value="FORMULARIO_PAREJA">Formulario Pareja</option>
+                <option value="VIDEO_YOUTUBE">Video YouTube</option>
             </select>
         </div>
         <div class="vmp-field">

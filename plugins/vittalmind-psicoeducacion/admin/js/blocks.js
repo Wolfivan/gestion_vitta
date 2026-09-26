@@ -173,7 +173,8 @@ VMP.blocks = {
             CUESTIONARIO: this.renderCuestionarioFields(),
             EJERCICIO_DIDACTICO: this.renderEjercicioFields(),
             FORMULARIO: this.renderFormularioFields(),
-            FORMULARIO_PAREJA: this.renderFormularioParejaFields()
+            FORMULARIO_PAREJA: this.renderFormularioParejaFields(),
+            VIDEO_YOUTUBE: this.renderVideoFields()
         };
 
         if (fieldSets[tipo]) {
@@ -292,6 +293,16 @@ VMP.blocks = {
             '</div>';
     },
 
+    renderVideoFields: function() {
+        return '<div class="vmp-field"><label>URL del video de YouTube *</label>' +
+            '<input type="url" id="vmp-video-url" placeholder="https://www.youtube.com/watch?v=...">' +
+            '<p class="description">Pega el enlace completo del video. Se aceptan enlaces de ' +
+            'youtube.com o youtu.be. En la app se muestra la miniatura y, al tocarla, ' +
+            'se abre el video en la aplicacion de YouTube.</p></div>' +
+            '<div class="vmp-field"><label>Descripcion (opcional)</label>' +
+            '<textarea id="vmp-video-descripcion" rows="2" placeholder="Que va a ver la persona"></textarea></div>';
+    },
+
     buildCuerpoJson: function() {
         var tipo = $('#blk_tipo').val();
         var json = {};
@@ -375,6 +386,12 @@ VMP.blocks = {
                     }
                 });
                 json.exportar_pdf = $('#vmp-fpareja-exportar-pdf').is(':checked');
+                break;
+
+            case 'VIDEO_YOUTUBE':
+                json.url = $.trim($('#vmp-video-url').val() || '');
+                var videoDesc = $.trim($('#vmp-video-descripcion').val() || '');
+                if (videoDesc) json.descripcion = videoDesc;
                 break;
         }
 
@@ -487,6 +504,11 @@ VMP.blocks = {
                 if (json.exportar_pdf !== undefined) {
                     $('#vmp-fpareja-exportar-pdf').prop('checked', json.exportar_pdf);
                 }
+                break;
+
+            case 'VIDEO_YOUTUBE':
+                if (json.url) $('#vmp-video-url').val(json.url);
+                if (json.descripcion) $('#vmp-video-descripcion').val(json.descripcion);
                 break;
         }
     },

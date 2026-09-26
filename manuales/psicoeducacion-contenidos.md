@@ -257,6 +257,63 @@ Cada ítem tiene Likert dual (Persona A + Persona B) más reflexión.
 
 ---
 
+### 7. `VIDEO_YOUTUBE`
+
+Solo lectura. No captura datos del usuario.
+
+```json
+{
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "descripcion": "Pista para practicar la escucha activa"
+}
+```
+
+| Campo | Tipo | Obligatorio |
+|---|---|---|
+| `url` | `string` | Sí |
+| `descripcion` | `string` | No |
+
+- **Render:** Miniatura del video en 16:9 (`i.ytimg.com`) con un botón de reproducción. Al
+  tocarla se abre el video en la app de YouTube con `Linking.openURL`. Debajo, la
+  `descripcion` si viene. Si la URL no es válida se muestra un aviso y no se intenta cargar
+  nada.
+- **Input del usuario:** No
+- **Botón PDF:** No
+
+**Formatos de `url` aceptados.** El componente exporta `parseYouTubeId`, que valida la
+entrada con una allowlist cerrada de hosts y exige esquema `https`:
+
+| Aceptado | Ejemplo |
+|---|---|
+| Id desnudo | `dQw4w9WgXcQ` |
+| Watch | `https://www.youtube.com/watch?v=dQw4w9WgXcQ` |
+| Watch con parámetros | `https://m.youtube.com/watch?v=dQw4w9WgXcQ&t=42s` |
+| Corto | `https://youtu.be/dQw4w9WgXcQ` |
+| Embed | `https://www.youtube.com/embed/dQw4w9WgXcQ` |
+| Shorts / live | `https://www.youtube.com/shorts/dQw4w9WgXcQ` |
+| Sin cookies | `https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ` |
+| Sin esquema | `youtube.com/watch?v=dQw4w9WgXcQ` |
+
+**Rechazado** (devuelve `null` y la app avisa): `http://` en claro, `javascript:`,
+`file:`, `data:`, cualquier host fuera de la allowlist, hosts que solo empiezan por uno
+permitido (`youtube.com.malicioso.com`), hosts con credenciales o puerto
+(`evil.com@youtube.com`), e ids que no son 11 caracteres de `[A-Za-z0-9_-]`.
+
+> **Por qué es estricto.** `url` es la primera URL que la app recibe desde contenido remoto
+> no constante: la escribe un admin de WordPress y el plugin la pasa con `json_decode` sin
+> sanitizar ningún campo. El backend tampoco valida `cuerpo_json`. Por eso la app nunca
+> concatena la URL guardada: extrae el id y construye `https://youtu.be/{id}` e
+> `https://i.ytimg.com/vi/{id}/hqdefault.jpg` a partir de ese id ya validado. Así un valor
+> malicioso o simplemente mal escrito no puede ejecutarse ni abrir una app inesperada.
+
+> **Sin reproducción embebida.** La app no trae `react-native-webview`, `expo-video` ni
+> `expo-av`, y no renderiza HTML. Por eso la v1 abre YouTube en el exterior en vez de
+> embeberlo. Para añadir reproducción dentro de la app basta con cambiar
+> `content-block-video.tsx`: el `cuerpo_json`, el tipo de bloque, el plugin y el backend no
+> cambiarían.
+
+---
+
 ## PDF — ¿qué se exporta y desde dónde?
 
 El PDF se genera con todos los bloques completados del tema, no solo el que tiene el botón.
@@ -271,6 +328,7 @@ El PDF se genera con todos los bloques completados del tema, no solo el que tien
 | `content-block-exercise.tsx` (`EJERCICIO_DIDACTICO`) | No tiene botón propio |
 | `content-block-text.tsx` (`TEXTO`) | No |
 | `content-block-table.tsx` (`TABLA_COMPARATIVA`) | No |
+| `content-block-video.tsx` (`VIDEO_YOUTUBE`) | No |
 
 ### Contenido del PDF por tipo de bloque
 
@@ -278,6 +336,7 @@ El PDF se genera con todos los bloques completados del tema, no solo el que tien
 |---|---|---|
 | `TEXTO` | No (no hay datos de usuario) | — |
 | `TABLA_COMPARATIVA` | No (no hay datos de usuario) | — |
+| `VIDEO_YOUTUBE` | No (no hay datos de usuario) | — |
 | `CUESTIONARIO` | **Sí** — si hay respuestas guardadas | `aspecto` / `pregunta` + Likert |
 | `EJERCICIO_DIDACTICO` | **Sí** — si hay draft guardado | El texto del draft |
 | `FORMULARIO` | **Sí** | `label` + valor de cada ítem |
@@ -297,3 +356,4 @@ El PDF se genera con todos los bloques completados del tema, no solo el que tien
 | `EJERCICIO_DIDACTICO` | `pasos[]`, `ejemplo` | Texto libre | No |
 | `FORMULARIO` | `items[].{id,label,tipo,...}` | Múltiple | **Sí** |
 | `FORMULARIO_PAREJA` | `items[].{id,aspecto,pregunta}`, `exportar_pdf` | Likert dual + texto | **Sí** (solo si `exportar_pdf: true`) |
+| `VIDEO_YOUTUBE` | `url`, `descripcion` | — | — |

@@ -845,6 +845,163 @@
       ],
       "priority": "alta",
       "status": "done"
+    },
+    {
+      "id": 61,
+      "name": "gratitude_circle",
+      "title": "Círculo de Gratitud diario con racha + módulo Ansiedad",
+      "description": "Actividad diaria (una vez cada 24h) donde el usuario escribe agradecimientos. Días 1-5: exactamente 3; día 6+: exactamente 5. Cada agradecimiento completa un segmento de un círculo (react-native-svg); al completarlo se muestra la animación flor_naciente.svg re-creada con Reanimated (gota cae → matera sube → tallo crece → flor florece). Cada día completado suma 1 a la racha. Offline-first: escritura local optimista en SQLite + cola pending_ops (patrón timeline, client_uuid para idempotencia) y sync en background cuando hay red. Solo usuarios autenticados. Incluye creación del módulo 'Ansiedad' en HomeScreen y la herramienta como primera del módulo (quita la tarjeta featured placeholder de Tools).",
+      "acceptance": [
+        "Backend: migraciones 019_create_gratitude_entries.sql y 020_create_gratitude_streaks.sql ejecutables",
+        "Backend: GET /gratitude/entries?fecha=YYYY-MM-DD devuelve las entradas del usuario para esa fecha",
+        "Backend: POST /gratitude/entry crea entrada con client_uuid idempotente; rechaza >3 (días 1-5) o >5 (día 6+) por fecha",
+        "Backend: GET /gratitude/streak devuelve currentStreak, bestStreak y última fecha completada",
+        "Backend: Streak service: día consecutivo suma 1, día perdido resetea, mismo día no suma",
+        "Backend: Tests de integración para los 3 endpoints incluida la regla del conteo por racha",
+        "Frontend: db.ts tabla gratitude_entries persistente (non-cache)",
+        "Frontend: gratitude-service offline-first (getCachedEntries, syncEntriesWithServer, createEntry, getStreak)",
+        "Frontend: hook use-gratitude expone entradas, racha, requiredCount, loading, error",
+        "Frontend: GratitudeCircleScreen con círculo de N segments (3 o 5), TextInput, botón Agregar, lista de agradecimientos del día",
+        "Frontend: Al completar el círculo se muestra la animación de flor (react-native-svg + Reanimated)",
+        "Frontend: Racha visible ('🔥 N días') en el header",
+        "Frontend: HomeScreen muestra módulo 'Ansiedad' que navega a Tools",
+        "Frontend: ToolsScreen filtra herramientas por módulo (module param), Gratitud es la primera herramienta de Ansiedad, tarjeta featured placeholder eliminada",
+        "Frontend: solo autenticados (guest ve modal de login)",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 63,
+      "name": "design_system_palette",
+      "title": "Theme central de paleta + guard que prohíbe colores hardcodeados",
+      "description": "La app tiene ~239 literales de color (hex/rgba) repartidos en App/src que bypassan los tokens de constants/index.ts. Se consolidan todos en la paleta central (tokens con nombre, alphas derivados calculados vía helper alpha(), semánticos danger/exercise/shadow, marcas Google/WhatsApp e ilustración flor) y se crea un guard de Jest (palette-guard.test.ts) que escanea App/src y falla si aparece una triada RGB no declarada en la allowlist. Cambiar o limitar la paleta pasa a ser editar un solo archivo. architecture.md y conventions.md declaran que los colores de la UI solo pueden venir de los tokens de @/constants.",
+      "acceptance": [
+        "constants/index.ts: COLORS extendido con todos los tokens (derivados alfa, dangerStrong, dangerSurface, exerciseAccent, shadow, brand Google/WhatsApp, flower*) y helper alpha() que calcula rgba desde un hex de la paleta",
+        "constants/index.ts: exporta PALETTE_TRIADAS (allowlist de triadas RGB permitidas)",
+        "App/src sin literales de color fuera de la paleta (hex/rgba que no estén en los tokens)",
+        "App/__tests__/palette-guard.test.ts: escanea App/src, falla con archivo:línea si hay un color no permitido",
+        "docs/architecture.md: principio que obliga a usar la paleta de constants y prohíbe colores hardcodeados",
+        "docs/conventions.md: regla de tokens de color",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 62,
+      "name": "tools_tab_show_all",
+      "title": "Tab Herramientas muestra todas las herramientas agrupadas por módulo",
+      "description": "Al pulsar el tab 'Herramientas' de la barra inferior se deben ver TODAS las herramientas (Parejas + Ansiedad) agrupadas por módulo, en vez de quedar filtradas o caer por defecto a Parejas. Las tarjetas de módulo de Home (Parejas/Ansiedad) siguen navegando a Tools filtrado por tema (param module). Gestión de sesión: la feature del Círculo de Gratitud (fix 2 y 3) se trata por separado.",
+      "acceptance": [
+        "tools-screen.tsx: moduleId = route.params?.module ?? 'all'; modo 'all' renderiza todas las herramientas agrupadas por módulo con encabezados de sección",
+        "app-navigator.tsx: listener tabPress en tab Tools navega a Tools con { module: 'all' } (reset al pulsar el tab)",
+        "Tarjetas de módulo en Home siguen filtrando (Parejas → parejas, Ansiedad → ansiedad)",
+        "El botón 'Ver todo →' de Home navega a Tools en modo 'all'",
+        "Huéspedes: misma lógica requiresAuth → modal de login sin cambios",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 64,
+      "name": "gratitude_circle_real_ring",
+      "title": "Círculo de Gratitud: anillo continuo real en vez de N segmentos",
+      "description": "La forma que hay tras el contador 'N/total hoy' del Círculo de Gratitud no es un círculo: GratitudeCircle dibuja N (3 o 5) arcos discretos separados GAP_DEG=5 con strokeLinecap='round' sobre strokeWidth=18. A RADIUS=38 cada cap redondeado invade ~13,6 grados por extremo, consume el hueco de 5 grados y los segmentos vecinos se solapan, deforme el anillo. Sustituirlo por un único anillo continuo real: un Circle de track completo (gris) mas un Circle de progreso (verde secundario) con strokeDasharray/strokeDashoffset animado con Reanimated, arrancando en las 12 en punto. El trazo se afina de 18 a 12 (viewBox 100) y el contador central 'N/total hoy' se mantiene intacto. Corrige el defecto pendiente anotado en progress/history.md. La animacion de flor a pantalla completa se trata por separado (feature #65).",
+      "acceptance": [
+        "Frontend: gratitude-circle.tsx renderiza un unico anillo continuo (track + arco de progreso) en lugar de N segmentos discretos",
+        "Frontend: el arco de progreso usa strokeDasharray/strokeDashoffset sobre un Circle, animado con Reanimated useAnimatedProps + withTiming",
+        "Frontend: el anillo arranca en las 12 en punto (rotacion -90 sobre el viewBox 0 0 100 100)",
+        "Frontend: el anillo no se deforma con total=3 y total=5 (fin de GAP_DEG, describeArc, polarToCartesian y el componente Segment)",
+        "Frontend: trazo afinado a strokeWidth 12 con COLORS.secondary y track COLORS.outlineVariant, sin colores hex/rgba literales",
+        "Frontend: casos borde cubiertos - total<=0 no divide por cero, filled>=total satura el arco, filled===0 oculta el arco (sin cap fantasma)",
+        "Frontend: el contador central 'N/total hoy' se mantiene sin cambios de texto ni jerarquia",
+        "Frontend: test App/__tests__/gratitude-circle.test.tsx cubre geometria del anillo, contador y casos borde",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 65,
+      "name": "gratitude_flower_fullscreen",
+      "title": "Círculo de Gratitud: animación de flor a pantalla completa",
+      "description": "Defecto pendiente anotado en progress/history.md: al completar el círculo, la animación flor_naciente.svg se muestra hoy como un bloque inline de 220px dentro de la tarjeta de celebración (celebrationCard) en gratitude-circle-screen.tsx, y se lee como un adorno pequeño en vez de una celebración. Convertirla en un overlay a pantalla completa realineado al centro de la pantalla, con scrim de fondo y cierre automático, sin romper el layout de la pantalla ni el scroll. Requiere reestructurar gratitude-flower-animation.tsx para desacoplar el tamaño fijo (actualmente dibuja un Rect de fondo COLORS.surface de 400x400 que en un overlay ya no debe ser necesario).",
+      "acceptance": [
+        "Frontend: la animación de flor se renderiza como overlay a pantalla completa (Modal o View absolute con scrim COLORS.scrim) alineado al centro, no inline en la celebrationCard",
+        "Frontend: gratitude-flower-animation.tsx deja de dibujar el Rect de fondo COLORS.surface y acepta el tamaño del overlay",
+        "Frontend: el overlay se cierra solo tras la animación y no bloquea el scroll de la pantalla",
+        "Frontend: no se pierde el texto de celebración ('¡Círculo completo!') ni la lista de agradecimientos al cerrar el overlay",
+        "Frontend: sin colores hex/rgba literales (solo tokens COLORS)",
+        "Frontend: test que cubre el montaje y desmontaje del overlay",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "media",
+      "status": "pending"
+    },
+    {
+      "id": 66,
+      "name": "psicoeducacion_bloque_video_youtube",
+      "title": "Bloque de psicoeducación con video de YouTube (creable desde el plugin)",
+      "description": "Nuevo tipo de bloque VIDEO_YOUTUBE en psicoeducación, para que el psicólogo incruste un video de YouTube desde el plugin de WordPress. Alcance v1: la app muestra la miniatura (i.ytimg.com) en 16:9 y al pulsar abre el video con Linking.openURL en la app de YouTube, sin dependencias nuevas y sin WebView. Es la primera vez que una URL llega desde contenido remoto no constante (el plugin hace json_decode sin sanitizar y el backend no valida cuerpo_json), por eso el componente exporta un parser puro con allowlist de esquema https y de hosts que devuelve el video id, y las URLs finales se construyen solo a partir de ese id. Sigue el precedente de content-block-table.tsx, que exporta sus helpers puros para testearlos.",
+      "acceptance": [
+        "App: 'VIDEO_YOUTUBE' en la union TipoComponente y nueva interfaz IVideoContent en App/src/types/psychoeducation.ts",
+        "App: nuevo App/src/components/content-block-video.tsx con parseYouTubeId exportado, miniatura 16:9 con aspectRatio (nunca altura fija) y fallback cuando no hay id valido o la imagen falla",
+        "App: parseYouTubeId acepta id desnugo, ?v=, youtu.be/<id> y /embed/<id>, y rechaza javascript:, file:, http: y hosts no allowlisted",
+        "App: ninguna URL se construye por concatenacion del input crudo; solo a partir del id validado",
+        "App: case 'VIDEO_YOUTUBE' en content-block-renderer.tsx (sin onComplete, es solo lectura)",
+        "App: sin colores hex/rgba literales, solo tokens COLORS (palette-guard.test.ts sigue pasando)",
+        "App: sin dependencias nuevas en package.json y sin cambios en app.json",
+        "App: test del parser con los casos validos y los rechazos, test de render en content-block-renderer.test.tsx y test de forma en psychoeducation-data.test.ts",
+        "Backend: 'VIDEO_YOUTUBE' en TipoComponente, migracion 021 con drop+re-add del CHECK de tipo_componente (obligatoria: es la unica puerta que valida el tipo en runtime) y enum actualizado en swagger.ts y en el JSDoc OpenAPI de routes/psychoeducation.ts",
+        "Backend: test en database-migration.test.ts que cubre el contenido de 021 (hoy no hay ninguno para el CHECK)",
+        "Plugin: <option> del selector de tipos, renderVideoFields(), y los case en buildCuerpoJson() y populateForm() de blocks.js; save() sin cambios",
+        "Plugin: VMP_VERSION subida a 1.0.6 para invalidar la cache del blocks.js en el navegador",
+        "Docs: seccion 7 en manuales/psicoeducacion-contenidos.md y las 3 tablas resumen actualizadas",
+        "npx tsc --noEmit en App sin errores",
+        "npm test en App y Backend pasa",
+        "init.ps1 pasa al 100%",
+        "Comprobacion manual: crear un bloque VIDEO_YOUTUBE desde el plugin y verificar que hace round-trip y se renderiza en la app"
+      ],
+      "priority": "media",
+      "status": "in_progress"
+    },
+    {
+      "id": 67,
+      "name": "gratitude_flower_animation_fix",
+      "title": "Círculo de Gratitud: la gota cae sobre la maceta y la flor florece en su sitio",
+      "description": "La animacion de flor (flor_naciente) tiene los pasos correctos pero la mecanica rota: la gota aterriza en (50,160), 100px a la izquierda de la maceta (x=150-250), y la flor escala sobre el origen del lienzo (en scale 0.1 esta colapsada en (20,17), la esquina superior izquierda) y se desplaza cruzando el tallo hasta llegar a (200,170). Causa raiz doble, verificada ejecutando extractTransform de react-native-svg 15.15.4: (1) origin se pasaba como string separado por ESPACIOS ('200 120') y universal2axis solo hace split por coma, cayendo en NaN y devolviendo [0,0]; (2) aun con coma seguiria roto, porque origin solo aplica cuando scale/rotation van como PROPS, no dentro del prop transform, y el puerto de Reanimated mete el scale en transform via animatedProps. Ademas el z-order era flor-tallo-maceta-gota en vez de maceta-tallo-flor-gota, la animacion loopeaba infinito cada 6s y el Rect de fondo blanco se leia como un recuadro pegado sobre la tarjeta verde. Sustituir origin por anclaje explicito: cada elemento escalable se ancla con translateX/translateY estatico y se dibuja en coordenadas locales (0,0), que si compone bien con transform. La flor a pantalla completa sigue siendo la feature #65. NOTA DE COORDINACION: implementada en paralelo a la feature #66 (psicoeducacion_bloque_video_youtube), que ocupa el unico slot in_progress y progress/current.md en otra sesion de agente. Por eso esta feature se registra como pending y su cierre (flip a done + entrada en progress/history.md) queda pendiente de que #66 libere el slot.",
+      "acceptance": [
+        "Frontend: ninguna prop 'origin' en el componente (guard de test que lo verifique)",
+        "Frontend: la gota se ancla con translateX={200} translateY={120} y se dibuja en coordenadas locales cx=0 cy=0 r=45",
+        "Frontend: la gota aterriza sobre la maceta - con scale 0.2 y translateY 110 su borde inferior queda en y=239, justo sobre el borde de la maceta en y=240 (era 50,160)",
+        "Frontend: la flor se ancla con translateX={200} translateY={170} y sus 8 petalos pasan a coordenadas locales simetricas respecto de (0,0), de modo que el floreo es centrado y no se desplaza (era (20,17) -> (200,170))",
+        "Frontend: z-order maceta -> tallo -> flor -> gota, igual que el SVG original (hoy es flor -> tallo -> maceta -> gota)",
+        "Frontend: las tablas de keyframes se extraen a constantes de modulo y reproducen los valores del SVG original",
+        "Frontend: la gota se hunde 8px y se desvanece entre 50% y 60% (absorcion en la tierra) en vez de desvanecerse en el aire",
+        "Frontend: la animacion se reproduce una sola vez (fuera withRepeat) y queda en el frame final con la flor abierta",
+        "Frontend: sin el Rect de fondo COLORS.surface que se leia como recuadro blanco sobre la celebrationCard",
+        "Frontend: la firma { visible, size? } no cambia, gratitude-circle-screen.tsx no se toca",
+        "Frontend: test App/__tests__/gratitude-flower-animation.test.tsx cubre anclajes, ausencia de origin, z-order, simetria de petalos y aritmetica de aterrizaje",
+        "docs/conventions.md documenta la trampa origin vs transform en SVG + Reanimated",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "pending"
     }
   ]
 }
