@@ -10,6 +10,10 @@
       `progress/current.md`.
 - [ ] Existen los 3 docs: `docs/architecture.md`, `docs/conventions.md`,
       `docs/verification.md`.
+- [ ] Existe `docs/entorno-pruebas.md` y sus credenciales siguen siendo las que
+      tienen los contenedores en marcha.
+- [ ] El entorno de pruebas es recreable: existe `plugins/wp-test/docker-compose.yml`
+      y las credenciales de `wp_options` no están en producción.
 - [ ] `.\init.ps1` (PowerShell) o `./init.sh` (Linux/macOS) termina con exit code 0.
 
 ## C2 — El estado es coherente

@@ -1882,4 +1882,270 @@ Ninguno pusheado.
   `docs/architecture.md` y `docs/conventions.md` de la #63, el ZIP, `images/flor_naciente.svg`,
   y en App/Backend el trabajo de gratitud (#67) y otros.
 
+## 2026-09-26 - Feature #67: La gota cae sobre la maceta y la flor florece en su sitio
+
+- **Feature:** #67 `gratitude_flower_animation_fix`
+- **Rama:** `development` (raiz) / `desarrollo` (App) - 2 repos git distintos
+- **Alcance:** solo la mecanica de `gratitude-flower-animation.tsx`. La flor a pantalla
+  completa sigue siendo la #65, que queda `pending`.
+
+### Diagnostico
+La animacion tenia los pasos correctos (gota -> maceta -> tallo -> flor) pero la mecanica
+rota, por dos causas que se verificaron ejecutando `extractTransform` de react-native-svg
+15.15.4 en vez de leyendo el codigo a ojo:
+
+1. `origin` se pasaba como string separado por **espacios** (`` `${x} ${y}` ``).
+   `universal2axis` solo hace `split(/\s*,\s*/)`, asi que `"200 120"` se resuelve a
+   `NaN` y `extractTransform` devuelve el origen `(0, 0)`. El elemento escalaba sobre la
+   esquina del lienzo.
+2. Anadir la coma **no lo arreglaba**: `origin` solo se aplica cuando `scale`/`rotation`
+   van como *props*, y el puerto de Reanimated mete el scale dentro del prop `transform`
+   via `animatedProps`. Se comprobó que `origin: '200,120'` + `transform: [{scale}]`
+   devuelve la matriz `[0.25,0,0,0.25,0,0]`, es decir, origen `(0,0)` igual.
+
+Efecto medido antes/despues: la gota caia en `(50, 160)` -100px a la izquierda de la
+maceta y 80px por encima de su borde- y la flor viajaba de `(20,17)` a `(200,170)`,
+cruzando el tallo de esquina a esquina.
+
+### Cambios
+- Cada elemento escalable se dibuja en coordenadas locales `(0,0)` y se ancla con un
+  `<G translateX translateY>`. La matriz resultante es `translate(ancla) · scale(s)`,
+  que escala sobre el ancla y no depende de `origin`. Replica el `transform-origin` de CSS.
+- Pétalos y centro de la flor en coordenadas locales simetricas respecto de `(0,0)`. Un
+  test verifica que `FLOWER_ANCHOR + petal` reproduce exactamente las ocho posiciones
+  absolutas del SVG original.
+- z-order corregido a maceta -> tallo -> flor -> gota (era flor -> tallo -> maceta -> gota).
+- Sin el `<Rect>` de fondo `COLORS.surface`, que se leia como un recuadro blanco sobre la
+  tarjeta de celebración.
+- Reproducción **una sola vez** (fuera `withRepeat`) durante 6000 ms; queda en el frame
+  final con la flor abierta.
+- Tablas de keyframes extraidas a constantes de modulo, corrigiendo **tres desviaciones**
+  que el codigo tenia respecto a `images/flor_naciente.svg`:
+  - scale final de la gota `0.25` -> `0.2`
+  - travel `130` -> `550`, que en el orden de CSS equivale a un offset neto de `0.2*550=110`
+  - rebote de la flor `1.15` -> `1.1`
+- Se respetó el comportamiento del keyframe original entre 50% y 60%: la gota **se retrae
+  hacia arriba** (neto 110 -> 46) mientras se desvanece. Una version anterior del plan
+  proponia hundirla 8px; se descarto al leer el SVG, que no lo hace.
+
+### Verificacion
+- Aritmetica comprobada con la matriz real de la libreria, no a ojo: la gota aterriza con
+  centro `(200,230)`, radio efectivo 9 y borde inferior `239`, a 1px del borde de la
+  maceta en `240`. El centro de la flor queda clavado en `(200,170)` para toda escala
+  (`0`, `1.1`, `1`).
+- `App/__tests__/gratitude-flower-animation.test.tsx`: 15 tests que cubren anclajes,
+  ausencia de `origin` (en el arbol renderizado y en el fuente), z-order, simetria de
+  petalos, aritmetica de aterrizaje, ausencia del fondo y reproduccion unica.
+- `npx tsc --noEmit`: limpio. App: 13 suites, 106 tests. `.\init.ps1`: 100% OK.
+
+### Coordinacion
+Se implemento en paralelo a la #66 (otra sesion de agente), que ocupaba el unico slot
+`in_progress` y `progress/current.md`. Por eso la #67 se registro como `pending` y el
+codigo se hizo sin tocar `progress/`. Al cerrarse la #66 se hizo el cierre normal:
+`in_progress` -> `done` con `init.ps1` verde.
+
+### Pendiente
+- **Comprobacion visual** en dispositivo o emulador: que la gota se vea caer sobre la
+  maceta y la flor florecer centrada. Los tests verifican anclajes y aritmetica, no el
+  resultado en pantalla.
+- La #65 (overlay a pantalla completa) sigue `pending` y es el paso natural para esta
+  animacion.
+
+### Correccion posterior: la flor se quedaba en la esquina superior izquierda
+
+La #67 se cerro como `done` con un defecto que solo se vio al ejecutar en emulador: la
+gota ya caia sobre la maceta, pero **la flor aparecia clavada en la esquina superior
+izquierda** en vez de armarse sobre el remate del tallo. Se reabrio la feature (sus
+criterios de aceptacion no se cumplian) y se corrigio.
+
+**Por que fallaba, y por que los tests no lo vieron.** El anclaje de la flor estaba en
+el mismo elemento que animaba:
+
+```tsx
+// roto
+<AnimatedG translateX={200} translateY={170} animatedProps={flowerProps}>
+```
+
+`G` **sobrescribe** `setNativeProps` (`elements/G.js`) y hace
+`matrix = extractTransform(props)` usando **solo las props animadas**
+(`{ transform, opacity }`). Eso sobrescribe la matriz que `extractProps` habia
+calculado al montar con todas las props, y el `translate` del anclaje se pierde en el
+primer frame:
+
+| momento | props que ve `extractTransform` | matrix |
+|---|---|---|
+| montaje | `{ translateX, translateY, transform }` | `[s, 0, 0, s, 200, 170]` |
+| frame | `{ transform }` | `[s, 0, 0, s, 0, 0]` |
+
+La gota no sufría el mismo problema porque su anclaje ya estaba en un `<G>` padre
+**plano**, que nunca recibe `animatedProps` y por tanto conserva su `matrix`. La
+correccion fue aplicar a la flor ese mismo patron ya verificado:
+
+```tsx
+<G translateX={FLOWER_ANCHOR.x} translateY={FLOWER_ANCHOR.y}>
+  <AnimatedG animatedProps={flowerProps}>
+```
+
+El sintoma era engañoso justamente porque antes de este arreglo la flor *si* viajaba
+de `(20,17)` a `(200,170)`: escalando sobre `(0,0)` acababa en su sitio por accidente
+al final del recorrido, y solo el movimiento delata el `origin` roto.
+
+**Por que los 15 tests originales no lo detectaron:** el mock de `react-native-svg` en
+`App/jest.setup.ts` sustituye cada elemento por un string (`'GMock'`, `'CircleMock'`),
+asi que nunca se ejecuta `setNativeProps` ni se calcula una `matrix`. Peor: el test
+`ancla la flor y la dibuja en coordenadas locales` **certificaba el patron roto**, porque
+comprobaba que existia un `GMock` con `translateY === 170` sin mirar si ese nodo era el
+animado.
+
+**Correcciones añadidas:**
+- Guard estructural: ningun nodo con `animatedProps` puede llevar `translateX`,
+  `translateY`, `origin`, `originX`, `originY` ni `matrix`. Verificado que **falla**
+  reintroduciendo el ancla sobre el elemento animado.
+- Test que ejercita el `extractTransform` **real** por ruta profunda (el mock no
+  intercepta ese id de modulo) y codifica la tabla de arriba, para que la razon del
+  bug quede en el codigo y no solo en la bitacora.
+- `docs/conventions.md`: nueva seccion "Que pueden y que no pueden ver los tests", con
+  la limitacion del mock y la obrigacion de comprobar en emulador.
+
+Verificacion: `npx tsc --noEmit` limpio. App: 13 suites, 109 tests. `.\init.ps1` 100% OK.
+
+**Pendiente**: sigue sin hacerse la comprobacion visual en emulador de esta correccion.
+Los tests confirman la forma del JSX, no que la flor se vea centrada sobre el tallo.
+
+
+
+---
+
+## 2026-09-26 — Feature #68: `gratitude_celebration_layout` (DONE)
+
+**Problema**: con el circulo de hoy completado, `gratitude-circle-screen.tsx` montaba
+a la vez el anillo con su contador "3/3 hoy", el formulario "¿Por que te sientes
+agradecido hoy?" (deshabilitado, con el boton en "Completado OK"), la tarjeta de
+celebracion y la lista de agradecimientos. Cuatro bloques compitiendo: el momento de
+celebracion se leia como un formulario que ya no puedes usar.
+
+**Cambio**: renderizado condicional, no de layout. `circleCard` e `inputCard` pasan a
+montarse solo con `!isComplete`. El orden del arbol ya producia "animacion ->
+agradecimientos" porque `entriesSection` estaba debajo de `inputCard`, asi que no hizo
+falta reordenar nada.
+
+Decisiones tomadas por el usuario antes de implementar:
+- La fila de racha (dias / mejor racha / N agradecimientos hoy) **se mantiene**: solo
+  se pedian el anillo y el formulario.
+- Los textos de celebracion **se mantienen** (titulo con emoji + "vuelve manana").
+- La #65 `gratitude_flower_fullscreen` **sigue `pending` sin tocar**: aqui la animacion
+  es inline, que no es lo mismo que el overlay a pantalla completa.
+
+**Consecuencia**: al ocultar esos dos bloques, tres ramas con `isComplete` quedaron
+inalcanzables dentro de ellos y se limpiaron por coherencia:
+- el ternario del `circleHint` ("Tu circulo de hoy esta completo"),
+- `editable={!isComplete && !submitting}`,
+- los `|| isComplete` de `disabled` y del `addButtonDisabled`,
+- el label `isComplete ? 'Completado OK' :` del boton.
+
+Un `isComplete ? 'Completado OK'` que ya no puede renderizar miente a quien lea el
+archivo despues. El guard `|| isComplete` de `handleAdd` **se conservo** a proposito:
+ahi no es JSX muerto, es proteccion de la capa de datos. Ningun estilo quedo huerfano:
+`circleCard`, `circleHint` e `inputCard` se siguen usando en la rama incompleta.
+
+**Tests**: nuevo `App/__tests__/gratitude-circle-screen.test.tsx`, 9 casos. Fue el primer
+test de pantalla del repo, asi que hubo que establecer los precedentes: `useSafeAreaInsets` y
+`useNavigation` ya venian resueltos por `jest.setup.ts`; hubo que mockear `@/hooks`
+(`useGratitude`) y `@/hooks/use-connectivity`.
+
+Cubre, con el circulo completo: 0 x `GratitudeCircle`, 0 x `TextInput`, 1 x
+`GratitudeFlowerAnimation`, los 3 agradecimientos listados, y racha + textos de
+celebracion intactos. Con el circulo incompleto: 1 x `GratitudeCircle` con
+`total`/`filled` correctos, `TextInput` editable presente, 0 animaciones, boton
+"Agregar (1/3)" y el hint "Anade 2 agradecimiento(s)...".
+
+A diferencia de los bugs de anclaje de la #67, este test **si** detecta el problema:
+es renderizado condicional puro, no depende de `setNativeProps` ni de matrices nativas
+que el mock de `react-native-svg` no ejecuta.
+
+**Verificacion**: `npx tsc --noEmit` limpio. App: 14 suites, 118 tests (antes 13/109).
+`.\init.ps1` 100% OK, exit 0.
+
+**Pendiente**: la revision visual en emulador la hace el usuario. Este test confirma que
+el anillo y el formulario no se montan; no confirma que la animacion se vea bien
+centrada sobre el tallo, que sigue siendo la comprobacion pendiente de la #67.
+
+
+# Sesión actual
+
+> Este archivo se vacía al cerrar cada sesión y se mueve a `history.md`.
+> Mientras trabajas, **mantenelo actualizado en tiempo real**, no al final.
+
+<!-- Estado de la sesión activa -->
+
+## 2026-09-26 — Feature #69: entorno de pruebas Docker documentado y reproducible
+
+- **Feature:** #69 `entorno_pruebas_docker_documentado`
+- **Inicio:** 2026-09-26
+- **Rama:** `development` (raíz)
+- **Plan:** reconstruir el compose de WordPress que faltaba en disco, documentar el
+  entorno de pruebas en `docs/entorno-pruebas.md`, y colgar la referencia desde
+  AGENTS.md, CHECKPOINTS.md y verification.md.
+
+### Origen de la tarea
+
+Al preguntar por las credenciales del WordPress de dev se descubrió que la carpeta
+`plugins/wp-test/` **no existía**: los contenedores seguían vivos, pero el compose
+se había borrado tras levantarlos. El label del proyecto apuntaba a una ruta
+inexistente, así que el entorno era irrecuperable si los contenedores morían.
+
+### Estado
+- [x] Revisión del entorno con `docker ps` / `docker inspect` / `docker exec`
+- [x] `plugins/wp-test/docker-compose.yml` reconstruido y validado
+- [x] `docs/entorno-pruebas.md` creado
+- [x] Referencia en `AGENTS.md`, `CHECKPOINTS.md` y `docs/verification.md`
+- [x] Feature #69 registrada
+- [ ] `init.ps1` + commit
+
+### Hallazgos que quedaron documentados
+
+- **El compose restaurado es el original**: `docker compose ps` reconoce los
+  contenedores en marcha como propios del proyecto `wp-test`, y los nombres de
+  volumen y red coinciden.
+- **El plugin se monta en bind, no se copia.** Editar
+  `plugins/vittalmind-psicoeducacion/` cambia el WordPress en vivo. Por eso el ZIP
+  desincronizado no afecta a dev: solo importa al distribuir.
+- **El plugin no autentica contra WordPress**, sino contra el Backend
+  (`POST /auth/login` en `includes/class-auth.php`). Necesita un usuario con
+  `role = 'admin'`: existe `test@vittal.com`, creado por `Backend/src/database/seed.ts`.
+- **Todas las llamadas a la API salen de PHP dentro del contenedor**
+  (`wp_remote_request` en `includes/class-api-client.php:121-132`); el JS solo
+  habla con `admin-ajax.php`. Por tanto la URL de la API debe ser alcanzable desde
+  Docker. Con la URL mal puesta el síntoma es `status: 0`, no un 401.
+- **`Backend/.env` apunta a Supabase producción** y `.env.docker` al Postgres
+  local. Correr el migrador sin cambiar el entorno aplica migraciones en producción.
+- **La imagen `backend-api` hornea las migraciones y no tiene bind mount**: una
+  migración nueva no existe para el contenedor hasta reconstruirlo.
+- **La base local está migrada solo hasta `018`.** Faltan `019`, `020` y `021`, que
+  es la que añade `VIDEO_YOUTUBE` al CHECK. Es el motivo por el que todavía no se
+  puede crear un bloque de video en dev.
+- **El tema "El amor" está duplicado** en `temas_psicoeducacion` (id 2 y 3), por los
+  seeds no idempotentes de `010` + `012`. Un usuario lo ve dos veces. No es de esta
+  feature: queda pendiente de decidir.
+- Contenedores muertos ajenos al proyecto: `openproject` y `pg-ssl-test`.
+
+### Correcciones sobre lo que seloisó durante la redacción
+
+- Se afirmó primero que la migración `020` tocaba psicoeducación. **Falso**: `019`
+  y `020` crean tablas de gratitud con `CREATE TABLE IF NOT EXISTS`, no tocan
+  psicoeducación y son idempotentes. Corregido en el doc.
+- Se escribió primero que con `vmp_api_url = http://localhost:3000` el navegador
+  sí llegaría a la API. **Falso**: el navegador nunca habla con la API. Corregido
+  tras leer `class-api-client.php` y `admin.js`.
+
+### Pendiente para la siguiente sesión
+
+- Feature #70: botón de pánico en `psychoeducation-topic-screen.tsx`. El plan está
+  acordado: replicar el cableado de `app-navigator.tsx:76-90,125-137`, montarlo
+  también en las ramas de carga y de error, y añadir una prop `style` opcional a
+  `PanicButton` porque hoy tiene `bottom: 100` fijo y choca con la `bottomBar`.
+- Crear la categoría "Prevención del suicidio" y el tema "Suicidios en la biblia"
+  desde el panel, con el primer bloque `VIDEO_YOUTUBE` = `M2RIAhUlCjI`. URL
+  verificada: parsea bien aunque lleve el `?si=`.
+- Requiere antes aplicar la migración `021` en la base local.
 

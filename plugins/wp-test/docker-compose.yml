@@ -1,0 +1,73 @@
+# Entorno de pruebas local — WordPress + plugin
+#
+# Docker Compose del WordPress de pruebas donde vive el plugin de psicoeducación.
+#
+# PRERREQUISITO: el Backend debe estar levantado ANTES, porque este compose se
+# conecta a la red externa `backend_default` (`external: true`). Compose no crea
+# esa red, y el plugin guarda en su configuración una URL interna de Docker
+# (`http://api:3000`), no `localhost`. Si el Backend no está en pie, el plugin
+# se rompe en silencio: el panel carga pero ninguna llamada a la API responde.
+#
+#   cd Backend && docker compose up -d
+#   cd plugins/wp-test && docker compose up -d
+#
+# Reconstruido el 2026-09-26 a partir de la configuración real de los
+# contenedores en marcha. Antes solo existía en esos contenedores y no había
+# compose en el repo: si morían, el entorno era irrecuperable.
+
+services:
+  wpmysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: wordpress
+    # El puerto NO se publica: el MySQL es solo interno. La wp-cli de este
+    # entorno se usa vía `docker compose exec`, no desde el host.
+    volumes:
+      - wp-dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -prootpass --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  wordpress:
+    image: wordpress:php8.2-apache
+    ports:
+      - "8082:80"
+    environment:
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_ADMIN_USER: vmpadmin
+      WORDPRESS_ADMIN_PASSWORD: vmp-admin-2026
+      WORDPRESS_ADMIN_EMAIL: admin@vittal.local
+      WORDPRESS_DB_HOST: wpmysql:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    volumes:
+      # Bind al repo: el plugin NO se copia al contenedor. Editar
+      # plugins/vittalmind-psicoeducacion/ en el repo cambia el WordPress en
+      # vivo, sin reinstalar nada. Por eso hay que subir `VMP_VERSION` en cada
+      # cambio de JS/CSS para invalidar la caché del navegador.
+      - ../vittalmind-psicoeducacion:/var/www/html/wp-content/plugins/vittalmind-psicoeducacion
+    depends_on:
+      wpmysql:
+        condition: service_healthy
+    networks:
+      - default
+      - backend_default
+
+networks:
+  # Red del proyecto Backend, creada por su propio compose. El plugin la
+  # necesita para resolver `http://api:3000`.
+  backend_default:
+    external: true
+
+volumes:
+  # Solo los datos de MySQL. El core de WordPress vive en un volumen anónimo
+  # que crea la propia imagen: si se recrea el contenedor, hay que volver a
+  # instalar WordPress (el instalador siempre reaplica las credenciales de
+  # arriba, así que la contraseña del panel nunca se pierde, pero sí el resto
+  # de ajustes).
+  wp-dbdata:

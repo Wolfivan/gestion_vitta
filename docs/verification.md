@@ -39,9 +39,22 @@ it('POST /auth/google returns 200 with JWT', async () => {
 });
 ```
 
-### Nivel 3 — Smoke test manual (opcional pero recomendado)
+### Nivel 3 — Smoke test manual (obligatorio para lo que toca el plugin)
 
-Antes de cerrar la sesión, ejecuta un flujo end-to-end:
+Los dos niveles anteriores no cubren nada que cruce WordPress → Backend → App: el
+contenido de psicoeducación se crea en un panel de WordPress real y se ve en un
+dispositivo, y ninguna de esas dos piezas tiene un test que lo simule.
+
+Para ese caso, el entorno y el procedimiento están en
+**`docs/entorno-pruebas.md`**: allí están las credenciales, los contenedores
+Docker, el orden de arranque y el procedimiento end-to-end. Un bloque de
+psicoeducación no está verificado hasta que se ha creado desde el panel y se ha
+visto en la App.
+
+Los niveles 1 y 2 siguen siendo obligatorios antes que este. El 3 no los
+sustituye: se suma.
+
+Para lo que no necesite el panel, esto basta:
 
 ```bash
 # Backend
