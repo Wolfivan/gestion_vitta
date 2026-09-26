@@ -1069,7 +1069,7 @@
       "acceptance": [
         "psychoeducation-topic-screen.tsx no lanza con 0 bloques ni con 1 bloque, y la barra de progreso se pinta al 100% en ambos casos",
         "findTopicsByCategory excluye los temas con 0 bloques y conserva el alias bloques_count que mapea psychoeducation-service",
-        "findAllCategories y findCategoryBySlug excluyen las categorias sin ningun tema visible, usando COUNT(DISTINCT t.id) porque el join a contenidos_bloques multiplica filas",
+        "findAllCategories y findCategoryBySlug excluyen las categorias sin ningun tema visible, usando HAVING COUNT(b.id) > 0, y cuentan los temas con COUNT(DISTINCT t.id) FILTER (WHERE b.id IS NOT NULL): DISTINCT porque el join a bloques multiplica filas, y FILTER porque con LEFT JOIN un tema sin bloques sigue aportando una fila con b.id nulo y su t.id, que no es nulo, se contaria igual",
         "Con el filtro, la categoria 1 muestra 2 temas en lugar de 3, que es el numero realmente pulsable",
         "El fallback offline de psychoeducation-home-screen filtra tambien los temas sin bloques, para que una cache descargada antes del arreglo no los reintroduzca",
         "Existe Backend/tests/psychoeducation-repository.test.ts: es el primer test del repo que cubre el SQL del repositorio, hasta ahora mocked entero en psychoeducation.test.ts, y verifica el filtro de las 3 consultas",
@@ -1086,6 +1086,33 @@
         "Hecho: la categoria relaciones-pareja paso de temasCount 3 a 2, que es el numero realmente pulsable, y el tema 3 'El amor' con 0 bloques quedo oculto",
         "Hecho: los dos tests nuevos se validaron revirtiendo el codigo que cubren. Sin el HAVING fallan 3 de 8; sin el guard de la interpolacion fallan 8 de 10",
         "Hecho: init.ps1 pasa al 100% con 61 features, App con 15 suites y 128 tests, Backend con 14 suites y 177 tests, y tsc --noEmit limpio en App"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 71,
+      "name": "panic_button_en_pantalla_de_tema",
+      "title": "Botón de pánico disponible en la pantalla de tema de psicoeducación",
+      "description": "El botón de pánico desaparece en la pantalla de tema de psicoeducación, que es justo donde más urge. PanicButton y PanicModal están montados dentro del componente HomeTabs, que es un Stack.Screen: al navegar a PsychoeducationTopic, un Stack.Screen hermano, React Navigation desmonta HomeTabs y el botón desaparece con él. Solo WelcomeScreen lleva el suyo propio, por eso allí sí aparece. Esto incumple la feature #51, marcada done, cuya descripción dice 'Panic Button visible en todas las pantallas' y cuya aceptación lista 'Panic global': el botón solo es global respecto a los 4 tabs, no al Stack. El hueco afecta a PsychoeducationTopic, Timeline, GratitudeCircle, Professionals, AcertiveTranslate y OfflineDownloads. Esta feature lo cierra solo para la pantalla de tema, replicando el patron que ya usa welcome-screen.tsx (usePanic + useEffect que carga el pais al abrir + PanicButton + PanicModal), y por decision explicita del usuario NO se reestructura el navigator para hochear el boton a nivel global, porque eso es una feature aparte. El boton aparece en los tres estados de la pantalla: cargando, con error de sin conexion y con contenido, que es justo cuando mas hace falta. Se muestra con showLabel para que la etiqueta 'Botón de Pánico' se_enqueue una vez al entrar y enseñe que la ayuda está a un toque.",
+      "acceptance": [
+        "App: psychoeducation-topic-screen.tsx importa PanicButton, PanicModal y usePanic, replicating el patron de welcome-screen.tsx en vez de reimplementar la logica de contactos",
+        "App: el boton se monta tambien en la rama de carga (loading && !topicContent) y en la rama de error (OfflineBanner), no solo en la de contenido; la ayuda no puede desaparecer porque la red falle",
+        "App: el useEffect que resuelve el pais con panic.ensureCountry() y luego panic.getCountryData(code) solo corre cuando panicVisible es true, para no pedir permisos de ubicacion al abrir la pantalla",
+        "App: onDial usa panic.openContact(contact), que ya distingue whatsapp de llamada telefonica, y onChangeCountry vuelve a pedir los datos del pais tras panic.changeCountry(code)",
+        "App: se reutiliza el fragmento en las tres ramas en vez de duplicar el JSX del boton y del modal tres veces",
+        "App: PanicButton se monta con showLabel, que enciende la etiqueta 'Botón de Pánico' al entrar y la apaga despues, como ya hacen WelcomeScreen y el tab Home",
+        "App: no se toca app-navigator.tsx ni se mueve HomeTabs; el patron por pantalla se mantiene, por decision explicita del usuario",
+        "App: sin colores hex/rgba literales, solo tokens COLORS, y palette-guard.test.ts sigue pasando",
+        "App: App/__tests__/psychoeducation-topic-screen.test.tsx cubre que el boton esta presente en las tres ramas (contenido, cargando y error), con use-panic mockeado para no depender de AsyncStorage ni de expo-location",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%",
+        "Hecho: la causa se confirmo leyendo el codigo, no suponiendo. app-navigator.tsx:125 monta PanicButton dentro del componente HomeTabs, y HomeTabs es un Stack.Screen (linea 215) igual que PsychoeducationTopic (linea 218), asi que al navegar React Navigation desmonta HomeTabs y el boton se pierde. welcome-screen.tsx:419 lleva el suyo proprio, que es la razon de que ahi si aparezca",
+        "Hecho: el boton se monta en las tres ramas y el fragmento panicUI se declara una sola vez, antes de los returns tempranos, con usePanic y el useEffect que resuelve el pais por encima de ellos para no romper la regla de hooks",
+        "Hecho: los 4 tests nuevos se validaron revirtiendo el codigo que cubren. Al quitar {panicUI} de las tres ramas fallan 4 de 14, y restored vuelve a 14 de 14",
+        "Hecho: init.ps1 pasa al 100% con 62 features, App con 15 suites y 132 tests, y tsc --noEmit limpio. palette-guard.test.ts sigue en verde porque no se introduced ningun color literal",
+        "Pendiente anotado y fuera de esta feature: los seeds 010 y 012 de psicoeducacion no son idempotentes, que es la causa real del tema 3 huerfano. La #70 lo oculta pero no lo previene, y la causa se propagaria a cualquier seed futuro"
       ],
       "priority": "alta",
       "status": "done"

@@ -2269,3 +2269,53 @@ sin commitear (sustitución de colores literales por tokens de `COLORS`), junto 
 mi filtro. Se commitea el archivo entero y se declara en el mensaje. App tiene 52
 archivos modificados y un stash que no son de esta feature.
 
+
+
+# Sesión actual
+
+> Este archivo se vacía al cerrar cada sesión y se mueve a `history.md`.
+> Mientras trabajas, **mantenelo actualizado en tiempo real**, no al final.
+
+## Feature #71 — panic_button_en_pantalla_de_tema (done, alta)
+
+**Pedido:** el botón de pánico no aparece en la pantalla de tema de psicoeducación.
+
+**Diagnóstico (leído, no supuesto):**
+- `app-navigator.tsx:125` monta `<PanicButton>` dentro del componente `HomeTabs`.
+- `HomeTabs` es un `Stack.Screen` (línea 215). `PsychoeducationTopic` es un
+  `Stack.Screen` hermano (línea 218).
+- Al navegar, React Navigation reemplaza un Stack.Screen por otro, así que
+  `HomeTabs` se desmonta y el botón se va con él.
+- `welcome-screen.tsx:419` sí lleva el suyo propio, y por eso allí aparece.
+
+**Consecuencia:** la #51 (`done`) dice "Panic Button visible en todas las pantallas"
+y lista "Panic global". No es cierto: es global solo respecto a los 4 tabs. Se quedan
+sin él `PsychoeducationTopic`, `Timeline`, `GratitudeCircle`, `Professionals`,
+`AcertiveTranslate` y `OfflineDownloads`.
+
+**Decisiones:**
+- Alcance: solo `PsychoeducationTopicScreen`. NO se reestructura el navigator para
+  hochear el botón a nivel global (feature aparte, decisión del usuario).
+- Patrón: replicar `welcome-screen.tsx`, no reimplementar.
+- El botón va en los **tres** estados: cargando, error y contenido.
+
+**Plan:**
+1. `usePanic` + `useEffect(panicVisible)` + `panicUI` compartido, antes de los
+   early returns.
+2. Test de las tres ramas con `use-panic` mockeado.
+3. `tsc`, `npm test`, `init.ps1`, commit local sin push.
+
+**Progreso:**
+- [x] Registrada #71 en `feature_list.json` (62 features)
+- [x] Corregida la aceptación de #70, que aún documentaba `COUNT(DISTINCT t.id)`
+      sin el `FILTER` que le añadí al arreglar el conteo
+- [x] Leídos `app-navigator.tsx`, `welcome-screen.tsx`, `panic-button.tsx`,
+      `panic-modal.tsx`, `use-panic.ts` y el test existente
+- [ ] Implementación en `psychoeducation-topic-screen.tsx`
+- [ ] Test de las tres ramas
+- [ ] Verificación y commit
+
+**Pendiente que dejo anotado (NO es de esta feature):** los seeds `010`/`012` de
+psicoeducación no son idempotentes, que es la causa real del tema 3 huérfano. La #70
+lo oculta pero no lo previene.
+
