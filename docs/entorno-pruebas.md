@@ -202,6 +202,50 @@ que valida el tipo de bloque en tiempo de ejecución: el backend no lo valida. S
 creas un bloque de un tipo sin migrar, el `INSERT` falla con violación de
 constraint y el panel muestra un error 500 sin más explicación.
 
+### Nombres reales (verificados contra la base)
+
+Para diagnosticar este tipo de fallo:
+
+| Qué | Nombre real |
+|---|---|
+| Tabla de bloques | `contenidos_bloques` |
+| Constraint del tipo | `contenidos_bloques_tipo_componente_check` |
+| Tabla de temas | `temas_psicoeducacion` |
+| Tabla de categorías | `categorias_psicoeducacion` |
+| Migraciones aplicadas | tabla `schema_migrations`, columna `filename` (no hay `version`) |
+
+El error del panel llega al log del Backend, no al de PHP, y trae la fila que no
+entró:
+
+```bash
+docker logs backend-api-1 --since 24h 2>&1 | Select-String "tipo_componente_check"
+```
+
+Comprobar de un vistazo qué tipos admite el `CHECK` en este momento:
+
+```bash
+docker exec backend-db-1 psql -U postgres -d vittalmind -c \
+  "SELECT pg_get_constraintdef(oid) FROM pg_constraint
+   WHERE conname = 'contenidos_bloques_tipo_componente_check';"
+```
+
+Y qué temas se quedan **sin bloques**, que son los que la app esconde y que antes
+reventaban la pantalla:
+
+```bash
+docker exec backend-db-1 psql -U postgres -d vittalmind -c \
+  "SELECT t.id, t.titulo, COUNT(b.id) AS bloques
+   FROM temas_psicoeducacion t
+   LEFT JOIN contenidos_bloques b ON b.tema_id = t.id
+   GROUP BY t.id, t.titulo HAVING COUNT(b.id) = 0;"
+```
+
+> [!WARNING]
+> Un tema se crea **antes** que sus bloques. Si el `INSERT` del bloque falla, el
+> tema queda creado y vacío, y el plugin lo reporta como error sin llegar a
+> mencionarlo. Por eso la regla de la feature #70: un tema sin bloques no se
+> muestra.
+
 ## Procedimiento end-to-end
 
 Para probar un bloque de psicoeducación de punta a punta:
@@ -231,25 +275,32 @@ del `cuerpo_json`, qué URLs se aceptan), ver `manuales/psicoeducacion-contenido
 
 ## Problemas conocidos
 
-Recopilados al revisar el entorno el 2026-09-26. Ninguno bloquea el trabajo
-salvo el tercero.
+Recopilados al revisar el entorno el 2026-09-26. Ninguno bloquea el trabajo.
 
-- **Las migraciones del entorno local llegan solo hasta `018`.** Faltan `019`,
-  `020` y `021` (esta última es la que añade `VIDEO_YOUTUBE` al `CHECK`). Por eso
-  la base local no puede todavía guardar un bloque de video aunque el plugin y la
-  app ya lo soporten. Arrancan en el próximo `migrate` desde el host o el
-  contenedor.
-- **`019` y `020` vienen de la feature de gratitud (#67), que sigue sin
-  commitear.** Ambas son `CREATE TABLE IF NOT EXISTS` sobre
-  `gratitude_entries` y `gratitude_streaks`, no tocan psicoeducación y son
-  idempotentes, así que aplicarlas es seguro. Pero son efecto colateral: al
-  correr el migrador para traer la `021` también entran estas dos, y su código
-  todavía puede cambiar.
+- ~~**Las migraciones del entorno local llegan solo hasta `018`.**~~ **Resuelto
+  el 2026-09-26** con la feature #70: `019`, `020` y `021` aplicadas reconstruyendo
+  la imagen. El `CHECK` de `tipo_componente` ya admite los 7 tipos y la base local
+  ya puede guardar un bloque de video. Para volver a comprobarlo:
+
+  ```bash
+  docker exec backend-db-1 psql -U postgres -d vittalmind -c \
+    "SELECT filename, applied_at FROM schema_migrations ORDER BY id DESC LIMIT 3;"
+  ```
+
+  Recordar que la migración se aplicó **dentro del contenedor**, nunca desde el
+  host: el entrypoint de `backend-api` corre el migrador al arrancar, así que un
+  `docker compose up -d api` tras reconstruir ya basta.
+- **`019` y `020` son de la feature de gratitud (#67).** Ambas son
+  `CREATE TABLE IF NOT EXISTS` sobre `gratitude_entries` y `gratitude_streaks`, no
+  tocan psicoeducación y son idempotentes, así que aplicarlas es seguro. Entraron
+  como efecto colateral de traer la `021`, que era el objetivo.
 - **El tema "El amor" está duplicado** en `temas_psicoeducacion` (id 2 y 3, misma
   categoría, mismo `orden`). Es consecuencia de los seeds no idempotentes: `010`
   insertó el tema y `012` lo renombró desde `"Psicoeducación para parejas"`, y
-  acabo aplicado dos veces. En la App el usuario ve "El amor" dos veces. Pendiente
-  de decidir si se limpia.
+  acabó aplicado dos veces. El id 3 se quedó **sin bloques**, y desde la feature
+  #70 la app **lo esconde** (un tema sin bloques no se muestra), así que el
+  usuario ya no lo ve dos veces. La fila sigue en la base, pendiente de decidir si
+  se limpia. Los seeds en sí siguen sin ser idempotentes, que es la causa real.
 - **El core de WordPress está en un volumen anónimo** (`a480d4f3…`), no con
   nombre. Si se recrea el contenedor hay que reinstalar WordPress. El
   instalador reaplica las credenciales del compose, así que el acceso al panel no

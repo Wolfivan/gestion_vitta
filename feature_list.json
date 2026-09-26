@@ -1060,6 +1060,35 @@
       ],
       "priority": "media",
       "status": "done"
+    },
+    {
+      "id": 70,
+      "name": "temas_sin_bloques_no_se_muestran",
+      "title": "Un tema sin bloques no aparece y la pantalla de tema no revienta con 0 o 1 bloques",
+      "description": "Al crear desde el plugin un tema con un bloque de video de YouTube, la app reventó al abrirlo con 'outputRange must have at least 2 elements'. La causa raiz es una sola: la migracion 021 nunca se aplico en la base local, asi que el CHECK contenidos_bloques_tipo_componente_check seguia admitiendo solo 6 tipos y rechazaba VIDEO_YOUTUBE con 500. Los logs del Backend lo confirman en dos intentos (16:18:45 y 16:19:05), con la fila exacta que no entro. Como el tema se crea antes que sus bloques, el plugin dejo el tema 4 'Suicidios en la Biblia' creado pero con 0 bloques, y ahi esta el crash: psychoeducation-topic-screen.tsx deriva inputRange y outputRange de bloques.map(), asi que con 0 bloques salen vacios y con 1 salen de longitud 1, y React Native exige al menos 2 elementos (AnimatedInterpolation.js, checkValidRanges). Ese codigo es del commit inicial 560df6e y nunca se habia ejecutado con un tema vacio, porque los temas existentes tienen 4 y 6 bloques. El tema 3 'El amor', duplicado por los seeds no idempotentes 010 + 012, tambien tiene 0 bloques y tampoco se podia abrir. Ademas la pantalla no tenia ni un test, por eso un crash de hace un mes sobrevivio. Se arregla el guard en la pantalla, se aplica la migracion 021 en la base local de pruebas y se establece la regla de que un tema sin bloques no se muestra y una categoria sin temas visibles tampoco. El filtro va en el repositorio del Backend, que es la capa autoritativa y ademas hace que los contadores que ya se pintan en pantalla sean honestos. El tema 3 se deja en la base, solo oculto.",
+      "acceptance": [
+        "psychoeducation-topic-screen.tsx no lanza con 0 bloques ni con 1 bloque, y la barra de progreso se pinta al 100% en ambos casos",
+        "findTopicsByCategory excluye los temas con 0 bloques y conserva el alias bloques_count que mapea psychoeducation-service",
+        "findAllCategories y findCategoryBySlug excluyen las categorias sin ningun tema visible, usando COUNT(DISTINCT t.id) porque el join a contenidos_bloques multiplica filas",
+        "Con el filtro, la categoria 1 muestra 2 temas en lugar de 3, que es el numero realmente pulsable",
+        "El fallback offline de psychoeducation-home-screen filtra tambien los temas sin bloques, para que una cache descargada antes del arreglo no los reintroduzca",
+        "Existe Backend/tests/psychoeducation-repository.test.ts: es el primer test del repo que cubre el SQL del repositorio, hasta ahora mocked entero en psychoeducation.test.ts, y verifica el filtro de las 3 consultas",
+        "Existe App/__tests__/psychoeducation-topic-screen.test.tsx con casos de 0, 1 y 3 bloques, y es el primer test de esta pantalla",
+        "Los alias de las consultas (temas_count, bloques_count) no cambian, porque psychoeducation-service los mapea de forma explicita",
+        "La migracion 021 esta aplicada en el Postgres local y el CHECK contiene los 7 tipos, incluido VIDEO_YOUTUBE",
+        "La migracion se aplica solo contra el Postgres del contenedor, verificado por config, y en ningun momento contra el Supabase de produccion al que apunta Backend/.env",
+        "El bloque de video existe en el tema 4 y la app lo pinta, con miniatura y apertura en YouTube",
+        "docs/entorno-pruebas.md anade los nombres reales que hacen falta para diagnosticar el fallo del plugin, verificados contra la base: la tabla contenidos_bloques, el constraint contenidos_bloques_tipo_componente_check y la columna filename de schema_migrations. Aclaracion: el doc del commit 667c79a NO tenia identificadores erroneos, se comprobo leyendolo y contrastando cada nombre contra information_schema",
+        "init.ps1 pasa al 100% y tsc --noEmit no reporta errores en App ni en Backend",
+        "Hecho: verificado de punta a punta contra la API en marcha. El bloque de video se creo por la misma ruta que usa el plugin (POST /psychoeducation/admin/blocks con JWT de admin) y devuelve id 17 en el tema 4; GET /psychoeducation/prevencion-duicida/4 lo devuelve con tipoComponente VIDEO_YOUTUBE y la URL intacta",
+        "Hecho: la migracion 021 se aplico solo al Postgres de pruebas, con la config revisada desde dentro del contenedor antes de correrla (DB_HOST=db, que resuelve a 172.18.0.3, la misma IP que backend-db-1 con imagen postgres:16-alpine) y con contraste explicito de que Backend/.env apunta a db.utudxtykopnowmxijalv.supabase.co con DB_SSL=true, que es el destino que no se toco. inet_server_addr() devuelve null porque psql entra por socket Unix, sin red",
+        "Hecho: el CHECK paso de 6 a 7 tipos, con VIDEO_YOUTUBE dentro, y schema_migrations registra 019, 020 y 021 a las 17:01:22",
+        "Hecho: la categoria relaciones-pareja paso de temasCount 3 a 2, que es el numero realmente pulsable, y el tema 3 'El amor' con 0 bloques quedo oculto",
+        "Hecho: los dos tests nuevos se validaron revirtiendo el codigo que cubren. Sin el HAVING fallan 3 de 8; sin el guard de la interpolacion fallan 8 de 10",
+        "Hecho: init.ps1 pasa al 100% con 61 features, App con 15 suites y 128 tests, Backend con 14 suites y 177 tests, y tsc --noEmit limpio en App"
+      ],
+      "priority": "alta",
+      "status": "done"
     }
   ]
 }

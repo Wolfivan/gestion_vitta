@@ -2149,3 +2149,123 @@ inexistente, así que el entorno era irrecuperable si los contenedores morían.
   verificada: parsea bien aunque lleve el `?si=`.
 - Requiere antes aplicar la migración `021` en la base local.
 
+
+
+# Sesión actual
+
+> Este archivo se vacía al cerrar cada sesión y se mueve a `history.md`.
+> Mientras trabajas, **mantenelo actualizado en tiempo real**, no al final.
+
+## Feature #70 — temas_sin_bloques_no_se_muestran (in_progress)
+
+**Inicio:** 2026-09-26, sesión continuation tras cerrar #69 (commit `667c79a`).
+
+### Causa raíz (verificada, no supuesta)
+
+Una sola cadena, no dos problemas:
+
+1. La migración `021_add_video_youtube.sql` **nunca se aplicó** en la base local. El CHECK real
+   `contenidos_bloques_tipo_componente_check` admite 6 tipos; `VIDEO_YOUTUBE` es el séptimo.
+2. Al crear el tema desde el plugin, el tema **sí** se creó (id 4, "Suicidios en la Biblia") pero
+   el INSERT del bloque fue rechazado con 500. Confirmado en los logs del Backend, dos intentos a
+   las 16:18:45 y 16:19:05, con la fila exacta que no entró.
+3. El tema quedó con **0 bloques**, y al abrirlo `psychoeducation-topic-screen.tsx:161` deriva
+   `inputRange` y `outputRange` de `bloques.map()`. Con 0 bloques salen vacíos, y React Native
+   exige ≥2 elementos (`AnimatedInterpolation.js`, `checkValidRanges`).
+
+Corrección a un diagnóstico previo: dije que el tema tenía 1 bloque. Tiene **0**. El mensaje de
+error es el mismo en ambos casos, por eso lo adiviné mal.
+
+Ese código es del commit inicial `560df6e` (2026-08-20), no de la feature #66. Nunca se ejecutó
+con un tema vacío porque los temas existentes tienen 4 y 6 bloques.
+
+### Correcciones a diagnósticos previos de esta sesión
+
+Dos, ambas por diagnosticar desde el resumen de sesión en vez de leer el archivo o
+la base. Las dos se detectaron al verificar, no por inspección casual:
+
+1. **"El tema tiene 1 bloque". Falso: tiene 0.** El mensaje de error es el mismo
+   para 0 y para 1 bloques, por eso lo adiviné mal. Con 0 la regla del fix es la
+   misma (`totalPaginas > 1`), pero el diagnóstico del fallo del plugin cambia:
+   el tema se creó y el INSERT de su bloque fue rechazado.
+2. **"`docs/entorno-pruebas.md` tiene tres identificadores erróneos del commit
+   `667c79a`". Falso.** Se comprobó leyendo el doc y contrastando cada nombre
+   contra `information_schema`: solo cita `temas_psicoeducacion` y
+   `schema_migrations`, y los dos existen. No hay nada que corregir. En vez de
+   eso se **añaden** los nombres reales que faltaban y sí hacen falta para
+   diagnosticar (`contenidos_bloques`, el constraint, la columna `filename`).
+
+### Decisiones tomadas por el usuario
+
+- Arreglo de la interpolación: **duplicar el punto** cuando no hay paginación real, en vez de
+  omitir la interpolación. Motivo:Animated.View rechaza la unión `string | AnimatedInterpolation`.
+- **Una sola feature (#70)**, no dividir. El doc corregido y la migración van dentro.
+- El tema 3 "El amor" (0 bloques, duplicado por los seeds no idempotentes 010 + 012) **se deja en
+  la base**, solo oculto. No se borra.
+- **Restricción dura del usuario:** el Docker es ambiente de pruebas y *"bajo ninguna circunstancia
+  los datos de ahí deben migrar a producción"*.
+
+### Salvaguardas para la migración
+
+El riesgo real: `Backend/.env` apunta al Supabase de producción, así que un `npm run migrate`
+desde el host aplicaría ahí. Procedimiento obligatorio:
+
+1. **Nunca** desde el host. Solo `docker exec backend-api-1 node dist/database/migrate.js`, que
+   usa el env horneado en la imagen (`DB_HOST=db`).
+2. Antes, imprimir la config **desde dentro** del contenedor y confirmar que apunta a `db`.
+3. Verificar `inet_server_addr()` después, para dejar constancia de que fue el Postgres local.
+4. `SELECT` del CHECK para confirmar que pasa de 6 a 7 valores.
+5. Si el paso 2 no confirma el destino esperado, **parar** y documentar el bloqueo. No improvisar.
+
+### Plan
+
+| # | Capa | Cambio |
+|---|---|---|
+| 1 | App `psychoeducation-topic-screen.tsx` | Guard de la interpolación |
+| 2 | Backend `psychoeducation-repository.ts` | `HAVING` en las 3 consultas |
+| 3 | App `psychoeducation-home-screen.tsx` | Filtro del fallback offline |
+| 4 | Tests | Nuevo test de repositorio (SQL) + nuevo test de la pantalla de tema |
+| 5 | Docs | Añadir los nombres reales verificados (no corregir: no había errores) |
+| 6 | Entorno | Rebuild + 019/020/021 en local + bloque de video del tema 4 |
+| 7 | Cierre | `feature_list.json`, `progress/`, `init.ps1`, commits en los 3 repos |
+
+### Hallazgo técnico del test del App
+
+El primer intento de test de la pantalla fallaba de forma desconcertante: el spy
+sobre `interpolate` no registraba nada, `toJSON()` devolvía `null` y los tests
+`not.toThrow()` pasaban. Causa: **React 19 agenda el render inicial de
+`renderer.create` de forma asíncrona**, y `react-native/index.js:139` expone
+`Animated` con un getter perezoso, así que el primer acceso a `Animated` — y con
+él el `require` del módulo — ocurría cuando el test ya había terminado ("trying to
+`import` a file after the Jest environment has been torn down"). El componente no
+llegaba a renderizarse y React descartaba el árbol. Se resuelve envolviendo el
+render en `act()`.
+
+### Deuda que esta feature destapa
+
+Documentado en `docs/entorno-pruebas.md` pero **fuera de alcance**:
+
+- Los seeds 010 + 012 no son idempotentes: "El amor" está duplicado (id 2 con 6 bloques, id 3 con
+  0). La causa de que haya un tema vacío es esa, no el plugin.
+- `Backend/tests/psychoeducation.test.ts` mockea el repositorio entero, así que el SQL no tenía
+  ninguna cobertura. El test nuevo introduce ese patrón.
+
+### Progreso
+
+- [x] Registrada la #70 en `feature_list.json` como `in_progress`, prioridad `alta`
+- [x] 1. Guard de la interpolación + `isLastPage` con 0 bloques
+- [x] 2. `HAVING` en las 3 consultas del repositorio
+- [x] 3. Filtro del fallback offline
+- [x] 4. Tests: 8 del repositorio (SQL) + 10 de la pantalla, ambos validados
+      revirtiendo el código para comprobar que fallan
+- [x] 5. Docs: nombres reales añadidos
+- [ ] 6. Migración + bloque
+- [ ] 7. Verificación y cierre
+
+### Pendiente de declarar en el commit
+
+`App/src/screens/psychoeducation-home-screen.tsx` tiene cambios de **otra sesión**
+sin commitear (sustitución de colores literales por tokens de `COLORS`), junto a
+mi filtro. Se commitea el archivo entero y se declara en el mensaje. App tiene 52
+archivos modificados y un stash que no son de esta feature.
+
