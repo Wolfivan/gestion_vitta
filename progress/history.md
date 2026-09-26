@@ -1630,3 +1630,256 @@ Cada llamada al LLM era completamente stateless — el traductor "olvidaba" mens
 - **Verificación:** `init.ps1` al 100% (Backend y App tests OK).
 
 
+
+## 2026-09-12 — Feature #61: Círculo de Gratitud diario con racha + módulo Ansiedad
+
+- **Duración:** Sesión completa
+- **Agente:** big-pickle
+- **Estado:** done
+- **Rama:** development
+
+### Objetivo
+Actividad diaria de gratitud (una vez cada 24h) con círculo visual y racha, animación de flor, offline-first (patrón timeline), y creación del módulo 'Ansiedad'. Solo usuarios autenticados.
+
+### Reglas de negocio aplicadas
+- Días 1-5 → exactamente 3 agradecimientos; día 6+ (racha >= 5) → exactamente 5.
+- Cada agradecimiento completa un segmento del círculo; al completarlo se muestra la animación flor_naciente.svg re-creada (gota → matera → tallo → flor).
+- Cada día completado suma 1 a la racha; día consecutivo +1, perdido reset, mismo día no suma; best_streak = max.
+- Fecha local del cliente (YYY-MM-DD) enviada al backend; server valida con isValidDateString y la usa para límites/streak.
+
+### Backend (completado en sesión previa de esta feature)
+- Migraciones 019 (gratitude_entries) y 020 (gratitude_streaks).
+- Models, repository, service (getRequiredCount, streak), controller (validaciones), routes montadas.
+- Endpoints: GET /gratitude/entries?fecha=, POST /gratitude/entry (client_uuid idempotente), GET /gratitude/streak?fecha=.
+- 18 tests; suite Backend 163/163 verde.
+
+### Frontend (esta sesión)
+- db.ts: tabla gratitude_entries (non-cache): client_uuid UNIQUE, data, fecha, synced, created_at.
+- gratitude-service.ts: getCachedEntries, syncEntriesWithServer, saveEntryToDb, createEntry (optimista + pending_ops + flush), fetchStreak, getCachedStreak, getRequiredCount, todayLocalString.
+- sync-manager.ts: entity 'gratitude' en flushPendingOps (POST /gratitude/entry) + upsertServerGratitudeEntry.
+- hook use-gratitude.ts (exportado en hooks/index.ts): entries, streak, loading, error, load, addEntry, syncStatus, pendingCount, requiredCount, isComplete.
+- components/gratitude-circle.tsx: anillo de N segmentos react-native-svg con fade Reanimated + contador central.
+- components/gratitude-flower-animation.tsx: flor_naciente.svg re-creada con react-native-svg + Reanimated (loop 6s).
+- screens/gratitude-circle-screen.tsx: racha (🔥 días / 🏆 mejor / requeridos), círculo, input + botón Agregar, lista de agradecimientos del día, celebración con flor, banner offline/sync.
+- Navegación: ruta GratitudeCircle + HomeTabParamList.Tools pasa param module.
+- HomeScreen: nuevo módulo 'Ansiedad' (🧘) en EXPLORE_MODULES que navega a Tools con module param.
+- ToolsScreen: filtrado por módulo (parejas/ansiedad), Gratitud primera herramienta de Ansiedad (requiresAuth, guest → modal login), tarjeta featured placeholder eliminada.
+- jest.setup.ts: mock de react-native-reanimated y react-native-svg ampliado (Circle/Rect/G) → suite App 47/47.
+
+### Verificación
+- tsc --noEmit en App sin errores.
+- npm test en App: 47/47.
+- init.ps1 al 100% (Backend + App OK).
+- Nota: lint de App (eslint src/) roto por config pre-existente (ESLint v9 sin eslint.config.js), no relacionado con esta feature.
+
+
+
+## 2026-09-15 — Feature #62: Tab Herramientas muestra todas las herramientas agrupadas por módulo
+
+- **Duración:** Sesión corta
+- **Agente:** big-pickle
+- **Estado:** done
+
+### Objetivo
+Al pulsar el tab 'Herramientas' de la barra inferior se deben ver TODAS las herramientas (Parejas + Ansiedad) agrupadas por módulo, en vez de quedar filtradas o caer por defecto a Parejas. Las tarjetas de módulo de Home (Parejas/Ansiedad) siguen navegando filtradas por tema.
+
+### Cambios
+- `tools-screen.tsx`: `moduleId = route.params?.module ?? 'all'`. En modo `all` se renderizan todas las herramientas agrupadas por módulo con encabezados de sección ('Herramientas de Parejas' / 'Herramientas de Ansiedad'); se añaden `MODULES_ORDER`, `ALL_TOOLS_META`, `ALL_MODULE_PARAM` y el estilo `moduleSectionHeader`. La UI por módulo concreto se mantiene igual (breadcrumb + título + lista).
+- `app-navigator.tsx`: listener `tabPress` en el tab Tools → `navigation.navigate('Tools', { module: 'all' })`, resetea a 'todas' en cada pulsación real del tab (la navegación programática desde Home no dispara `tabPress`, así que el filtrado por tarjeta no se rompe).
+- `home-screen.tsx`: el texto muerto 'Ver todo →' ahora es un `TouchableOpacity` que navega a Tools en modo `all`.
+
+### Verificación
+- tsc --noEmit en App sin errores.
+- npm test en App: 47/47.
+- init.ps1 al 100% (Backend + App OK).
+
+### Pendiente (feature aparte, id 63)
+- Círculo de gratitud deforme (`gratitude-circle.tsx`, GAP_DEG con caps round).
+- Animación de flor: a pantalla completa y realineada (`gratitude-flower-animation.tsx` + overlay en `gratitude-circle-screen.tsx`).
+
+
+
+## 2026-09-16 — Feature #63: Theme central de paleta + guard anti-colores hardcodeados
+
+- **Duración:** Sesión completa
+- **Agente:** big-pickle
+- **Estado:** done
+
+### Objetivo
+Centralizar toda la paleta de colores de la app en un único archivo de design tokens (`App/src/constants/index.ts`) y añadir un guard de Jest que prohíba literales de color fuera de la allowlist. Cambiar o limitar los colores de la UI pasa a ser editar un solo archivo.
+
+### Reglas de negocio aplicadas
+- Todos los colores de `App/src` deben venir de tokens de `COLORS` en `constants/index.ts`.
+- `PALETTE_TRIADAS` (ReadonlySet de triadas RGB derivadas de los tokens) es la allowlist autoritativa.
+- El guard escanea `App/src` (excluye `constants/index.ts`), detecta hex (3–8 dígitos) y `rgba()/rgb()` literales y falla reportando `archivo:línea`.
+- `docs/architecture.md` (principio 6) y `docs/conventions.md` (sección "Colores y UI") declaran la regla.
+
+### Cambios
+- `App/src/constants/index.ts` — `COLORS` reescrito y extendido (base + semánticos `shadow`, `textMuted`, `borderNeutral`, `dangerStrong`, `dangerStrongSoft`, `exerciseAccent`, `exerciseAccentSoft`, `exerciseAccentSoft10`, `scrim`, `scrimStrong`, `blackOverlay`, `white20/70/85/90`, `backgroundGlass`, `placeholder`, `primarySoft`, `primarySoft10`, `primaryContainerSoft`, `primaryFixedSoft`, `primaryFixedDimSoft`, `secondarySoft`, `secondarySoft12/15`, `secondaryContainerSoft`, `secondaryContainerSoft30`, `tertiarySoft`, `successSoft`, marcas Google/WhatsApp, `flower*`), helper `withAlpha(hex, alpha)`, export `PALETTE_TRIADAS`, `TIMELINE_DAY_COLORS` refactorizado a tokens.
+- ~239 literales de color reemplazados por tokens en ~38 archivos de `App/src` (script PowerShell en temp; `pdf-service.ts` migrado a mano por templates literals → `${COLORS.x}`).
+- Imports `COLORS` añadidos a `logo.tsx`, `panic-button.tsx`, `gratitude-flower-animation.tsx`, `brand-watermark.tsx`.
+- `App/__tests__/palette-guard.test.ts` — nuevo guard de Jest.
+- `docs/architecture.md`, `docs/conventions.md` — regla de paleta documentada.
+
+### Verificación
+- `npx tsc --noEmit` en App sin errores.
+- `npm test` en App: 10 suites / 48 tests OK (incluye `palette-guard.test.ts`).
+- Scanner post-reemplazo confirma 0 literales de color fuera de `constants/index.ts`.
+- `init.ps1` al 100% (Backend + App OK).
+- Nota: lint de App roto por config pre-existente (ESLint v9 sin `eslint.config.js`), no relacionado con esta feature.
+
+
+## 2026-09-26 — Bugfix: Tarjetas de Herramientas se solapan unas sobre otras
+
+- **Duración:** ~10 min
+- **Agente:** big-pickle
+- **Estado:** done
+
+### Problema
+Las tarjetas de la pantalla Herramientas se veían superpuestas unas sobre otras (se rozaban/superponían visualmente en lugar de separarse).
+
+**Causa raíz:** `gap` en el nivel equivocado del árbol, no un problema de `zIndex` ni de posicionamiento absoluto.
+- `tools-screen.tsx` — `toolsList` (línea 219) tiene `gap: SPACING.gutter`, pero ese contenedor solo tiene 1–2 hijos: los **grupos de módulo**.
+- Las tarjetas son **nietas**: viven dentro de `<View key={mod}>` (línea 135), que no tenía ningún estilo.
+- Resultado: 0px de separación entre tarjetas. Como todas son del mismo blanco (`surfaceContainerLowest`) con `shadowRadius: 20` en iOS / `elevation: 4` en Android, al tocarse las sombras de cada una invaden a la vecina y las esquinas redondeadas se funden → se leen como superpuestas.
+- Agravante: `moduleSectionHeader` solo tenía `marginTop: SPACING.sm` (8px), la única separación en la frontera entre módulos.
+
+El bug estaba presente en los dos modos de la pantalla: `all` y módulo individual.
+
+**Corrección (1 archivo, 2 ediciones) — `App/src/screens/tools-screen.tsx`:**
+- Línea 135 — el wrapper de módulo pasa a `<View key={mod} style={styles.moduleGroup}>`.
+- Nuevo estilo `moduleGroup: { gap: SPACING.gutter }` junto a `toolsList`.
+
+`toolsList` conserva su `gap` para separar los grupos, así cada nivel queda con su propio ritmo: 16px entre tarjetas, 16px entre grupos. Cubre `all` y módulo individual con el mismo cambio (en modo individual `toolsList` tiene un solo hijo y su `gap` no aplica, pero `moduleGroup` sigue dando los 16px).
+
+Mockup de referencia: `templates/tools.html:153` — `flex flex-col gap-gutter` en el **padre directo** de las tarjetas, exactamente el nivel que faltaba en React Native.
+
+### Verificación
+- `npx tsc --noEmit` en App sin errores.
+- `npm test` en App y Backend: OK.
+- `init.ps1` al 100% (Backend + App OK).
+- Pendiente de comprobación visual en los dos modos: pestaña "Herramientas" (todas) y entrada desde Home con `module: 'parejas'`.
+
+### Notas
+- Sin entrada en `feature_list.json`: cambio puramente estético, no amerita una feature (#43 sigue siendo la única `pending`, y #6 la única `blocked`).
+- Sin test de regresión: `App/__tests__/` no cubre `tools-screen`, así que este fix de estilo queda sin protección automática.
+- Fuera de alcance, sin tocar: los márgenes de `moduleSectionHeader` (`marginTop: 8` / `marginBottom: 4`) quedan asimétricos frente a los 16px del gutter.
+
+
+
+## 2026-09-26 — Feature #64: Círculo de Gratitud con anillo continuo real
+
+- **Duración:** Sesión corta
+- **Agente:** big-pickle
+- **Estado:** done
+- **Rama raíz:** `development` · **Rama App (repo anidado):** `desarrollo`
+
+### Objetivo
+El usuario pidió cambiar la forma que hay tras el `0/3 hoy` del Círculo de Gratitud por un círculo de verdad. Corrige el defecto que quedó pendiente en la feature #62 (`history.md`, sección "Pendiente") sin volver a los segmentos.
+
+### Diagnóstico
+`gratitude-circle.tsx` no dibujaba un círculo sino N (3 o 5) arcos discretos, separados `GAP_DEG = 5` y con `strokeLinecap="round"` sobre `strokeWidth: 18`. A `RADIUS = 38` cada cap redondeado invade ~13,6° por extremo, consume el hueco de 5° y los segmentos vecinos se solapan: de ahí el anillo deforme.
+
+### Decisiones tomadas con el usuario
+| Decisión | Valor |
+|---|---|
+| Forma | Arco continuo único (track + arco de progreso), sin marcas de paso |
+| Trazo | `strokeWidth` 12/100, `COLORS.secondary` sobre track `COLORS.outlineVariant` |
+| Alcance | Solo el anillo; la flor a pantalla completa se va a la feature #65 |
+| Centro | Se mantiene el texto `N/total hoy` tal cual |
+
+### Cambios
+- `App/src/components/gratitude-circle.tsx` — reescrito. Fuera `polarToCartesian`, `describeArc`, `GAP_DEG` y el componente `Segment`. Ahora un `Circle` de track (gris) + un `AnimatedCircle` de progreso (verde secundario) con `strokeDasharray={2πr}` y `strokeDashoffset` animado a `CIRCUMFERENCE * (1 - progress)` vía `useAnimatedProps`, ambos envueltos en `<G rotation={-90} originX={50} originY={50}>` para arrancar a las 12 en punto. `strokeLinecap="round"`, trazo afinado de 18 a 12, `withTiming(600ms, Easing.out)` al cambiar la fracción. Sin dependencias nuevas: mismo patrón que ya usaba `gratitude-flower-animation.tsx` para el `strokeDashoffset` del tallo. Casos borde: `total<=0` no divide por cero, `filled>=total` satura, `filled===0` oculta el arco (`opacity: 0`) para que el cap redondeado no deje un punto fantasma. Contador central `N/total hoy` intacto.
+- `App/jest.setup.ts` — el mock de `react-native-svg` no declaraba `__esModule: true`, así que el default import de `Svg` resolvía al objeto del módulo en vez de a `'SvgMock'` y ningún componente con SVG se podía renderizar en tests. Añadida la marca (la intención del mock ya era esa: `default: 'SvgMock'`). Ningún test previo lo detectaba porque ninguno renderizaba un componente con SVG.
+- `App/__tests__/gratitude-circle.test.tsx` — nuevo, 10 tests con `react-test-renderer`: exactamente 2 círculos y 0 paths (guard contra volver a segmentos), rotación -90 del grupo, `strokeDasharray` = circunferencia con total 3 y con total 5, colores por token, arco oculto en 0, contador `0/3` / `2/3` / `4/5`, saturación a `3/3` y `total=0` sin romperse.
+- `feature_list.json` — #64 `gratitude_circle_real_ring` añadida y marcada `done`; #65 `gratitude_flower_fullscreen` añadida como `pending` con los criterios de aceptación del otro defecto pendiente.
+
+### Verificación
+- `npx tsc --noEmit` en App sin errores.
+- `npm test` en App: 11 suites / 58 tests OK.
+- `npm test` en Backend: 13 suites / 163 tests OK.
+- `init.ps1` al 100% (exit 0).
+- Pendiente de comprobación visual: el arco de `0/3`, `1/3` y `3/3` en la pantalla real, sobre `total=5` (racha >= 5).
+
+### Notas
+- Sin commitear en ninguno de los dos repos: `App/` es un repo git anidado en rama `desarrollo` y la raíz está en `development`, ambos con trabajo de gratitud pendiente de commit.
+- Gravedad: el defecto del anillo era el único de los dos que afectaba a la legibilidad de la métrica diaria; el de la flor (#65) es puramente de celebración y sigue abierto.
+
+
+
+# Sesión actual
+
+> Este archivo se vacía al cerrar cada sesión y se mueve a `history.md`.
+> Mientras trabajas, **mantenelo actualizado en tiempo real**, no al final.
+
+<!-- Estado de la sesión activa -->
+
+## 2026-09-26 — Feature #66: Bloque de psicoeducación con video de YouTube
+
+- **Feature:** #66 `psicoeducacion_bloque_video_youtube`
+- **Inicio:** 2026-09-26
+- **Rama:** `development` (raíz) / `desarrollo` (App, Backend) — 3 repos git distintos
+- **Plan:** thumbnail 16:9 + `Linking.openURL` a la app de YouTube. Cero dependencias
+  nuevas, sin WebView. El parser `parseYouTubeId` es el punto de seguridad crítico: es la
+  primera URL que llega de contenido remoto no constante.
+
+### Estado
+- [x] Alta en `feature_list.json` (#66 → in_progress)
+- [x] Backend: union + migracion 021 + swagger/OpenAPI + test
+- [x] App: tipos + content-block-video.tsx + renderer
+- [x] App: tests (parser, renderer, forma)
+- [x] Plugin: blocks.php + blocks.js + VMP_VERSION
+- [x] Docs: manuales/psicoeducacion-contenidos.md
+- [x] init.ps1 + tsc
+- [x] Commits en los 3 repos
+
+### Commits
+- Raíz (`development`): `f4a41e5` feat: feature #66 - plugin + docs
+- App (`desarrollo`): `2a1aa93` feat: bloque de psicoeducacion con video de YouTube
+- App (`desarrollo`): `6bd2b7d` fix: separacion vertical entre tarjetas de Herramientas
+- Backend (`desarrollo`): `9278d20` feat: tipo de bloque VIDEO_YOUTUBE en psicoeducacion
+
+Ninguno pusheado.
+
+### Decisiones tomadas
+- **Opcion A** (thumbnail + abrir YouTube) ahora; WebView embebido queda como follow-up.
+  Cambiar a WebView despues toca **un solo componente** (`content-block-video.tsx`):
+  plugin, backend, migracion, tipos y `cuerpo_json` no cambian.
+- **No** regenerar `plugins/vittalmind-psicoeducacion.zip` (queda desincronizado a proposito).
+- **No** anadir token `brandYouTubeRed` a `COLORS`: `src/constants/index.ts` ya tiene
+  cambios sin commitear de la feature #63, asi que tocarlo mezclaría ambas features en un
+  mismo commit. Se usa `COLORS.primary` para el boton de play, que ademas encaja mejor con
+  la   paleta calmada de la app. `palette-guard.test.ts` sigue pasando.
+
+### Hallazgos durante la sesion
+- La migracion 021 no es decorativa: el backend **no** valida `tipo_componente` en runtime
+  (el service y el repository lo tipan como `string` y solo comprueban presencia), asi que el
+  CHECK de Postgres es la unica puerta que rechaza un tipo desconocido. Sin el `DROP`, el
+  INSERT del bloque fallaria por constraint.
+- `App/src/screens/tools-screen.tsx` **ya estaba sucio** por las features #62 (agrupacion por
+  modulo) y #63 (tokens de paleta), no solo por el fix de layout. Mi commit inicial lo
+  describia como un fix de 2 lineas cuando en realidad eram 253 lineas: se rehizo el commit
+  con un mensaje honesto que declara las tres cosas que incluye. Era local, sin pushear.
+- Se encontro una **feature #67** (`gratitude_flower_animation_fix`) registrada por otra
+  sesion de agente en paralelo, con nota de coordinacion: se implemento junto a la #66
+  porque la #66 ocupaba el unico slot `in_progress`. Al cerrarse la #66, la #67 queda libre
+  para pasar a `in_progress`.
+
+### Verificacion
+- `.\init.ps1`: 100% OK (entorno, feature_list.json valido, tests de ambos repos)
+- App: 12 suites, 91 tests. Backend: 13 suites, 168 tests
+- `npx tsc --noEmit`: limpio en App y en Backend
+- `node --check` del `blocks.js`: OK
+
+### Pendiente
+- **Comprobacion manual** del round-trip plugin -> backend -> app. Requiere WordPress con
+  datos reales y un dispositivo o emulador. Es el unico criterio de aceptacion sin verificar.
+- **`plugins/vittalmind-psicoeducacion.zip` desincronizado**: el trabajo esta en la carpeta
+  `plugins/vittalmind-psicoeducacion/`, el zip no se regenero. Rehacerlo antes de distribuir.
+- **Follow-up**: reproduccion embebida con `react-native-webview`. Solo requiere reescribir
+  `content-block-video.tsx`; `cuerpo_json`, el tipo de bloque, el plugin y el backend no cambian.
+- **Cambios sin commitear de sesiones anteriores** siguen en los 3 repos (no tocados):
+  `docs/architecture.md` y `docs/conventions.md` de la #63, el ZIP, `images/flor_naciente.svg`,
+  y en App/Backend el trabajo de gratitud (#67) y otros.
+
+
