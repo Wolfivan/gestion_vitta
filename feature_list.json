@@ -1116,6 +1116,85 @@
       ],
       "priority": "alta",
       "status": "done"
+    },
+    {
+      "id": 72,
+      "name": "sync_error_visible",
+      "title": "Cola de sincronizacion: mostrar el error real y el desglose por entidad",
+      "description": "Cuando la cola de escrituras offline no puede enviarse, el banner de la pantalla de Gratitud muestra 'N agradecimiento(s) pendiente(s)' y nada mas: ni que entidad es, ni por que falla, ni quantos intentos lleva. El fallo real se traga un 'catch {}' vacio en sync-manager.ts, asi que ni la app ni el usuario pueden saber que pasa. getPendingOpsCount() cuenta TODAS las filas de pending_ops sin filtrar por entidad, pero el texto dice 'agradecimientos', cuando timeline encola cuatro tipos de op distintos en la misma tabla: el numero puede no ser de gratitud. Esta feature NO cambia funcionalidad: solo hace visible lo que ya ocurria. No toca la logica de reintento, no anade timers, no descarta ops y no modifica la definicion de isOffline. Captura el ultimo fallo en estado de modulo y lo entrega por el canal que ya existe, y sustituye la etiqueta enganosa por un desglose por entidad. El texto delagradecimiento (payload) no se registra nunca en logs: es dato de salud mental. Base para la #73 (reintento indefinido en primer plano) y la #74 (guard de reachability), que hasta ahora no se podian verificar.",
+      "acceptance": [
+        "Frontend: sync-manager expone ISyncErrorInfo con entity, tipo, opId, attempts, message y at",
+        "Frontend: el catch del push deja de estar vacio y guarda el error en el estado de modulo lastFlushError",
+        "Frontend: getLastFlushError() devuelve el ultimo fallo y null cuando la cola se vacia o el flush termina bien",
+        "Frontend: getPendingOpsBreakdown() agrupa por entity y tipo devolviendo count y total de attempts, sin loguear el payload",
+        "Frontend: use-gratitude expone lastSyncError y pendingBreakdown refrescados en el mismo efecto que ya llama a getPendingOpsCount, sin anadir renders",
+        "Frontend: el banner de pendientes ya no dice 'agradecimiento(s) pendiente(s)': muestra el desglose por entidad, y con una sola entidad en singular",
+        "Frontend: cuando hay error se muestra su mensaje en el banner, de modo que un 401 o un servidor inalcanzable sean legibles en pantalla",
+        "Frontend: cuando no hay error ni cola pendiente el banner no se monta, igual que antes",
+        "Frontend: la lectura de pendingBreakdown es defensiva ante un payload de hook incompleto, para no romper el render",
+        "Frontend: NO se registra nunca el payload de una operacion (contiene texto deagradecimiento)",
+        "Frontend: no se anaden timers ni logica de reintento, no se descarta ninguna op y no se toca isOffline",
+        "Frontend: test nuevo de banner con desglose multiple, desglose singular, error visible y ausencia de error, reutilizando el mock de @/hooks del test de pantalla existente",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 73,
+      "name": "sync_queue_retry",
+      "title": "Cola de sincronizacion: reintento automatico con backoff y pausa sin sesion",
+      "description": "La #72 y la #74 dejaron la cola siempre explicada, pero nadie la mueve. Verificado por grep: en toda la App no hay ni un setTimeout, setInterval ni AppState fuera de api.ts, y flushPendingOps solo se llama desde use-gratitude.load(), use-timeline.loadEvents() y tras crear o borrar en los servicios. No existe ningun disparador a nivel de app. Eso produce dos agujeros distintos. El primero es el wedge clasico: con la red estable, un fallo transitorio deja la op en la cola y no hay NADA que la reintente hasta que el usuario vuelva a abrir una pantalla o cree otra entrada. El segundo es que useConnectivityListener esta exportado en use-connectivity.ts:58 pero no lo usa nadie, y por tanto una op encolada sin red no se sube al volver la red si el usuario no vuelve a abrir gratitud o timeline. Se anade un planificador en sync-manager que se arma siempre que la cola no este vacia, no solo tras un fallo, para cubrir los dos. Backoff 5s, 15s, 60s, 300s y 300s en adelante, indefinido, guionado por un contador de modulo que se resetea al vaciarse la cola: el contador va en memoria a proposito, la columna attempts de SQLite queda como dato de UI. Sin sesion no se intenta ni se programa nada, y cuando la sesion vuelve a levantarse se reanuda de inmediato. El invitado puede seguir usando la pantalla y sus entradas no se pierden: simplemente quedan en cola hasta que inicie sesion, y el motivo no-session lo dice en el banner para que el invariante de la #74 siga siendo cierto. AppState pausa el temporizador en background y hace flush inmediato al volver a active, de modo que solo hay polling con la app abierta. Ninguna op se descarta jams y no hay dead-letter, segun lo pedido. NO se toca setOnUnauthorized: es una ranura unica (api.ts:7) ya ocupada por use-auth.ts:248 y registrarse ahi pisaria el cierre de sesion. El puente de sesion se hace con setOnSessionChange dentro de setTokens, clearTokens y attemptRefresh, que son los unicos tres puntos donde cambian los tokens y que ya cubren el 401 permanente porque clearTokens se llama en api.ts:172 y api.ts:200. Dato que condiciona el diseno: getToken() en null NO significa sesion muerta, porque enterGuestMode en use-auth.ts:238 deja al invitado sin token y GratitudeCircle es accesible en la rama invitada de app-navigator.tsx:221.",
+      "acceptance": [
+        "Frontend: api.ts expone setOnSessionChange con varios listeners y lo dispara en setTokens, clearTokens y attemptRefresh, que son los tres unicos puntos donde cambian los tokens",
+        "Frontend: sync-manager NO usa setOnUnauthorized, porque es una ranura unica ya ocupada por use-auth.ts:248",
+        "Frontend: sync-manager tiene un contador de fallos consecutivos de modulo y un backoff 5s, 15s, 60s, 300s que se queda en 300s",
+        "Frontend: el planificador se arma siempre que la cola no este vacia, incluido el caso de una op encolada sin red, no solo tras un fallo de envio",
+        "Frontend: se cancela y resetea el contador en cuanto la cola se vacia",
+        "Frontend: solo hay un temporizador vivo, armar dos veces no duplica",
+        "Frontend: sin token no se intenta el envio ni se programa reintento, y el motivo que se expone es no-session",
+        "Frontend: al restablecerse la sesion, si la cola sigue sin vaciar, se hace flush inmediato sin esperar al backoff",
+        "Frontend: AppState pausa el temporizador en background y hace flush inmediato al volver a active, de modo que no hay polling con la app en segundo plano",
+        "Frontend: la salida por busy reprograma el reintento en vez de consumirlo, para que un flush manual en curso no se coma el turno del planificador",
+        "Frontend: la pantalla muestra el motivo no-session en el banner, para que el invariante de la #74 siga siendo cierto con pendientes y sin error ni otro motivo",
+        "Frontend: no se descarta ninguna op, no hay dead-letter y no se toca el esquema de pending_ops",
+        "Frontend: tests con timers falsos que cubren escalada del backoff, tope en 300s, cancelacion al vaciar, armado tras encolar sin red, pausa en background, reanudacion, no-session y reprogramacion en busy",
+        "Frontend: los tests limpian sus temporizadores al terminar, para no reintroducir el aviso de worker que se vio en la #74",
+        "Frontend: tsc --noEmit en App sin errores",
+        "Frontend: npm test en App pasa",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 74,
+      "name": "sync_reachability_guard",
+      "title": "Cola de sincronizacion: explicar siempre por que hay pendientes",
+      "description": "La #72 mostro el error cuando un envio se intenta y falla, pero dejo mudo el otro camino: hay cuatro salidas tempranas en flushPendingOps que devuelven sin fijar estado ni motivo, asi que la cola puede quedar pendiente SIN que nadie haya intentado subirla y el banner no dice nada. Con ConnectivityState solo isOffline, se descarto usar isInternetReachable como guard: no lo lee nadie en toda la app y, si NetInfo lo reporta false con la red en buen estado, suprimiria precisamente los envios que habrian funcionado, recreando el wedge que la #72 elimino. El valor real de esta feature es cerrar el silencio, no adivinar la red. Se anade un motivo NO-error, separado de lastFlushError a proposito: uno es 'se intento y fallo' y el otro 'no se intento'. Si coexisten, gana el error, porque un 401 real seguido de perder la red seguia siendo la causa verdadera de los pendientes. Invariante: pendingCount > 0 implica que el banner siempre dice por que. Sin timers, sin descartar ops, sin cambios en cuando se intenta subir y sin tocar isOffline. db y read son casi invisibles por diseno, porque pendingCount viene de la misma base de datos que fallo y getPendingOpsCount devuelve 0 al fallar, asi que el banner ni se monta; se incluyen para que el invariante se cumpla sin excepciones.",
+      "acceptance": [
+        "Frontend: sync-manager expone IQueueNotice con reason y at, y los motivos busy, offline, db y read",
+        "Frontend: lastQueueNotice es estado de modulo con su getter, separado de lastFlushError para no mezclar 'no se intento' con 'se intento y fallo'",
+        "Frontend: la salida por syncing ya en curso fija el motivo busy",
+        "Frontend: la salida por sin red fija el motivo offline",
+        "Frontend: la salida por base de datos no disponible fija el motivo db",
+        "Frontend: la salida por no poder leer la cola fija el motivo read",
+        "Frontend: db y read se registran en consola porque el usuario no puede verlos; offline y busy no, porque ya se ven en pantalla",
+        "Frontend: el motivo se limpia en cuanto el flush se compromete a intentar, para que no quede obsoleto junto a un error posterior",
+        "Frontend: si coexisten error y motivo, la pantalla muestra el error, porque un 401 previo sigue siendo la causa de los pendientes",
+        "Frontend: si hay pendientes y no hay ni error ni motivo, la pantalla muestra 'Pendiente de sincronizar' en vez de quedar muda",
+        "Frontend: use-gratitude expone queueNotice con el mismo patron getter que lastSyncError",
+        "Frontend: NO se modifica syncStatus en las salidas tempranas, para no suprimir la recarga que use-gratitude solo dispara cuando el estado es 'synced'",
+        "Frontend: no se anaden timers, no se descarta ninguna op, no se toca isOffline ni se usa isInternetReachable",
+        "Frontend: test del invariante, dado pendingCount > 0 existe alguna de las tres lineas, mas los casos de cada motivo, la precedencia del error y los cuatro motivos en sync-manager",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%"
+      ],
+      "priority": "alta",
+      "status": "done"
     }
   ]
 }

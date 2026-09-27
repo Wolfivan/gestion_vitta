@@ -54,6 +54,15 @@
 5. **Sin dependencias innecesarias.** Cada librería externa debe justificarse.
    Si una feature requiere una dependencia no prevista, se discute (blocked).
 
+6. **Paleta de colores única (design tokens).** Toda la interfaz gráfica debe
+   usar obligatoriamente la paleta definida en `App/src/constants/index.ts`
+   (`COLORS` + `PALETTE_TRIADAS`). Los colores **jamás** se escriben
+   hardcodeados en el código como hex/rgba literales: siempre se referencian
+   los tokens (`COLORS.primary`, `COLORS.scrim`, etc.). Cambiar o limitar los
+   colores de la app se hace exclusivamente desde ese archivo; un test de
+   guard (`App/__tests__/palette-guard.test.ts`) falla si aparece un color no
+   declarado en la paleta.
+
 ## Flujo de autenticación
 
 ```
@@ -75,3 +84,4 @@
   Única excepción: `GET/PUT /auth/me` (solo el propietario de la sesión).
 - No usar `console.log` para debug. Usar logger estructurado (pino/winston).
 - No almacenar el JWT en AsyncStorage (usar SecureStore o expo-secure-store).
+- No hardcodear colores en la UI (hex/rgba literales). Siempre usar los tokens de `App/src/constants/index.ts` (`COLORS`).
