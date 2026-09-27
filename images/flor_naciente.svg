@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <style>
+    .bg { fill: #ffffff; }
+    
+    /* Estilos base de la Matera */
+    .pot { fill: #e67e22; stroke: #d35400; stroke-width: 3; }
+    .pot-rim { fill: #f39c12; stroke: #d35400; stroke-width: 3; }
+    
+    /* Estilos base del Tallo */
+    .stem { 
+      stroke: #2ecc71; stroke-width: 4; 
+      stroke-linecap: round; fill: none; 
+      stroke-dasharray: 100; stroke-dashoffset: 100; /* Inicialmente invisible */
+    }
+    
+    /* Estilos base de la Flor */
+    .flower { 
+      transform-origin: 200px 170px; 
+      opacity: 0; /* Inicialmente invisible */
+    }
+    .petal { fill: #e74c3c; stroke: #c0392b; stroke-width: 1.5; }
+    .center-flower { fill: #f1c40f; }
+
+    /* === DEFINICIÓN DE ANIMACIONES (Keyframes) === */
+
+    /* 1.  2.  4. Animación de la Gota (hacerse pequeña, bajar y caer) */
+    @keyframes dropFall {
+      0% { transform: scale(1) translateY(0); opacity: 1; } /* Grande y arriba */
+      20% { transform: scale(0.2) translateY(0); opacity: 1; } /* Paso 1: Se hace pequeña arriba */
+      50% { transform: scale(0.2) translateY(550px); opacity: 1; } /* Paso 2 y 4: Cae sobre la maceta */
+      60% { transform: scale(0.2) translateY(230px); opacity: 0; } /* Desaparece al tocar */
+      100% { opacity: 0; }
+    }
+
+    /* 3. Animación de la Maceta (aparecer desde abajo y subir) */
+    @keyframes potRise {
+      0% { transform: translateY(150px); opacity: 0; } /* Comienza abajo y oculta */
+      30% { transform: translateY(150px); opacity: 0; } /* Espera a que la gota baje un poco */
+      50% { transform: translateY(0); opacity: 1; } /* Sube a su posición final */
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    /* 5. Animación del Tallo (brotar) */
+    @keyframes stemGrow {
+      0%, 50% { stroke-dashoffset: 100; } /* Oculto mientras cae la gota/sube maceta */
+      70% { stroke-dashoffset: 0; } /* Se dibuja el tallo */
+      100% { stroke-dashoffset: 0; }
+    }
+
+    /* 6. Animación de la Flor (florecer) */
+    @keyframes flowerBloom {
+      0%, 70% { transform: scale(0); opacity: 0; } /* Espera a que salga el tallo */
+      85% { transform: scale(1.1); opacity: 1; } /* Efecto rebote */
+      100% { transform: scale(1); opacity: 1; } /* Tamaño final */
+    }
+
+    /* === APLICACIÓN DE ANIMACIONES === */
+    
+    .seed {
+      /* Vinculamos la animación de la gota (duración total 6s, infinita) */
+      fill: #3498db;
+      animation: dropFall 6s ease-in-out infinite;
+      transform-origin: 200px 120px; /* Centro de la gota original */
+    }
+
+    .animated-pot {
+      /* Vinculamos la animación de la maceta */
+      animation: potRise 6s ease-in-out infinite;
+    }
+
+    .stem {
+      /* Vinculamos la animación del tallo */
+      animation: stemGrow 6s ease-in-out infinite;
+    }
+
+    .flower {
+      /* Vinculamos la animación de la flor */
+      animation: flowerBloom 6s ease-in-out infinite;
+    }
+  </style>
+
+  <!-- Fondo Blanco -->
+  <rect class="bg" width="400" height="400"/>
+
+  <!-- Grupo de la Maceta (se anima todo el grupo para subir) -->
+  <g class="animated-pot">
+    <!-- Cuerpo de la maceta -->
+    <path class="pot" d="M 160 250 L 180 340 L 220 340 L 240 250 Z" />
+    <!-- Borde de la maceta -->
+    <rect class="pot-rim" x="150" y="240" width="100" height="15" rx="4" />
+  </g>
+
+  <!-- Tallo (Oculto inicialmente, se dibuja de abajo hacia arriba) -->
+  <path class="stem" d="M 200 240 Q 200 205 200 170" />
+
+  <!-- Grupo de la Flor (Escala desde 0 en su centro) -->
+  <g class="flower">
+    <!-- Pétalos -->
+    <circle class="petal" cx="200" cy="145" r="14" />
+    <circle class="petal" cx="175" cy="170" r="14" />
+    <circle class="petal" cx="225" cy="170" r="14" />
+    <circle class="petal" cx="200" cy="195" r="14" />
+    <circle class="petal" cx="182" cy="152" r="14" />
+    <circle class="petal" cx="218" cy="152" r="14" />
+    <circle class="petal" cx="182" cy="188" r="14" />
+    <circle class="petal" cx="218" cy="188" r="14" />
+    <!-- Centro de la flor -->
+    <circle class="center-flower" cx="200" cy="170" r="10" />
+  </g>
+
+  <!-- La Gota / Circulo Azul (Se anima independientemente) -->
+  <circle class="seed" cx="200" cy="120" r="45" />
+
+</svg>
