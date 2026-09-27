@@ -11,7 +11,7 @@ VMP.categories = {
             var $tbody = $('#vmp-categories-list');
             if (r.success && r.data) {
                 if (r.data.length === 0) {
-                    $tbody.html('<tr><td colspan="7" style="text-align:center;color:#94a3b8">No hay categorías. Crea la primera.</td></tr>');
+                    $tbody.html('<tr><td colspan="8" style="text-align:center;color:#94a3b8">No hay categorías. Crea la primera.</td></tr>');
                     return;
                 }
                 var html = '';
@@ -19,6 +19,7 @@ VMP.categories = {
                     html += '<tr>';
                     html += '<td>' + c.id + '</td>';
                     html += '<td><strong>' + VMP.escHtml(c.titulo) + '</strong></td>';
+                    html += '<td class="vmp-icon-cell">' + (c.icono ? VMP.escHtml(c.icono) : '<span class="vmp-icon-empty">—</span>') + '</td>';
                     html += '<td><code>' + VMP.escHtml(c.slug) + '</code></td>';
                     html += '<td>' + VMP.escHtml(c.descripcion || '—') + '</td>';
                     html += '<td>' + (c.temasCount || 0) + '</td>';
@@ -31,7 +32,7 @@ VMP.categories = {
                 });
                 $tbody.html(html);
             } else {
-                $tbody.html('<tr><td colspan="7" style="text-align:center;color:#dc2626">Error: ' + VMP.escHtml(r.data || 'Sin respuesta') + '</td></tr>');
+                $tbody.html('<tr><td colspan="8" style="text-align:center;color:#dc2626">Error: ' + VMP.escHtml(r.data || 'Sin respuesta') + '</td></tr>');
             }
         });
     },
@@ -46,6 +47,10 @@ VMP.categories = {
         $form.find('[name="icono"]').val('');
         $form.find('[name="orden"]').val('0');
 
+        // Se monta después de los resets para que el grid arranque en "Sin
+        // icono" y no conserve la selección de la edición anterior.
+        var iconPicker = VMP.mountIconPicker($form);
+
         if (id) {
             VMP.api.get('/psychoeducation').done(function(r) {
                 if (r.success && r.data) {
@@ -55,8 +60,15 @@ VMP.categories = {
                         $form.find('[name="titulo"]').val(cat.titulo);
                         $form.find('[name="slug"]').val(cat.slug);
                         $form.find('[name="descripcion"]').val(cat.descripcion || '');
-                        $form.find('[name="icono"]').val(cat.icono || '');
                         $form.find('[name="orden"]').val(cat.orden);
+                        if (iconPicker) {
+                            // set() y no .val() a secas: además de escribir el
+                            // valor, marca la opción correspondiente y avisa si el
+                            // icono guardado no está en el catálogo.
+                            iconPicker.set(cat.icono || '');
+                        } else {
+                            $form.find('[name="icono"]').val(cat.icono || '');
+                        }
                     } else {
                         VMP.notice('Categoría no encontrada', 'error');
                     }
@@ -73,11 +85,17 @@ VMP.categories = {
     save: function() {
         var $form = $('#vmp-category-form-fields');
         var id = $form.find('[name="id"]').val();
+
+        // null y no undefined: "Sin icono" tiene que llegar al repositorio como
+        // NULL explícito. Con undefined, JSON.stringify omite la clave y el
+        // icono anterior se queda en la base de datos.
+        var icono = $form.find('[name="icono"]').val() || null;
+
         var data = {
             slug: $form.find('[name="slug"]').val(),
             titulo: $form.find('[name="titulo"]').val(),
             descripcion: $form.find('[name="descripcion"]').val() || undefined,
-            icono: $form.find('[name="icono"]').val() || undefined,
+            icono: icono,
             orden: parseInt($form.find('[name="orden"]').val()) || 0
         };
 

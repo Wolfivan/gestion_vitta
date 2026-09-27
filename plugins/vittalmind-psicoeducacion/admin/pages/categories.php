@@ -13,6 +13,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Título</th>
+                        <th>Icono</th>
                         <th>Slug</th>
                         <th>Descripción</th>
                         <th>Temas</th>
@@ -21,7 +22,7 @@
                     </tr>
                 </thead>
                 <tbody id="vmp-categories-list">
-                    <tr><td colspan="7" style="text-align:center;color:#94a3b8">Cargando...</td></tr>
+                    <tr><td colspan="8" style="text-align:center;color:#94a3b8">Cargando...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -45,8 +46,14 @@
             <textarea id="cat_descripcion" name="descripcion" rows="3"></textarea>
         </div>
         <div class="vmp-field">
-            <label for="cat_icono">Icono (emoji o identificador)</label>
-            <input type="text" id="cat_icono" name="icono" placeholder="ej: heart">
+            <label>Icono</label>
+            <div class="vmp-icon-head">
+                <div class="vmp-icon-preview" id="vmp-icon-preview" aria-hidden="true">📖</div>
+                <div class="vmp-help">Se muestra dentro de un círculo en la app. Elige uno de la lista.</div>
+            </div>
+            <input type="hidden" id="cat_icono" name="icono" value="">
+            <div class="vmp-icon-grid"></div>
+            <div class="vmp-icon-note"></div>
         </div>
         <div class="vmp-field">
             <label for="cat_orden">Orden</label>

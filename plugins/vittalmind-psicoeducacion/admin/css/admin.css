@@ -281,3 +281,129 @@
     opacity: 0.6;
     pointer-events: none;
 }
+
+/* Selector de iconos. El círculo del preview reproduce el tamaño real que ve
+   el usuario en la app (biblioteca-screen.tsx, 48x48 con border-radius 24),
+   para que la elección se pueda juzgar de un vistazo. */
+.vmp-icon-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.vmp-icon-head .vmp-help {
+    margin-top: 0;
+}
+
+.vmp-icon-preview {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    border-radius: 24px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.vmp-icon-preview.is-empty {
+    opacity: 0.45;
+}
+
+.vmp-icon-grid {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.vmp-icon-group + .vmp-icon-group {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.vmp-icon-group-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+    margin-bottom: 6px;
+}
+
+.vmp-icon-row {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+}
+
+.vmp-icon-opt {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-width: 0;
+    padding: 0;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vmp-icon-opt:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.vmp-icon-opt.selected {
+    background: #eff6ff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb;
+}
+
+/* Va fuera de los grupos, así que no puede heredar el ancho de la fila: sin
+   esto el width:100% + aspect-ratio de .vmp-icon-opt lo harían un cuadrado
+   de casi 500px. */
+.vmp-icon-none {
+    width: 40px;
+    height: 40px;
+    margin-top: 12px;
+    color: #94a3b8;
+}
+
+.vmp-icon-none.selected {
+    color: #2563eb;
+}
+
+.vmp-icon-note {
+    display: none;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #b45309;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+.vmp-icon-note.is-visible {
+    display: block;
+}
+
+.vmp-icon-cell {
+    text-align: center;
+    font-size: 18px;
+}
+
+.vmp-icon-cell .vmp-icon-empty {
+    color: #cbd5e1;
+}

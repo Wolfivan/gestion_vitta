@@ -74,6 +74,16 @@ class VMP_Admin {
         wp_enqueue_style('vmp-admin', VMP_PLUGIN_URL . 'admin/css/admin.css', [], VMP_VERSION);
         wp_enqueue_script('vmp-admin', VMP_PLUGIN_URL . 'admin/js/admin.js', ['jquery'], VMP_VERSION, true);
 
+        // El selector de iconos se carga en todas las pantallas porque el
+        // formulario de categoría se reutiliza, no porque hoy se use en todas.
+        wp_enqueue_script(
+            'vmp-icon-picker',
+            VMP_PLUGIN_URL . 'admin/js/icon-picker.js',
+            ['jquery', 'vmp-admin'],
+            VMP_VERSION,
+            true
+        );
+
         $screen = $_GET['page'] ?? '';
 
         $js_files = [
