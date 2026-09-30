@@ -24,6 +24,7 @@
 | `docs/conventions.md`        | Reglas de estilo, nombres, estructura                     | Antes de escribir código |
 | `docs/verification.md`       | Cómo verificar que tu trabajo funciona                    | Antes de declarar una tarea como `done` |
 | `docs/entorno-pruebas.md`    | Entorno Docker de pruebas (WordPress + plugin), credenciales y procedimiento end-to-end | Para probar contra WordPress antes de producción |
+| `docs/entornos-dev-produccion.md` | Qué está y qué NO está separado entre desarrollo y producción, trampas conocidas y procedimiento de release | **Antes de mergear a `main` o desplegar** |
 | `CHECKPOINTS.md`             | Criterios objetivos de "estado final correcto"            | Para auto-evaluarte |
 | `.claude/agents/`            | Definiciones de subagentes (líder, implementador, revisor) | Si orquestas trabajo |
 | `init.ps1` / `init.sh`       | Script de verificación multiplataforma                   | Antes de empezar y antes de cerrar |
