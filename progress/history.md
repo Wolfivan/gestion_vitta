@@ -2770,3 +2770,144 @@ oteStalled()\ suma un escalon por fallo y el
 - Ojo al medir: \consecutiveFailures\ es estado de **modulo**, asi que reiniciar la app lo
   pone a cero. Empezar la prueba con la app recien abierta hace que el primer reintento sea
   siempre el de 5s.
+---
+
+## 2026-10-07 — Fix: el teclado tapa el textbox del Círculo de Gratitud (#75)
+
+**Feature:** `fix_gratitude_keyboard` (id 75, done).
+
+Plan: (1) sustituir el `ScrollView` plano de `gratitude-circle-screen.tsx` por
+`KeyboardAwareScrollView` (react-native-keyboard-controller) con
+`keyboardShouldPersistTaps="handled"` y `bottomOffset`, (2) test guard que
+verifique el `KeyboardAwareScrollView`, (3) convertir la regla "un textbox nunca
+queda tapado por el teclado" en regla de repo (`docs/conventions.md` +
+`docs/architecture.md`), (4) `init.ps1` en verde y cierre.
+
+Causa verificada: es la única pantalla con `TextInput` que quedó con
+`ScrollView` de react-native tras la migración de la feature #40; el resto de
+formularios ya usan `KeyboardAwareScrollView`.
+
+### Hecho
+
+- `gratitude-circle-screen.tsx`: `ScrollView` → `KeyboardAwareScrollView` con
+  `keyboardShouldPersistTaps="handled"` y `bottomOffset={SPACING.lg * 3}`
+  (sitio para el botón "Agregar" bajo el caret).
+- `App/__tests__/gratitude-circle-screen.test.tsx`: 2 tests guard nuevos
+  (monta `KeyboardAwareScrollView` + `keyboardShouldPersistTaps`).
+- `docs/conventions.md`: nueva sección **Teclado** con la regla dura
+  ("un textbox nunca puede quedar tapado por el teclado") y el patrón
+  obligatorio; `docs/architecture.md`: regla añadida en "Qué NO hacer".
+- Verificación: `tsc --noEmit` limpio, `npm test` App 16 suites / 180 tests
+  (antes 178) e `init.ps1` al 100% (66 features, Backend + App).
+- Fix 100% JS: llega con el siguiente build EAS, sin cambios en `app.json`
+  ni prebuild. Verificación manual en dispositivo/emulador pendiente del usuario.
+
+## 2026-09-29 — Release v0.3.0: mergers a main + auditoría dev/prod
+
+**Feature:** release v0.3.0 (no es feature de `feature_list.json`, es release).
+
+Plan: (1) auditar que ningún dato de desarrollo se filtre a producción,
+(2) documentarlo, (3) mergear los 3 repos a `main`, (4) preparar la app.
+
+### Hecho
+
+- **Auditoría dev/prod** (resultado en `docs/entornos-dev-produccion.md`):
+  - `Backend/.env` apunta AL MISMO Supabase de producción (`db.utudxtykopnowmxijalv.supabase.co`)
+    con `NODE_ENV=development`. `npm run migrate` / `npm run dev` escriben en la BD real.
+  - `seed.ts` inserta `test@vittal.com` / `test1234` con login `local` válido, y `Dockerfile:29`
+    lo corre en cada arranque. **Añadida guarda:** `runSeed()` aborta con `NODE_ENV=production`.
+  - `.env` y `.env.production` no están en git → un merge jamás pisa la config del servidor.
+  - Google OAuth sin separación dev/prod (un solo proyecto `220224673708`).
+  - El panel de Hostinger es la fuente de verdad (`.env.production` local va atrasado).
+- **Backend** → `npm run build` OK (21 migraciones copiadas), `npm test` 183/183.
+  Commit `717962f` + guarda `5d46776`. Merge `desarrollo`→`main` (árbol idéntico, sin
+  conflictos). Push `main`. Working tree limpio.
+- **App** → `npm test` 178/178. Merge `desarrollo`→`main` (fast-forward).
+  - `app.json` version `0.2.0`→`0.3.0` (base: lo que hay en producción = main).
+  - `assets/splash-icon.png` era 1×1 (70 B, splash en blanco) → lienzo 1024×1024, icono ~54%
+    sobre `#fbf9f8`, compat `resizeMode: contain`. Commit `189990a`.
+  - Push `main` y `desarrollo` (quedan en el mismo commit, no divergen).
+    `buildNumber` 12 y `versionCode` 10 los sube `autoIncrement` durante el build.
+- **Raíz** → commit `9b12a59` (doc dev/prod + AGENTS.md). Fast-forward `development`→`main`.
+  Push ambos. `upgrade/expo-sdk-57` sigue divergida (pre-existente, sin tocar).
+- `init.ps1` → 100% verde (Node v24, tests Backend + App).
+
+### Pendiente (usuario)
+
+1. **Deploy Backend en Hostinger desde `main`** — borrar `dist/` antes, redeploy,
+   verificar `GET /gratitude/streak` con JWT. No seed, no Docker.
+2. **Builds EAS desde `App/main`** — `npx eas-cli build --platform android --profile production`
+   (.aab, subida manual a Play) y `.\eas-build-ios.ps1` (.ipa + `--auto-submit`,
+   *Submit for Review* manual). Necesita `npx eas-cli login`.
+3. **Commit del `autoIncrement`** en `App/app.json` después de cada build.
+4. Definir `APP_STORE_URL` real (hoy placeholder) y hostear la política de privacidad.
+5. Subir `APP_LATEST_VERSION` a `0.3.0` en Hostinger SOLO cuando las stores aprueben.
+6. Riesgo asumido: sin eliminación de cuenta in-app → posible rechazo de Apple (5.1.1(v)).
+
+---
+
+## 2026-10-07 — Fix: el botón de pánico tapa la pestaña Inicio (#76)
+
+**Feature:** `fix_panic_button_overlap` (id 76, done).
+
+Causa verificada: `panic-button.tsx` usa `bottom: 100` fijo, pero la tab bar
+mide `72 + insets.bottom` (y react-navigation le añade `paddingBottom:
+insets.bottom`), así que la fila de pestañas sube con la barra de navegación
+del sistema y con `insets.bottom > 28` (Android 3 botones ~48, iOS home
+indicator 34) el botón `[100,156]` solapa la pestaña Inicio (izquierda,
+`left: 20`). Con gestos (~24) no se ve — por eso solo lo reportan algunos
+usuarios. Edge-to-edge es forzado en Expo SDK 57.
+
+Plan: (1) `PanicButton` pasa a calcular `bottom = 100 + insets.bottom` con
+`useSafeAreaInsets` (arregla las 3 pantallas sin tocarlas), (2) tests con
+insets 48 y 0, (3) regla de safe area en `docs/conventions.md`, (4)
+`init.ps1` en verde y cierre.
+
+### Hecho
+
+- `panic-button.tsx`: `useSafeAreaInsets()` + `bottom: 100 + insets.bottom`
+  en los dos branches de render; `bottom: 100` eliminado del stylesheet.
+  Sin tocar `app-navigator.tsx`, `welcome-screen.tsx` ni
+  `psychoeducation-topic-screen.tsx` (mismo componente).
+- `App/__tests__/panic-button.test.tsx`: 3 tests nuevos — bottom 100 con
+  inset 0, bottom 148 con inset 48 (barra Android 3 botones) y guard de que
+  el hueco sobre la tab bar (72 + inset) es siempre 28px con insets
+  0/24/34/48. Los 2 tests existentes conservados.
+- `docs/conventions.md`: nueva sección **Safe area y elementos flotantes**
+  (offsets siempre sobre `insets`, nunca fijos).
+- Verificación: `tsc --noEmit` limpio, `npm test` App 16 suites / 183 tests
+  (antes 178), `init.ps1` al 100% (67 features). El aviso de worker en Jest
+  es preexistente (aparece también con las 15 suites de antes).
+- Pendiente del usuario: verificación manual en dispositivo con barra de
+  navegación (3 botones y gestos) y en iPhone con home indicator.
+
+---
+
+## 2026-10-07 — Feature #77 `ui_update_modal_buttons`
+
+**Feature:** `ui_update_modal_buttons` (id 77, done).
+**Hora de inicio:** ver git log de la sesión.
+**Plan breve:** agrandar los botones del modal de actualizar (recomendación de
+QA): `paddingVertical` 16 → 18 (píldora 52 → 56px), etiqueta de `FONT.labelMd`
+(14px/20/500) a nuevo token `FONT.labelLg` (16/20/600), test nuevo de estilo y
+callbacks. Scope: solo `update-modal.tsx` (decisión del usuario; no tocar
+info-dialog, confirm-dialog ni login-prompt).
+
+### Hecho
+
+- `constants/index.ts`: nuevo token `FONT.labelLg` (fontSize 16, lineHeight 20,
+  letterSpacing 0.01, fontWeight 600), alineado con el `Button` estándar de la
+  app (16/600).
+- `update-modal.tsx`: `buttonPrimary` y `buttonSecondary` con
+  `paddingVertical: 18` (píldora 52 → 56px); etiquetas de `FONT.labelMd` a
+  `FONT.labelLg`.
+- Test nuevo `App/__tests__/update-modal.test.tsx` (7 tests): render
+  obligatorio sin "Más tarde", render opcional con ambos botones, callbacks
+  `onUpdate`/`onLater`, y guards de estilo (`paddingVertical >= 18`,
+  `fontSize >= 16`, `fontWeight 600`, `fontSize != 14`). Helpers con
+  `StyleSheet.flatten` y subida por `parent` hasta el `TouchableOpacity` con
+  `onPress` (el match de `findAllByProps` puede caer en el host de RN).
+- Sin cambios en `info-dialog.tsx`, `confirm-dialog.tsx` ni
+  `login-prompt-modal.tsx` (scope acordado).
+- Verificación: `tsc --noEmit` limpio, `npm test` App 17 suites / 190 tests
+  (antes 183), `init.ps1` al 100% (68 features).

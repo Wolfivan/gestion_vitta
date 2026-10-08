@@ -85,3 +85,7 @@
 - No usar `console.log` para debug. Usar logger estructurado (pino/winston).
 - No almacenar el JWT en AsyncStorage (usar SecureStore o expo-secure-store).
 - No hardcodear colores en la UI (hex/rgba literales). Siempre usar los tokens de `App/src/constants/index.ts` (`COLORS`).
+- No dejar que el teclado tape un textbox: todo `TextInput` va dentro de un
+  `KeyboardAwareScrollView` / `KeyboardAvoidingView` de
+  `react-native-keyboard-controller`, nunca en un `ScrollView` de `react-native`.
+  Regla completa en `docs/conventions.md` (sección "Teclado").

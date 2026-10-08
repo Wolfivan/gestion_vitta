@@ -102,6 +102,47 @@ hacer el resto.
 - El test `App/__tests__/palette-guard.test.ts` falla si aparece un color no
   declarado en la paleta.
 
+## Teclado
+
+- **Un textbox nunca puede quedar tapado por el teclado.** Regla dura de UI:
+  si al enfocar un `TextInput` el teclado lo cubre, es un bug, no una molestia.
+- Todo `TextInput` se monta dentro de `KeyboardAwareScrollView` o
+  `KeyboardAvoidingView` de **`react-native-keyboard-controller`** (los dos ya
+  están en la app: `KeyboardProvider` en `App.tsx`, mock de Jest en
+  `App/jest.setup.ts`). Para formularios con scroll va `KeyboardAwareScrollView`
+  (ej. `change-password-screen.tsx`); cuando no hay scroll va
+  `KeyboardAvoidingView` de la misma librería (ej. `acertive-translate-screen.tsx`).
+- **Prohibido** el `ScrollView` de `react-native` como contenedor de un
+  `TextInput`, y prohibido el `KeyboardAvoidingView` de `react-native`: son la
+  causa de los fallos de teclado que ya se han corregido varias veces
+  (#37, #38, #39, #40 y #75).
+- Si el formulario tiene botones junto al input (envío, etc.), el scroll lleva
+  `keyboardShouldPersistTaps="handled"` para que un toque con el teclado abierto
+  funcione a la primera, y `bottomOffset` para dejar sitio al botón.
+- Cada pantalla con formulario lleva un test que verifica el
+  `KeyboardAwareScrollView` (guard anti-regresión), como
+  `App/__tests__/gratitude-circle-screen.test.tsx`.
+
+## Safe area y elementos flotantes
+
+- **Un elemento flotante (`position: absolute`) nunca se posiciona con un
+  offset fijo respecto al borde de la pantalla: los offsets se calculan sobre
+  `insets` de `react-native-safe-area-context`.** En Android edge-to-edge
+  (forzado desde Expo SDK 54 / targetSdk 35) `insets.bottom` es la altura de
+  la barra de navegación del sistema (≈48dp con 3 botones, ≈24dp con gestos)
+  y en iOS el home indicator (≈34pt): un `bottom` fijo funciona en unos
+  dispositivos y tapa contenido en otros.
+- Regla práctica: el offset fijo que se quiera usar es **la distancia por
+  encima de la barra**, no del borde físico. Se aplica como
+  `bottom: OFFSET + insets.bottom` (ej. `panic-button.tsx`).
+- Patrón relacionado: si un contenedor crece con el inset — la tab bar usa
+  `height: 72 + insets.bottom` (`app-navigator.tsx`) — cualquier elemento que
+  deba despejarla se mide contra `altura + insets.bottom`, nunca contra un
+  número hardcodeado elegido con inset cero.
+- Causa original de la regla: el botón de pánico con `bottom: 100` fijo
+  tapaba la pestaña Inicio en dispositivos con barra de navegación
+  (feature #76).
+
 ## Animaciones SVG con Reanimated
 
 Reglas para escalar o rotar elementos de `react-native-svg` desde

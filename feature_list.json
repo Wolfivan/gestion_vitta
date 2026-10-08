@@ -1195,6 +1195,64 @@
       ],
       "priority": "alta",
       "status": "done"
+    },
+    {
+      "id": 75,
+      "name": "fix_gratitude_keyboard",
+      "title": "Círculo de Gratitud: el teclado no tapa el textbox + regla de repo",
+      "description": "Al escribir en el textbox del Círculo de Gratitud el teclado lo tapa. Causa: gratitude-circle-screen.tsx era la única pantalla con TextInput que aún usaba un ScrollView plano de react-native, sin ningún manejo de teclado, aunque la app ya migró a react-native-keyboard-controller (feature #40). Se sustituye por KeyboardAwareScrollView con keyboardShouldPersistTaps='handled' (un toque en 'Agregar' con teclado abierto funciona a la primera) y bottomOffset para que el scroll deje visible también el botón. Además se convierte en regla de repo que un textbox nunca puede quedar tapado por el teclado, con su test guard, para que el fallo no se repita en pantallas futuras.",
+      "acceptance": [
+        "Frontend: gratitude-circle-screen.tsx usa KeyboardAwareScrollView de react-native-keyboard-controller en lugar del ScrollView de react-native",
+        "Frontend: el scroll tiene keyboardShouldPersistTaps='handled' y bottomOffset para que el input y el botón 'Agregar' queden visibles con el teclado abierto",
+        "Frontend: test en App/__tests__/gratitude-circle-screen.test.tsx que verifica que la pantalla monta KeyboardAwareScrollView con keyboardShouldPersistTaps='handled' (guard anti-regresión)",
+        "Docs: docs/conventions.md incluye la sección 'Teclado' con la regla de que un textbox nunca puede ser tapado por el teclado y el patrón obligatorio (react-native-keyboard-controller)",
+        "Docs: docs/architecture.md incluye la regla en 'Qué NO hacer'",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%",
+        "Hecho: implementado y verificado en esta sesión. tsc --noEmit limpio, npm test en App 16 suites / 180 tests en verde (2 tests nuevos de guard) e init.ps1 al 100% (66 features, Backend y App)"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 76,
+      "name": "fix_panic_button_overlap",
+      "title": "Botón de pánico: no tapa la pestaña Inicio con barra de navegación del sistema",
+      "description": "Usuarios con barra de navegación inferior del sistema ven el botón de pánico encima de la tab bar, tapando la pestaña Inicio. Causa raíz: panic-button.tsx usa bottom: 100 fijo, mientras la tab bar mide 72 + insets.bottom y su contenido se sube por el paddingBottom de insets (BottomTabBar.tsx). Con insets.bottom > 28 (Android 3 botones ~48, iOS home indicator 34) el botón [100,156] solapa la fila de pestañas [inset, inset+72], y al estar en left:20 cae sobre la primera pestaña. Con gestos Android (~24) no se ve, por eso solo lo reportan algunos usuarios. Fix: PanicButton calcula bottom = 100 + insets.bottom con useSafeAreaInsets, con lo que el hueco sobre la tab bar vuelve a ser 28px en cualquier dispositivo y las pantallas sin tab bar (welcome, psicoeducación) quedan siempre 100px sobre la barra del sistema. Regla añadida a docs/conventions.md: los elementos flotantes con position absolute se posicionan sobre insets, nunca con offsets fijos.",
+      "acceptance": [
+        "Frontend: panic-button.tsx usa useSafeAreaInsets y posiciona bottom = 100 + insets.bottom (sin bottom fijo en el stylesheet)",
+        "Frontend: con insets.bottom = 48 (barra Android de 3 botones) el botón queda en 148, por encima de la tab bar (72 + 48 = 120) con 28px de hueco",
+        "Frontend: con insets.bottom = 0 el botón queda en 100, igual que antes (sin regresión)",
+        "Frontend: welcome-screen y psychoeducation-topic-screen se corrigen sin tocar sus archivos (mismo componente)",
+        "Frontend: tests en App/__tests__/panic-button.test.tsx que verifican bottom con insets 48 y con insets 0, conservando los 2 tests existentes",
+        "Docs: docs/conventions.md incluye la regla de safe area para elementos flotantes (nunca offsets fijos)",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%",
+        "Hecho: implementado y verificado en esta sesión. tsc --noEmit limpio, npm test en App 16 suites / 183 tests en verde (3 tests nuevos: insets 0, insets 48 y guard de hueco 28px) e init.ps1 al 100% (67 features). El aviso 'worker process has failed to exit gracefully' es preexistente: aparece tambien con las 15 suites y los 178 tests de antes de esta feature"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 77,
+      "name": "ui_update_modal_buttons",
+      "title": "Modal de actualizar: botones más grandes para que la etiqueta no se vea pequeña",
+      "description": "Recomendación de QA sobre el modal de actualización (update-modal.tsx): los botones se ven muy pequeños en comparación con el texto y la etiqueta dentro del botón se ve rara. Causa: los botones usan paddingVertical 16 con FONT.labelMd (14px/20, w500) → píldora de 52px con etiqueta de 14px, mientras la descripción del diálogo es de 16px y el Button estándar de la app usa 16px/w600. Fix acotado al update-modal (alcance elegido por el usuario, sin tocar info-dialog/confirm-dialog/login-prompt): paddingVertical 18 (píldora 52 → 56px) y nuevo token FONT.labelLg (16/20/600) en constants/index.ts para las etiquetas de ambos botones.",
+      "acceptance": [
+        "Frontend: constants/index.ts define FONT.labelLg (fontSize 16, lineHeight 20, fontWeight 600)",
+        "Frontend: update-modal.tsx buttonPrimary y buttonSecondary usan paddingVertical 18 (píldora de 56px) en vez de 16",
+        "Frontend: las etiquetas 'Actualizar ahora' y 'Más tarde' usan FONT.labelLg en lugar de FONT.labelMd",
+        "Frontend: test nuevo App/__tests__/update-modal.test.tsx — render obligatorio (sin 'Más tarde') y opcional (con ambos), callbacks onUpdate/onLater, y guard de estilo con StyleSheet.flatten (paddingVertical >= 18, fontSize >= 16)",
+        "Sin cambios en info-dialog.tsx, confirm-dialog.tsx ni login-prompt-modal.tsx (scope acordado)",
+        "tsc --noEmit en App sin errores",
+        "npm test en App pasa",
+        "init.ps1 pasa al 100%",
+        "Hecho: implementado y verificado en esta sesión. tsc --noEmit limpio, npm test en App 17 suites / 190 tests en verde (7 tests nuevos en update-modal.test.tsx) e init.ps1 al 100% (68 features)"
+      ],
+      "priority": "media",
+      "status": "done"
     }
   ]
 }
