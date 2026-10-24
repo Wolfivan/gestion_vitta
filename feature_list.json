@@ -1253,6 +1253,46 @@
       ],
       "priority": "media",
       "status": "done"
+    },
+    {
+      "id": 78,
+      "name": "vulnerabilities_phase2_deps",
+      "title": "Vulnerabilidades FASE 2: brace-expansion, fast-uri, js-yaml (+ crítico shell-quote en App)",
+      "description": "Remediación de dependencias altas de docs/vulnerabilidades.md FASE 2: brace-expansion (CVE-2026-102278/102276 y aliases GHSA) en Backend y App, fast-uri (CVE-2026-84292 + GHSA de host confusion/SSR) en la cadena prod swagger-jsdoc→swagger-parser→ajv del Backend, js-yaml (CVE-2026-84375 maxTotalMergeKeys + GHSA omap) en 4.x y 3.x de ambos paquetes, más el crítico shell-quote (GHSA-pqg4-j6r4-53mv, command injection en quote()) detectado en App. Estrategia: npm update dentro de rango primero, overrides semver-específicos como respaldo (precedente proxy-addr FASE 1). Incluye cierre del pendiente de auditoría App de FASE 1 (fast-uri/undici ausentes).",
+      "acceptance": [
+        "Backend: brace-expansion >=1.1.21 y >=5.0.12, fast-uri >=3.1.8, js-yaml >=4.3.2 y >=3.15.2 verificados con npm ls",
+        "App: brace-expansion y js-yaml parcheados; shell-quote >=1.11.0; npm ls fast-uri undici vacío (cierra FASE 1)",
+        "npm audit en Backend y App sin hallazgos de brace-expansion, fast-uri, js-yaml ni shell-quote",
+        "tsc --noEmit sin errores en Backend y App",
+        "npm test en Backend y App pasa",
+        "Smoke test: el Backend arranca y genera /api-docs (swagger-jsdoc usa js-yaml/fast-uri en runtime)",
+        "init.ps1 pasa al 100%",
+        "docs/vulnerabilidades.md documenta FASE 2 ejecutada (versión antes/después por CVE)",
+        "Hecho: verificado en la sesion del 2026-10-08. Backend 14 suites/183 tests, App 17 suites/190 tests, tsc limpio en ambos, smoke swagger validado, init.ps1 al 100% (69 features). BOM previo en Backend/package.json que rompia el preset ts-jest de jest-resolve corregido como parte del Paso 0."
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 79,
+      "name": "vulnerabilities_rls_and_prod_audit",
+      "title": "Vulnerabilidades: RLS en Supabase + auditoría de dependencias de producción",
+      "description": "Cierre del pendiente crítico de docs/vulnerabilidades.md FASE 1a: la auditoría global en Supabase confirmó 12 tablas de public sin RLS (usuarios_auth, refresh_tokens, preguntas_seguridad, timeline_events, gratitude_entries, gratitude_streaks, usuario_progreso_psicoeducacion, profesionales, categorias_psicoeducacion, temas_psicoeducacion, contenidos_bloques y schema_migrations). Se cierra con la migración 022 (ENABLE RLS + REVOKE de grants a anon/authenticated + ALTER DEFAULT PRIVILEGES) y la 023 (search_path de update_updated_at_column). Seguro para el Backend: conecta como postgres (owner + BYPASSRLS). Además, cierre parcial de FASE 3 limitado a dependencias de PRODUCCIÓN: sincronizar Backend/package-lock.json con npm audit fix (express 4.22.3, qs 6.16.1, body-parser 1.20.9) para bajar npm audit --omit=dev de 4 a 1 (solo uuid, sin impacto real porque el Backend solo usa v4), y dejar Backend/package.json sin el reformateo/mojibake de una sesión anterior (solo quedan los overrides). Fuera de alcance: cadena jest 29→30, nodemon/chokidar/braces, browserslist, Expo/metro y el resto de hardening HTTP/auth.",
+      "acceptance": [
+        "Backend/src/database/migrations/022_enable_rls_public_tables.sql creado con RLS en las 12 tablas, REVOKE a anon/authenticated y SQL de verificación documentado",
+        "Backend/src/database/migrations/023_fix_function_search_path.sql creado con search_path fijo para update_updated_at_column",
+        "SQL aplicado manualmente en Supabase el 2026-10-24; las migraciones quedan idempotentes para el deploy",
+        "npm audit fix en Backend sincroniza package-lock.json; npm audit --omit=dev baja a 1 (solo uuid)",
+        "uuid@10 justificado en docs/vulnerabilidades.md (solo se usa v4, CVE v3/v5/v6 no aplica)",
+        "Backend/package.json sin mojibake ni reformateo: el diff contra HEAD son solo los overrides",
+        "tsc --noEmit sin errores y npm test pasa en Backend",
+        "init.ps1 pasa al 100%",
+        "Procedimiento de ejecución de la migración y auditoría RLS documentado en docs/vulnerabilidades.md y progress/current.md",
+        "Pendiente al cierre: verificar en Supabase (desde el dashboard) que las 12 tablas tienen rowsecurity=true y que anon/authenticated no tienen grants, y hacer el smoke del Backend tras el deploy",
+        "Hecho: verificado en la sesion del 2026-10-24. SQL aplicado en Supabase por el usuario; migraciones 022/023 creadas; npm audit --omit=dev 4->1 (uuid justificado); tsc limpio; Backend 14 suites/183 tests OK; init.ps1 100%."
+      ],
+      "priority": "alta",
+      "status": "done"
     }
   ]
 }

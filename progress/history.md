@@ -2911,3 +2911,87 @@ info-dialog, confirm-dialog ni login-prompt).
   `login-prompt-modal.tsx` (scope acordado).
 - Verificación: `tsc --noEmit` limpio, `npm test` App 17 suites / 190 tests
   (antes 183), `init.ps1` al 100% (68 features).
+
+
+---
+
+## Sesión 2026-10-07 22:14:09
+
+# Sesión actual
+
+> Este archivo se vacía al cerrar cada sesión y se mueve a history.md.
+> Mientras trabajas, **mantenlo actualizado en tiempo real**, no al final.
+
+## Estado de la sesión activa
+- Inicio: 2025-10-07
+- Rama: development
+- Feature en progreso: FASE 1 — Vulnerabilidades críticas (RLS + proxy-addr/CVE-2026-90711)
+
+## Trabajo actual
+### FASE 1 — Ejecutada (rama development, read-only+ajustes deps mínimos)
+- [x] Rama development verificada
+- [x] 1a) RLS: SQL verificación/auditoría + política mínima (solo service_role) documentados. Validación PostgREST planificada.
+- [x] 1b) trust proxy: NO existe en Backend/src (app.ts/index.ts). Vulnerabilidad latente si se habilita con notación incorrecta.
+- [x] Estratégia 1b: Opción A — overrides proxy-addr@^2.0.8 aplicada en Backend/package.json.
+- [x] 
+pm install --ignore-scripts en Backend ejecutado. Resuelto: proxy-addr@2.0.8 (express@4.22.2 actualizado vía override).
+- [x] TypeScript: Backend tsc --noEmit OK (sin errores). App tsc --noEmit OK (sin errores).
+- [x] App tests: 17 suites, 190/190 passing.
+- [ ] Backend tests: requieren ejecución con entorno/config adecuados (jest/ts-jest en entorno local) — fuera de alcance crítico de esta fase. No se modifican tests.
+- [x] Plan completo FASE 0 y FASE 1 documentados en docs/vulnerabilidades.md.
+
+## Cambios realizados
+- Backend/package.json: añadido overrides → "proxy-addr": "^2.0.8"
+- Backend/package-lock.json: actualizado por 
+pm install (resuelve proxy-addr@2.0.8)
+- docs/vulnerabilidades.md: añadido FASE 0 ejecutada + Plan de remediación completo
+- progress/current.md: actualizado
+
+## Resultados
+- Mitigación crítica CVE-2026-90711: aplicada vía override (sin cambios código). Verificado con 
+pm ls proxy-addr → 2.0.8.
+- Sin cambios de código en Backend/App (solo deps). Trust proxy no configurado.
+
+## Pendiente (RLS — BD)
+- Ejecutar SQL en Supabase (1a): verificar estado, habilitar RLS + política solo service_role, auditoría global. Requiere acceso a BD (fuera de repo Node).
+---
+## Sesion 2026-10-08 - Feature 78: Vulnerabilidades FASE 2 (+ shell-quote critico App)
+### Trabajo realizado
+- Paso 0: init.ps1 inicial FALLABA en Backend. Causa raiz: Backend/package.json tenia UTF-8 con BOM (escrito por una sesion anterior con PowerShell); jest-resolve (readPackageCached) fallaba en JSON.parse y producia el error aparente "Preset ts-jest not found". BOM eliminado (contenido intacto). Base verde: Backend 183 tests, App 190, init.ps1 100%.
+- Paso 1: npm update en Backend -> brace-expansion 1.1.21/5.0.12, fast-uri 3.1.8, js-yaml 4.3.2/3.15.2 (todo dentro de rango, sin overrides de paquetes objetivo).
+- Paso 2: override global "js-yaml": "^4.3.2" en Backend/package.json para eliminar js-yaml@3->argparse@1->sprintf-js (sin version parcheada publicada de sprintf-js; GHSA-hp3w-g68c-fv3c). El override anidado scoped no lo re-resolvia npm 11.12.1; la forma global si. Backend audit 42->37.
+- Paso 3: App - brace-expansion 1.1.21/5.0.12, js-yaml 4.3.2, shell-quote 1.9.0->1.12.0 (CRITICO GHSA-pqg4-j6r4-53mv resuelto). Igual override de js-yaml en App/package.json. Cierre de la auditoria pendiente de FASE 1: fast-uri/undici ausentes en App. App audit 72->67 (critical 0).
+- Paso 4: tsc --noEmit limpio (Backend+App), Backend 183 tests OK, App 190 OK, smoke swagger (generacion de spec 28 paths + SwaggerParser.validate con ajv+fast-uri+js-yaml) OK, init.ps1 100% (69 features).
+### Cambios realizados
+- Backend/package.json: overrides ampliados (proxy-addr ^2.0.8, js-yaml ^4.3.2). BOM eliminado.
+- Backend/package-lock.json y App/package-lock.json: actualizados.
+- App/package.json: nueva seccion overrides {js-yaml ^4.3.2}.
+- feature_list.json: feature 78 vulnerabilities_phase2_deps done.
+- docs/vulnerabilidades.md: seccion FASE 2 completa (inventario, pasos 0-4, estado final por paquete).
+### Pendiente (FASE 3)
+- Cadena jest 29->30 (upgrade mayor), nodemon/chokidar/braces, browserslist, body-parser/qs/express/uuid (Backend prod: 4 moderate; npm audit fix no-force deberia subir express 4.22.x), remanentes Expo/metro/@xmldom en App, y npm audit --omit=dev final.
+- RLS 1a en Supabase sigue pendiente (requiere acceso BD).
+---
+## Sesion 2026-10-24 - Feature 79: RLS Supabase + auditoria de produccion (FASE 1a cerrada, FASE 3 parcial)
+### Trabajo realizado
+- La auditoria global en el SQL Editor de Supabase confirmo 12 tablas de public sin RLS (no solo schema_migrations): usuarios_auth, refresh_tokens, preguntas_seguridad, timeline_events, gratitude_entries, gratitude_streaks, usuario_progreso_psicoeducacion, profesionales, categorias_psicoeducacion, temas_psicoeducacion, contenidos_bloques y schema_migrations.
+- Chequeo de seguridad antes de actuar: owner de todas las tablas = postgres; postgres y service_role tienen BYPASSRLS; authenticator no. Por tanto habilitar RLS no afecta al Backend (conexion directa como postgres).
+- El usuario ejecuto manualmente en Supabase (2026-10-24) el SQL de RLS + REVOKE + ALTER DEFAULT PRIVILEGES. Versionado como migraciones idempotentes 022_enable_rls_public_tables.sql y 023_fix_function_search_path.sql (esta ultima cierra el aviso "Function Search path mutable" de public.update_updated_at_column).
+- Backend: npm audit fix -> express 4.22.3, qs 6.16.1, body-parser 1.20.9. npm audit --omit=dev: 4 -> 1 (solo uuid, justificado: el Backend solo usa v4 y la CVE es v3/v5/v6 con buffer).
+- Backend/package.json restaurado desde HEAD (una sesion anterior lo habia reformateado con PowerShell y corrompido description con mojibake). Diff contra HEAD: solo los overrides proxy-addr ^2.0.8 y js-yaml ^4.3.2.
+### Verificacion
+- npx tsc --noEmit: sin errores.
+- npm test (Backend): 14 suites / 183 tests OK.
+- init.ps1: 100%.
+- No se ejecuto npm run migrate en local (Backend/.env apunta a la BD de produccion y el host Supabase solo resuelve IPv6; documentado).
+### Cambios realizados
+- Backend/src/database/migrations/022_enable_rls_public_tables.sql (nuevo).
+- Backend/src/database/migrations/023_fix_function_search_path.sql (nuevo).
+- Backend/package.json: solo overrides sobre HEAD (sin mojibake ni reformateo).
+- Backend/package-lock.json y App/package-lock.json: sincronizados.
+- docs/vulnerabilidades.md: secciones FASE 1a ejecutada y FASE 3 parcial.
+- feature_list.json: feature 79 done (con pendiente explicito de verificacion post-deploy).
+- Limpieza: fix.ps1 y fix2.py eliminados.
+### Pendiente
+- Post-deploy: verificar rowsecurity=true en las 12 tablas y 0 grants a anon/authenticated; smoke del Backend (health, login, gratitude/streak, timeline, psychoeducation).
+- FASE 3 restante: cadena jest 29->30, nodemon/chokidar/braces, browserslist, Expo/metro/@xmldom, hardening HTTP/auth, npm audit completo.
