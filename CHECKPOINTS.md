@@ -35,6 +35,9 @@
 - [ ] Cada módulo en `App/` tiene su test correspondiente.
 - [ ] Los tests usan datos reales o de prueba, no mocks del filesystem.
 - [ ] `npm test` en ambos proyectos muestra > 0 tests y todos verdes.
+- [ ] **Security & Quality**: `security-auditor` ejecutado sin bloqueantes CRITICAL/HIGH.
+- [ ] **Quality Gate**: `sonar-verifier` en PASS según `docs/quality-gate.md`.
+- [ ] **Seguridad de la información**: anonimato respetado, sin PII/secrets en logs, RLS revisado si aplica.
 
 ## C5 — La sesión se cerró bien
 

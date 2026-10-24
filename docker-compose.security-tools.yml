@@ -1,0 +1,34 @@
+services:
+  gitleaks:
+    image: zricethezav/gitleaks:v8.28.0
+    working_dir: /repo
+    volumes:
+      - ./:/repo:ro
+    command: ["detect", "--source=/repo", "--no-git", "--redact", "--exit-code", "1"]
+    profiles: ["scan"]
+
+  osv-scanner:
+    image: ghcr.io/google/osv-scanner:v2.2.3
+    working_dir: /repo
+    volumes:
+      - ./:/repo:ro
+    command: ["scan", "source", "-r", "/repo"]
+    profiles: ["scan"]
+
+  semgrep:
+    image: semgrep/semgrep:latest
+    working_dir: /repo
+    volumes:
+      - ./:/repo:ro
+    environment:
+      - SEMGREP_SEND_METRICS=off
+    command: ["semgrep", "scan", "--config=auto", "--error", "/repo"]
+    profiles: ["scan"]
+
+  trivy:
+    image: aquasec/trivy:0.66.0
+    working_dir: /repo
+    volumes:
+      - ./:/repo:ro
+    command: ["fs", "--scanners", "vuln,secret,misconfig", "--exit-code", "1", "--severity", "CRITICAL,HIGH", "/repo"]
+    profiles: ["scan"]

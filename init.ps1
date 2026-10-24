@@ -137,7 +137,45 @@ foreach ($dir in @('Backend', 'App')) {
   }
 }
 
-Write-Host "`n-- 6. Resumen ----------------------------------------------------"
+Write-Host "`n-- 6. Security & Quality (opcional) ------------------------------"
+
+# Security scan
+$secScript = ".\scripts\security-scan.ps1"
+if (Test-Path -LiteralPath $secScript) {
+  Write-Host "   -> Ejecutando security-scan..."
+  try {
+    & $secScript
+    if ($LASTEXITCODE -eq 0) {
+      ok "Security scan: OK"
+    } else {
+      warn "Security scan: bloqueantes o avisos detectados (ver arriba)"
+    }
+  } catch {
+    warn "Security scan no ejecutado: $_"
+  }
+} else {
+  warn "scripts/security-scan.ps1 no existe (omitido)"
+}
+
+# Quality check
+$qualScript = ".\scripts\quality-check.ps1"
+if (Test-Path -LiteralPath $qualScript) {
+  Write-Host "   -> Ejecutando quality-check..."
+  try {
+    & $qualScript
+    if ($LASTEXITCODE -eq 0) {
+      ok "Quality check: OK"
+    } else {
+      warn "Quality check: avisos detectados (ver arriba)"
+    }
+  } catch {
+    warn "Quality check no ejecutado: $_"
+  }
+} else {
+  warn "scripts/quality-check.ps1 no existe (omitido)"
+}
+
+Write-Host "`n-- 7. Resumen ----------------------------------------------------"
 
 if ($EXIT_CODE -eq 0) {
   ok "Entorno listo. Puedes empezar a trabajar."

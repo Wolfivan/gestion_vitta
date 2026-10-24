@@ -38,6 +38,11 @@
 - **Una sola feature a la vez.** No mezcles cambios de varias tareas en la misma sesión.
 - **No declares una tarea `done` sin pruebas verdes.** Ejecuta `.\init.ps1` (PowerShell) o `./init.sh` (Linux/macOS) y
   asegúrate de que el bloque de tests pasa al 100%.
+- **Seguridad y calidad obligatorias antes de `done`.** Antes de marcar una tarea como `done`, ejecuta:
+  - `security-auditor` (análisis estático, solo lectura). Ver `docs/security-guidelines.md`.
+  - `sonar-verifier` (Quality Gate). Ver `docs/quality-gate.md`. Si hay bloqueantes CRITICAL/HIGH → **NO marcar `done`**.
+  - Opcional pero recomendado: `.\scripts\security-scan.ps1` / `./scripts/security-scan.sh` y `.\scripts\quality-check.ps1` / `./scripts/quality-check.sh`.
+- **Privacidad y seguridad de la información.** Respetar anonimato (`id_anonimo`), minimizar datos, no loggear PII/secrets, revisar RLS si toca DB. Ver `docs/security-guidelines.md`.
 - **Documenta lo que haces** en `progress/current.md` mientras trabajas, no al final.
 - **Deja el repositorio limpio** antes de cerrar la sesión (ver §5).
 - **Si no sabes algo, busca en `docs/`** antes de inventarlo.
