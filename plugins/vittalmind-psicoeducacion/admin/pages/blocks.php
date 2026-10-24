@@ -51,7 +51,7 @@
         </div>
         <div class="vmp-field">
             <label for="blk_titulo">Título del bloque *</label>
-            <input type="text" id="blk_titulo" name="tituloBloque" required>
+            <input type="text" id="blk_titulo" name="tituloBloque" required maxlength="200">
         </div>
         <div class="vmp-field">
             <label for="blk_pilar">Pilar *</label>

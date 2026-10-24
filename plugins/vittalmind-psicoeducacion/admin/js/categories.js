@@ -7,7 +7,7 @@ if (categoryFormEl) categoryFormEl.remove();
 (function($) {
 VMP.categories = {
     loadList: function() {
-        VMP.api.get('/psychoeducation').done(function(r) {
+        VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
             var $tbody = $('#vmp-categories-list');
             if (r.success && r.data) {
                 if (r.data.length === 0) {
@@ -52,7 +52,7 @@ VMP.categories = {
         var iconPicker = VMP.mountIconPicker($form);
 
         if (id) {
-            VMP.api.get('/psychoeducation').done(function(r) {
+            VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
                 if (r.success && r.data) {
                     var cat = r.data.find(function(c) { return c.id === id; });
                     if (cat) {

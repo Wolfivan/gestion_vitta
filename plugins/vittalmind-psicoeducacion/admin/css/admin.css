@@ -217,6 +217,12 @@
     align-items: end;
 }
 
+/* La tabla comparativa genera una celda por columna, no una pareja
+   clave/valor: el numero de inputs varia segun las columnas definidas. */
+.vmp-item-row.vmp-tabla-fila {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) auto;
+}
+
 .vmp-item-row input,
 .vmp-item-row select {
     width: 100%;

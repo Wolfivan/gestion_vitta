@@ -46,7 +46,7 @@
         </div>
         <div class="vmp-field">
             <label for="top_titulo">Título *</label>
-            <input type="text" id="top_titulo" name="titulo" required>
+            <input type="text" id="top_titulo" name="titulo" required maxlength="150">
         </div>
         <div class="vmp-field">
             <label for="top_descripcion_breve">Descripción breve</label>
@@ -54,7 +54,7 @@
         </div>
         <div class="vmp-field">
             <label for="top_autor">Autor</label>
-            <input type="text" id="top_autor" name="autor" placeholder="Nombre del autor">
+            <input type="text" id="top_autor" name="autor" placeholder="Nombre del autor" maxlength="150">
         </div>
         <div class="vmp-field">
             <label for="top_orden">Orden</label>
