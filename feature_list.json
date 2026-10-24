@@ -1407,10 +1407,12 @@
         "Plugin: la tabla comparativa guarda columnas: string[] y filas con una clave normalizada por columna; al editar se reconstruyen todas las columnas",
         "VMP_VERSION subido a 1.0.8 y ZIP regenerado antes de publicar",
         "Backend: tsc limpio y 19 suites / 237 tests OK; App: 19 suites / 207 tests OK",
-        "Pendiente: prueba end-to-end en Docker (crear categoría, tema y tabla; editar sin perder columnas; slug duplicado devuelve 409)"
+        "Hecho: verificado en Docker (las categorías aparecen, incluida una recién creada sin contenido) y por API (categoría+tema+tabla 201, slug duplicado 409, valor largo 400, columnas completas al releer)",
+        "Hecho: release solo de psicoeducación en main (Backend 7456cd6; plugin v1.0.8 + ZIP en raíz 1aee456/3a2879d). No se mergearon las notificaciones",
+        "Pendiente operativo: desplegar en Hostinger (pull main, borrar dist, reiniciar) y subir el ZIP 1.0.8 al WordPress de producción"
       ],
       "priority": "alta",
-      "status": "in_progress"
+      "status": "done"
     }
   ]
 }
