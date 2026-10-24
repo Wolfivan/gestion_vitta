@@ -45,6 +45,21 @@ Para crear tu cuenta podemos recopilar:
   sistema operativo (huella dactilar o rostro). VittalMind **no**
   recopila ni almacena tus datos biométricos.
 
+### 1.5 Notificaciones push
+- Si activas las notificaciones, guardamos un **identificador de
+  dispositivo**, el **token de envío de Expo**, la plataforma (iOS o
+  Android), la **zona horaria** y tus **preferencias** (qué avisos quieres,
+  a qué hora y en qué horario de silencio).
+- El token de envío se asocia únicamente a tu `id_anonimo`, nunca a tu
+  nombre ni correo.
+- Las notificaciones **no incluyen** tu nombre, el contenido de tu diario,
+  tus entradas de gratitud ni información clínica. Solo contienen un texto
+  motivacional genérico y, si corresponde, la pantalla de la app que se
+  abrirá.
+- Puedes desactivar las notificaciones en cualquier momento desde la app o
+  desde los ajustes del sistema operativo. Al cerrar sesión, el
+  dispositivo se desvincula.
+
 ## 2. Cómo usamos tu información
 
 - Para autenticarte y mantener tu sesión activa.
@@ -57,6 +72,9 @@ Para crear tu cuenta podemos recopilar:
   a un proveedor de Inteligencia Artificial únicamente con el fin de
   generar una sugerencia de comunicación asertiva. Dicho texto se envía
   **sin tu identidad** asociada.
+- Para enviarte **recordatorios y mensajes de bienestar** que hayas
+  activado, a través del servicio de notificaciones push de Expo. Estos
+  envíos no contienen datos clínicos ni tu identidad.
 
 ## 3. Privacidad por diseño: patrón de anonimato
 

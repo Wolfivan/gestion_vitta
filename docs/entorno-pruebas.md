@@ -273,6 +273,39 @@ Para probar un bloque de psicoeducación de punta a punta:
 Para el contenido de psicoeducación en sí (tipos de bloque disponibles, formato
 del `cuerpo_json`, qué URLs se aceptan), ver `manuales/psicoeducacion-contenidos.md`.
 
+## Probar notificaciones push en local
+
+Sin un build nativo y credenciales FCM/APNs no se puede probar el envío real
+(Expo Go no soporta push desde SDK 53). Lo que **sí** se puede probar en local:
+
+1. **Plantillas desde WordPress:** activar el plugin *VittalMind Notificaciones*,
+   entrar con `test@vittal.com` (rol admin en el seed) y editar una plantilla.
+   El plugin llama a `GET/PUT /admin/notifications/templates`; la URL de la API
+   debe ser `http://api:3000` por la misma razón que el plugin de psicoeducación
+   (ver paso 6 del procedimiento anterior).
+2. **Tick interno:** con el Backend levantado y un `INTERNAL_NOTIFICATION_TOKEN`
+   propio definido en `Backend/.env` (y exportado en la shell):
+
+   ```bash
+   curl -X POST http://localhost:3000/internal/notifications/tick \
+     -H "X-Internal-Token: $INTERNAL_NOTIFICATION_TOKEN"
+   ```
+
+   Debe devolver contadores. Si devuelve `503 INTERNAL_TRIGGER_DISABLED`, falta
+   el token en el entorno del contenedor. Si devuelve `401`, el token no coincide.
+3. **Preferencias desde la app:** abrir Perfil → 🔔 Notificaciones. En emulador o
+   web el permiso aparece como `unsupported`/`undetermined`; los toggles igual
+   guardan contra la API.
+4. **Base de datos:**
+
+   ```bash
+   docker exec backend-db-1 psql -U postgres -d vittalmind -c \
+     "SELECT key, category, version, is_active FROM notification_templates ORDER BY key;"
+   ```
+
+Para el envío real, ver la sección «Preparación nativa (EAS)» de
+`docs/notifications.md`.
+
 ## Problemas conocidos
 
 Recopilados al revisar el entorno el 2026-09-26. Ninguno bloquea el trabajo.

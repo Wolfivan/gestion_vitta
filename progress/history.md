@@ -2995,3 +2995,33 @@ pm ls proxy-addr → 2.0.8.
 ### Pendiente
 - Post-deploy: verificar rowsecurity=true en las 12 tablas y 0 grants a anon/authenticated; smoke del Backend (health, login, gratitude/streak, timeline, psychoeducation).
 - FASE 3 restante: cadena jest 29->30, nodemon/chokidar/braces, browserslist, Expo/metro/@xmldom, hardening HTTP/auth, npm audit completo.
+---
+## Sesion 2026-10-24 - Features 80-85: sistema de notificaciones push
+
+### Trabajo realizado
+- Backend: motor reutilizable sobre Expo Push Service sin dependencias nuevas (fetch nativo). Migraciones 024 (5 tablas + indices + RLS) y 025 (plantillas gratitude, motivation, announcement). Dominios separados en notification-repository, notification-time, push-client, notification-service, notification-resolvers/* y notification-dispatcher.
+- Dispatcher con claim FOR UPDATE SKIP LOCKED, dedupe_key, reintentos, receipts (DeviceNotRegistered desactiva el token), purga y kill switch PUSH_ENABLED.
+- Endpoints: app (/notifications/devices, /notifications/preferences), interno (POST /internal/notifications/tick con X-Internal-Token timing-safe) y admin (/admin/notifications/templates).
+- index.ts arranca setInterval(...).unref() solo con NOTIFICATION_SCHEDULER=interval.
+- Frontend: expo-notifications y expo-device; notification-service (permisos, deviceId, canales Android, registro, baja, mapeo de preferencias, deep links), navigation-ref, hooks use-notifications/use-notification-preferences, SwitchRow y pantalla NotificationSettings; Perfil y App.tsx conectados; logout desvincula el dispositivo.
+- WordPress: plugin independiente plugins/vittalmind-notificaciones con prefijo VMPN_ (login JWT, proxy AJAX restringido a /admin/notifications/, listado y edicion de plantillas, guia de copy clinico).
+- Documentacion: docs/notifications.md, PRIVACY_POLICY.md 1.5 + uso en seccion 2, docs/entorno-pruebas.md (prueba local) y Backend/.env.example.
+
+### Verificacion
+- Backend: tsc --noEmit limpio; npm test -> 18 suites / 219 tests OK; npm run build OK (migraciones 001-025 copiadas a dist).
+- App: tsc --noEmit limpio; Jest -> 19 suites / 207 tests OK (avisos de PanicButton preexistentes).
+- init.ps1: 100%.
+- Gitleaks: 13 hallazgos, todos preexistentes (.env, DataConf/*.p8, graphify cache). El unico nuevo (token de ejemplo en docs/entorno-pruebas.md) se sustituyo por $INTERNAL_NOTIFICATION_TOKEN.
+- npm audit --omit=dev: Backend 1 moderate (uuid v3/v5/v6, no aplica: solo se usa v4); App 16 (7 moderate, 9 high) del toolchain Expo, preexistentes, sin fix no-breaking.
+- Quality-check: 3 avisos de revision (console/any/TODO y patrones peligrosos preexistentes), sin bloqueantes nuevos.
+
+### Decisiones
+- Scheduler por defecto endpoint (cron externo); interval opcional.
+- gratitude_reminder_enabled nace en FALSE (opt-in), con horario de silencio, ventana de 15 min, tope diario y dedupe.
+- Payload solo con templateKey, category, deepLink y data; nunca PII ni contenido clinico.
+
+### Pendiente / bloqueado
+- Prueba manual del envio real: requiere development build de EAS y credenciales FCM V1/APNs (Expo Go no soporta push desde SDK 53).
+- Configurar cron real, INTERNAL_NOTIFICATION_TOKEN y credenciales Expo en Hostinger antes de produccion.
+- Plugin de WordPress implementado pero sin prueba end-to-end manual.
+- No se tocaron los cambios en curso de psicoeducacion (panel admin) ni docs/vulneravilidades.md ni el zip del plugin.

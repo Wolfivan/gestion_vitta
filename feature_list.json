@@ -1293,6 +1293,124 @@
       ],
       "priority": "alta",
       "status": "done"
+    },
+    {
+      "id": 80,
+      "name": "push_notifications_backend_platform",
+      "title": "Notificaciones push: plataforma reutilizable en el Backend",
+      "description": "Motor de notificaciones push reutilizable sobre Expo Push Service, sin dependencias nuevas (fetch nativo). Separacion por dominios: dispositivos, preferencias, plantillas, jobs y entregas. Migraciones 024 (5 tablas + indices + RLS) y 025 (plantillas iniciales). Endpoints de app (/notifications/devices, /notifications/preferences), interno (/internal/notifications/tick con X-Internal-Token y comparacion timing-safe) y admin (/admin/notifications/templates). Dispatcher con claim FOR UPDATE SKIP LOCKED, dedupe_key, reintentos, receipts (DeviceNotRegistered desactiva el token), purga y kill switch PUSH_ENABLED. Generadores enchufables; el primero es el recordatorio diario de gratitud. Todo vinculado a id_anonimo y sin PII ni datos clinicos en el payload.",
+      "acceptance": [
+        "Migraciones 024/025 con notification_devices, notification_preferences, notification_templates, notification_jobs y notification_deliveries, indices y RLS",
+        "Repositorio y servicio cubren CRUD de dispositivos/preferencias, lectura de plantillas y claim atomico de jobs",
+        "POST /internal/notifications/tick exige X-Internal-Token; 503 si no esta configurado y 401 si no coincide",
+        "Dispatcher aplica ventana de 15 min, horario de silencio, tope diario, dedupe y reintentos",
+        "Receipts de Expo desactivan tokens DeviceNotRegistered",
+        "Payload push solo contiene templateKey, category, deepLink y data: nunca nombre, correo ni contenido clinico",
+        "tsc --noEmit limpio en Backend",
+        "Hecho: verificado en la sesion del 2026-10-24. Backend 18 suites / 219 tests OK."
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 81,
+      "name": "push_notifications_frontend",
+      "title": "Notificaciones push: ajustes y ciclo de vida en la app Expo",
+      "description": "Registro del dispositivo y preferencias desde la app. El permiso del sistema solo se pide con una accion explicita del usuario (nunca al arrancar). Pantalla Perfil > Notificaciones con interruptor general, toggles de gratitud/motivacion/avisos, hora del recordatorio, horario de silencio, estados de permiso bloqueado/no soportado y nota de privacidad. Deep link al tocar la notificacion. Re-registro al volver a primer plano. Logout desvincula el dispositivo (best effort). Configuracion de expo-notifications y POST_NOTIFICATIONS en app.json.",
+      "acceptance": [
+        "registerForPushNotifications no solicita permiso implicitamente; solo registra si ya esta concedido",
+        "Pantalla de ajustes permite activar permiso, cambiar toggles y horas, y explica el bloqueo del sistema",
+        "Los cambios se guardan contra PUT /notifications/preferences",
+        "Tocar una notificacion navega a la pantalla destino segun screen o deepLink",
+        "Logout llama a unregisterDevice antes de cerrar sesion",
+        "app.json declara el plugin expo-notifications y android.permission.POST_NOTIFICATIONS",
+        "tsc --noEmit limpio en App",
+        "Hecho: verificado en la sesion del 2026-10-24. App 19 suites / 207 tests OK (los avisos de PanicButton son preexistentes)."
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 82,
+      "name": "push_notifications_wordpress_plugin",
+      "title": "Notificaciones push: plugin de WordPress para editar plantillas",
+      "description": "Plugin independiente plugins/vittalmind-notificaciones con prefijo VMPN_ que replica el patron del plugin de psicoeducacion (JWT + proxy AJAX). Permite al psicologo iniciar sesion contra el backend, ver las plantillas y editar title, body, deepLink e isActive sin recompilar la app. El navegador nunca ve el JWT; el proxy solo acepta rutas que empiezan por /admin/notifications/ y verifica nonce y capability. Incluye guia de copy clinico (amable, sin culpa, sin datos clinicos).",
+      "acceptance": [
+        "Plugin con menu propio, pantalla de login, listado de plantillas, modal de edicion y pagina de configuracion",
+        "El proxy AJAX valida nonce, capability y prefijo /admin/notifications/",
+        "El login rechaza cuentas sin rol admin comprobando GET /admin/notifications/templates",
+        "Los textos se escapan antes de insertarse en el DOM",
+        "No colisiona con el plugin de psicoeducacion (prefijo VMPN_)",
+        "Hecho: verificado en la sesion del 2026-10-24. Falta prueba manual end-to-end con WordPress levantado."
+      ],
+      "priority": "media",
+      "status": "done"
+    },
+    {
+      "id": 83,
+      "name": "push_notifications_docs_privacy",
+      "title": "Notificaciones push: documentacion de operacion y privacidad",
+      "description": "Documentacion operativa en docs/notifications.md (principios, arquitectura, tablas, API, reglas del recordatorio, programacion por cron o interval, variables de entorno, preparacion EAS, privacidad y diagnostico). Seccion nueva en PRIVACY_POLICY.md (1.5 Notificaciones push y uso en la seccion 2) y procedimiento de prueba local en docs/entorno-pruebas.md.",
+      "acceptance": [
+        "docs/notifications.md describe arquitectura, API, reglas, programacion y extension",
+        "PRIVACY_POLICY.md declara que se guarda token/dispositivo/zona horaria y que no se envian datos clinicos",
+        "docs/entorno-pruebas.md explica como probar plantillas, tick interno y preferencias en local",
+        "Backend/.env.example documenta PUSH_ENABLED, PUSH_DAILY_CAP, EXPO_ACCESS_TOKEN, INTERNAL_NOTIFICATION_TOKEN, NOTIFICATION_SCHEDULER y NOTIFICATION_TICK_INTERVAL_MS",
+        "Hecho: verificado en la sesion del 2026-10-24."
+      ],
+      "priority": "media",
+      "status": "done"
+    },
+    {
+      "id": 84,
+      "name": "push_notifications_scheduler_deploy",
+      "title": "Notificaciones push: programacion del tick (cron externo o interval)",
+      "description": "Dos modos de disparo del motor: endpoint (por defecto; un cron de Hostinger/VPS llama a POST /internal/notifications/tick con X-Internal-Token) e interval (setInterval(...).unref() dentro de Node, controlado por NOTIFICATION_SCHEDULER y NOTIFICATION_TICK_INTERVAL_MS). El tick es idempotente: dedupe_key, FOR UPDATE SKIP LOCKED y flag isRunning evitan duplicados aunque corran varios disparadores.",
+      "acceptance": [
+        "NOTIFICATION_SCHEDULER=endpoint no arranca ningun temporizador",
+        "NOTIFICATION_SCHEDULER=interval arranca un setInterval con unref y respeta NOTIFICATION_TICK_INTERVAL_MS",
+        "El endpoint interno responde 503 si INTERNAL_NOTIFICATION_TOKEN esta vacio",
+        "Dos ticks simultaneos no duplican jobs ni envios",
+        "Ejemplo de cron y advertencias de multiples instancias documentados en docs/notifications.md",
+        "Hecho: verificado en la sesion del 2026-10-24.",
+        "Pendiente operativo: configurar el cron real y INTERNAL_NOTIFICATION_TOKEN en Hostinger, y las credenciales FCM V1/APNs en EAS antes de produccion"
+      ],
+      "priority": "media",
+      "status": "done"
+    },
+    {
+      "id": 85,
+      "name": "push_notifications_tests",
+      "title": "Notificaciones push: pruebas automatizadas de backend y frontend",
+      "description": "Cobertura de las piezas criticas sin red ni base real. Backend: reglas horarias y de ventana, resolucion del recordatorio de gratitud, dispatcher (kill switch, claim, reintentos, receipts, purga) y contrato de los endpoints (auth interno timing-safe, validacion de tokens y preferencias). Frontend: utilidades del servicio de notificaciones (mapeo de preferencias, token de dispositivo, permiso no implicito, deep links) y pantalla de ajustes (toggles, horas, estados de permiso).",
+      "acceptance": [
+        "Backend: tests/notifications.test.ts, notification-time.test.ts, notification-gratitude-resolver.test.ts y notification-dispatcher.test.ts",
+        "Frontend: notification-service.test.ts y notification-settings-screen.test.tsx",
+        "Ninguna prueba hace llamadas reales a Expo, al backend ni a la base",
+        "Backend: 18 suites / 219 tests OK; App: 19 suites / 207 tests OK",
+        "Hecho: verificado en la sesion del 2026-10-24."
+      ],
+      "priority": "media",
+      "status": "done"
+    },
+    {
+      "id": 86,
+      "name": "psicoeducacion_admin_y_tabla_comparativa",
+      "title": "Psicoeducación: desbloquear el panel de WordPress y arreglar la TABLA_COMPARATIVA",
+      "description": "El panel de WordPress no permitía crear contenido: las categorías y temas recién creados no aparecían (las consultas públicas filtran con HAVING COUNT(b.id) > 0) y los errores de Postgres (slug duplicado, valor demasiado largo) se devolvían como 500 Internal server error. Además, los bloques TABLA_COMPARATIVA se guardaban como pares clave/valor y la App los renderizaba como bandas en vez de columnas. Fase A: lecturas de admin separadas (sin HAVING), rutas GET /psychoeducation/admin/*, validación de categoría por id al crear tema y traducción de errores de Postgres en el error handler. Fase B: el editor de tablas genera una celda por columna, normaliza las claves igual que App/src/components/content-block-table.tsx y reconstruye todas las columnas al editar.",
+      "acceptance": [
+        "Backend: findAllCategoriesForAdmin, findCategoryBySlugForAdmin, findTopicsByCategoryForAdmin, findCategoryById y findTopicByIdForAdmin sin HAVING; las consultas públicas de la App se mantienen igual",
+        "Backend: GET /psychoeducation/admin/categories, /admin/categories/:slug y /admin/topics/:id con authMiddleware + adminMiddleware, registradas antes de /psychoeducation/:slug/:temaId",
+        "Backend: createTopic valida la categoría por id, de modo que el primer tema de una categoría vacía se crea con 201",
+        "Backend: error handler mapea 23505 a 409 CONFLICT, 22001 a 400 VALUE_TOO_LONG y 23503 a 400 INVALID_REFERENCE; el resto sigue en 500",
+        "Plugin: las pantallas usan los endpoints de admin y muestran el mensaje de error del backend",
+        "Plugin: la tabla comparativa guarda columnas: string[] y filas con una clave normalizada por columna; al editar se reconstruyen todas las columnas",
+        "VMP_VERSION subido a 1.0.8 y ZIP regenerado antes de publicar",
+        "Backend: tsc limpio y 19 suites / 237 tests OK; App: 19 suites / 207 tests OK",
+        "Pendiente: prueba end-to-end en Docker (crear categoría, tema y tabla; editar sin perder columnas; slug duplicado devuelve 409)"
+      ],
+      "priority": "alta",
+      "status": "in_progress"
     }
   ]
 }
