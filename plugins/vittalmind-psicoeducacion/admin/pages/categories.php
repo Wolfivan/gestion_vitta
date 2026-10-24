@@ -34,11 +34,11 @@
         <input type="hidden" name="id" value="">
         <div class="vmp-field">
             <label for="cat_titulo">Título *</label>
-            <input type="text" id="cat_titulo" name="titulo" required>
+            <input type="text" id="cat_titulo" name="titulo" required maxlength="100">
         </div>
         <div class="vmp-field">
             <label for="cat_slug">Slug *</label>
-            <input type="text" id="cat_slug" name="slug" required pattern="[a-z0-9-]+">
+            <input type="text" id="cat_slug" name="slug" required pattern="[a-z0-9-]+" maxlength="50">
             <div class="vmp-help">Solo letras minúsculas, números y guiones. Ej: <code>relaciones-pareja</code></div>
         </div>
         <div class="vmp-field">

@@ -10,7 +10,7 @@ VMP.blocks = {
 
     loadCategories: function() {
         var self = this;
-        VMP.api.get('/psychoeducation').done(function(r) {
+        VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
             if (r.success && r.data) {
                 self.categories = r.data;
                 var $filter = $('#vmp-block-filter-cat');
@@ -41,7 +41,7 @@ VMP.blocks = {
         }
 
         if (!catId) {
-            VMP.api.get('/psychoeducation').done(function(r) {
+            VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
                 if (!r.success || !r.data) {
                     done();
                     return;
@@ -52,7 +52,7 @@ VMP.blocks = {
                 }
                 var total = 0;
                 r.data.forEach(function(cat) {
-                    VMP.api.get('/psychoeducation/' + cat.slug).done(function(d) {
+                    VMP.api.get('/psychoeducation/admin/categories/' + cat.slug).done(function(d) {
                         if (d.success && d.data && d.data.temas) {
                             d.data.temas.forEach(function(t) {
                                 var label = VMP.escHtml(cat.titulo) + ' — ' + VMP.escHtml(t.titulo);
@@ -68,7 +68,7 @@ VMP.blocks = {
         } else {
             var cat = this.categories.find(function(c) { return c.id == catId; });
             if (cat) {
-                VMP.api.get('/psychoeducation/' + cat.slug).done(function(d) {
+                VMP.api.get('/psychoeducation/admin/categories/' + cat.slug).done(function(d) {
                     if (d.success && d.data && d.data.temas) {
                         d.data.temas.forEach(function(t) {
                             topicOptions += '<option value="' + t.id + '">' + VMP.escHtml(t.titulo) + '</option>';
@@ -89,7 +89,7 @@ VMP.blocks = {
         $tbody.html('<tr><td colspan="7" style="text-align:center;color:#94a3b8">Cargando...</td></tr>');
 
         var self = this;
-        VMP.api.get('/psychoeducation').done(function(r) {
+        VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
             if (!r.success || !r.data) {
                 $tbody.html('<tr><td colspan="7" style="color:#dc2626">Error al cargar</td></tr>');
                 return;
@@ -107,7 +107,7 @@ VMP.blocks = {
             }
 
             r.data.forEach(function(cat) {
-                VMP.api.get('/psychoeducation/' + cat.slug).done(function(d) {
+                VMP.api.get('/psychoeducation/admin/categories/' + cat.slug).done(function(d) {
                     var temas = (d.success && d.data && d.data.temas) ? d.data.temas : [];
                     var tdone = 0;
 
@@ -122,7 +122,7 @@ VMP.blocks = {
                         }
                         var topicLabel = VMP.escHtml(cat.titulo) + ' / ' + VMP.escHtml(t.titulo);
 
-                        VMP.api.get('/psychoeducation/' + cat.slug + '/' + t.id).done(function(b) {
+                        VMP.api.get('/psychoeducation/admin/topics/' + t.id).done(function(b) {
                             if (b.success && b.data && b.data.bloques) {
                                 b.data.bloques.forEach(function(blk) {
                                     var pilarClass = 'vmp-badge-conciencia';
@@ -192,6 +192,9 @@ VMP.blocks = {
                     $(this).closest('.vmp-item-row').remove();
                 }
             });
+            if (tipo === 'TABLA_COMPARATIVA') {
+                this.bindTablaEvents();
+            }
         }
     },
 
@@ -214,16 +217,119 @@ VMP.blocks = {
         return '<div class="vmp-field">' +
             '<label>Columnas (separadas por coma)</label>' +
             '<input type="text" id="vmp-tabla-columnas" placeholder="Ej: Estilo, Conductas típicas, Mensaje">' +
+            '<button type="button" class="button" id="vmp-tabla-aplicar" style="margin-top:8px">Aplicar columnas</button>' +
+            '<p class="vmp-help">Cada fila tiene un campo por columna. Al aplicar las columnas se conserva lo que ya hayas escrito. ' +
+            'Las tablas guardadas con el formato antiguo (clave/valor) solo conservan la primera columna: vuelve a escribir el resto.</p>' +
             '</div><div class="vmp-field"><label>Filas</label>' +
-            '<div class="vmp-items-list" id="vmp-tabla-filas-list">' +
-            '<div class="vmp-item-row vmp-item-proto" style="display:none">' +
-            '<input type="text" placeholder="Clave" class="vmp-fila-key">' +
-            '<input type="text" placeholder="Valor" class="vmp-fila-val">' +
-            '<button class="vmp-remove-item">Eliminar</button></div>' +
-            '<div class="vmp-item-row"><input type="text" placeholder="Clave" class="vmp-fila-key">' +
-            '<input type="text" placeholder="Valor" class="vmp-fila-val">' +
-            '<button class="vmp-remove-item">Eliminar</button></div>' +
-            '</div><button class="button vmp-add-item" style="margin-top:8px">+ Agregar fila</button></div>';
+            '<div class="vmp-items-list" id="vmp-tabla-filas-list"></div>' +
+            '<button type="button" class="button" id="vmp-tabla-add-fila" style="margin-top:8px">+ Agregar fila</button>' +
+            '<p class="vmp-help" id="vmp-tabla-empty" style="display:none">Escribe las columnas y pulsa "Aplicar columnas" para empezar.</p></div>';
+    },
+
+    // Misma normalizacion que App/src/components/content-block-table.tsx. Las
+    // claves de cada fila se guardan normalizadas para que la App encuentre la
+    // celda por nombre de columna aunque el usuario escriba acentos o espacios.
+    normalizeKey: function(s) {
+        return (s || '')
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, '');
+    },
+
+    getCellValue: function(fila, columna) {
+        if (fila[columna] !== undefined && fila[columna] !== '') return fila[columna];
+        var norm = this.normalizeKey(columna);
+        var keys = Object.keys(fila);
+        for (var i = 0; i < keys.length; i++) {
+            if (this.normalizeKey(keys[i]) === norm && fila[keys[i]] !== '') return fila[keys[i]];
+        }
+        return '';
+    },
+
+    getTableColumns: function() {
+        return ($('#vmp-tabla-columnas').val() || '').split(',')
+            .map(function(s) { return s.trim(); })
+            .filter(Boolean);
+    },
+
+    buildTablaRow: function(columns, fila) {
+        var self = this;
+        var $row = $('<div class="vmp-item-row vmp-tabla-fila"></div>');
+        columns.forEach(function(col) {
+            $('<input type="text" class="vmp-tabla-cell">')
+                .attr('data-col', self.normalizeKey(col))
+                .attr('placeholder', col)
+                .val(self.getCellValue(fila || {}, col))
+                .appendTo($row);
+        });
+        if (columns.length === 0) {
+            $('<span class="vmp-help">Sin columnas todavía.</span>').appendTo($row);
+        }
+        $('<button type="button" class="vmp-remove-item">Eliminar</button>').appendTo($row);
+        return $row;
+    },
+
+    renderTablaRows: function(columns, filas) {
+        var self = this;
+        var $list = $('#vmp-tabla-filas-list');
+        if (!$list.length) return;
+        $list.empty();
+        var rows = (filas && filas.length) ? filas : [{}];
+        rows.forEach(function(fila) {
+            $list.append(self.buildTablaRow(columns, fila));
+        });
+        this.bindTablaRowEvents();
+        $('#vmp-tabla-empty').toggle(columns.length === 0);
+    },
+
+    bindTablaRowEvents: function() {
+        $('#vmp-tabla-filas-list .vmp-tabla-fila .vmp-remove-item').off('click').on('click', function() {
+            var $rows = $('#vmp-tabla-filas-list .vmp-tabla-fila');
+            if ($rows.length > 1) {
+                $(this).closest('.vmp-tabla-fila').remove();
+            } else {
+                $(this).closest('.vmp-tabla-fila').find('input').val('');
+            }
+        });
+    },
+
+    collectTablaRows: function() {
+        var rows = [];
+        $('#vmp-tabla-filas-list .vmp-tabla-fila').each(function() {
+            var row = {};
+            $(this).find('.vmp-tabla-cell').each(function() {
+                var key = $(this).attr('data-col');
+                if (key) row[key] = $(this).val();
+            });
+            rows.push(row);
+        });
+        return rows;
+    },
+
+    bindTablaEvents: function() {
+        var self = this;
+        $('#vmp-tabla-aplicar').off('click').on('click', function(e) {
+            e.preventDefault();
+            var columns = self.getTableColumns();
+            if (columns.length === 0) {
+                VMP.notice('Escribe al menos una columna.', 'error');
+                return;
+            }
+            self.renderTablaRows(columns, self.collectTablaRows());
+        });
+        $('#vmp-tabla-add-fila').off('click').on('click', function(e) {
+            e.preventDefault();
+            var columns = self.getTableColumns();
+            if (columns.length === 0) {
+                VMP.notice('Escribe las columnas y pulsa "Aplicar columnas" primero.', 'error');
+                return;
+            }
+            $('#vmp-tabla-filas-list').append(self.buildTablaRow(columns, {}));
+            self.bindTablaRowEvents();
+        });
+        this.bindTablaRowEvents();
     },
 
     renderCuestionarioFields: function() {
@@ -324,17 +430,20 @@ VMP.blocks = {
                 break;
 
             case 'TABLA_COMPARATIVA':
-                var cols = $('#vmp-tabla-columnas').val().split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+                var self = this;
+                var cols = this.getTableColumns();
                 json.columnas = cols;
                 json.filas = [];
-                $('#vmp-tabla-filas-list .vmp-item-row:not(.vmp-item-proto)').each(function() {
-                    var key = $(this).find('.vmp-fila-key').val();
-                    var val = $(this).find('.vmp-fila-val').val();
-                    if (key && val) {
-                        var row = {};
-                        row[key] = val;
-                        json.filas.push(row);
-                    }
+                this.collectTablaRows().forEach(function(row) {
+                    var out = {};
+                    var hasValue = false;
+                    cols.forEach(function(col) {
+                        var key = self.normalizeKey(col);
+                        var value = row[key] !== undefined ? row[key] : '';
+                        out[key] = value;
+                        if (value) hasValue = true;
+                    });
+                    if (hasValue) json.filas.push(out);
                 });
                 break;
 
@@ -425,21 +534,9 @@ VMP.blocks = {
                 break;
 
             case 'TABLA_COMPARATIVA':
-                if (json.columnas) $('#vmp-tabla-columnas').val(json.columnas.join(', '));
-                if (json.filas) {
-                    var $tlist = $('#vmp-tabla-filas-list');
-                    $tlist.find('.vmp-item-row:not(.vmp-item-proto)').remove();
-                    json.filas.forEach(function(f) {
-                        var $row = $tlist.find('.vmp-item-proto').clone().removeClass('vmp-item-proto').css('display', '');
-                        var keys = Object.keys(f);
-                        if (keys.length > 0) {
-                            $row.find('.vmp-fila-key').val(keys[0]);
-                            $row.find('.vmp-fila-val').val(f[keys[0]]);
-                        }
-                        $tlist.append($row);
-                        $row.find('.vmp-remove-item').on('click', function() { $(this).closest('.vmp-item-row').remove(); });
-                    });
-                }
+                var tablaCols = json.columnas || [];
+                if (tablaCols.length) $('#vmp-tabla-columnas').val(tablaCols.join(', '));
+                this.renderTablaRows(tablaCols, json.filas || [{}]);
                 break;
 
             case 'CUESTIONARIO':
@@ -529,7 +626,7 @@ VMP.blocks = {
             return;
         }
 
-        VMP.api.get('/psychoeducation').done(function(r) {
+        VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
             if (r.success && r.data) {
                 var idx = 0;
                 function findBlock() {
@@ -538,13 +635,13 @@ VMP.blocks = {
                         return;
                     }
                     var cat = r.data[idx];
-                    VMP.api.get('/psychoeducation/' + cat.slug).done(function(d) {
+                    VMP.api.get('/psychoeducation/admin/categories/' + cat.slug).done(function(d) {
                         if (d.success && d.data && d.data.temas) {
                             var tIdx = 0;
                             function searchTopics() {
                                 if (tIdx >= d.data.temas.length) { idx++; findBlock(); return; }
                                 var t = d.data.temas[tIdx];
-                                VMP.api.get('/psychoeducation/' + cat.slug + '/' + t.id).done(function(b) {
+                                VMP.api.get('/psychoeducation/admin/topics/' + t.id).done(function(b) {
                                     if (b.success && b.data && b.data.bloques) {
                                         var blk = b.data.bloques.find(function(x) { return x.id === id; });
                                         if (blk) {

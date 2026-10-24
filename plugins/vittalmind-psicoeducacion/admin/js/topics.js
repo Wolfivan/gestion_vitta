@@ -10,7 +10,7 @@ VMP.topics = {
 
     loadCategories: function(callback) {
         var self = this;
-        VMP.api.get('/psychoeducation').done(function(r) {
+        VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
             if (r.success && r.data) {
                 self.categories = r.data;
                 var $filter = $('#vmp-topic-filter');
@@ -32,7 +32,7 @@ VMP.topics = {
         var self = this;
         var filterCatId = $('#vmp-topic-filter').val();
 
-        VMP.api.get('/psychoeducation').done(function(r) {
+        VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
             if (!r.success || !r.data) {
                 $('#vmp-topics-list').html('<tr><td colspan="8" style="color:#dc2626">Error al cargar</td></tr>');
                 return;
@@ -49,7 +49,7 @@ VMP.topics = {
             }
 
             r.data.forEach(function(cat) {
-                VMP.api.get('/psychoeducation/' + cat.slug).done(function(d) {
+                VMP.api.get('/psychoeducation/admin/categories/' + cat.slug).done(function(d) {
                     if (d.success && d.data && d.data.temas) {
                         var temas = filterCatId
                             ? d.data.temas.filter(function(t) { return t.categoriaId == filterCatId; })
@@ -95,7 +95,7 @@ VMP.topics = {
         }
 
         if (id) {
-            VMP.api.get('/psychoeducation').done(function(r) {
+            VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
                 if (r.success && r.data) {
                     var found = false;
                     var idx = 0;
@@ -105,7 +105,7 @@ VMP.topics = {
                             return;
                         }
                         var cat = r.data[idx];
-                        VMP.api.get('/psychoeducation/' + cat.slug).done(function(d) {
+                        VMP.api.get('/psychoeducation/admin/categories/' + cat.slug).done(function(d) {
                             if (d.success && d.data && d.data.temas) {
                                 var t = d.data.temas.find(function(tm) { return tm.id === id; });
                                 if (t) {

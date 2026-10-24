@@ -31,7 +31,7 @@ jQuery(function($) {
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    VMP.api.get('/psychoeducation').done(function(r) {
+    VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
         if (!r.success || !r.data) {
             $('#vmp-dashboard-content').html('<p style="color:#dc2626">Error al cargar: ' + escHtml(r.data || 'Sin respuesta') + '</p>');
             return;
@@ -63,12 +63,12 @@ jQuery(function($) {
             html += '<p><strong>Temas:</strong> ' + (cat.temasCount || 0) + '</p>';
             html += '</div>';
 
-            VMP.api.get('/psychoeducation/' + cat.slug).done(function(detail) {
+            VMP.api.get('/psychoeducation/admin/categories/' + cat.slug).done(function(detail) {
                 var temas = (detail.success && detail.data && detail.data.temas) ? detail.data.temas : [];
                 var tdone = 0;
 
                 temas.forEach(function(t) {
-                    VMP.api.get('/psychoeducation/' + cat.slug + '/' + t.id).done(function(b) {
+                    VMP.api.get('/psychoeducation/admin/topics/' + t.id).done(function(b) {
                         if (b.success && b.data && b.data.bloques) {
                             b.data.bloques.forEach(function(blk) {
                                 totalBlocks++;
