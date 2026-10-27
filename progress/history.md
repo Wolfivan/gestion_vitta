@@ -3156,3 +3156,62 @@ cambios. Todo el contenido y las herramientas actuales quedan free.
   `.env` local, que apunta a producción).
 - Reconstruir la imagen `backend-api` para que el contenedor incluya la 026
   (la DB local ya la tiene y está registrada).
+
+## Sesión 88 - access_backend_core (2026-10-26)
+
+### Hecho
+- API de accesos sobre el esquema 026, con el plan efectivo calculado desde la
+  DB en cada request (no viaja en el JWT). Vencido -> plan default al instante.
+- Endpoints de app: `GET /access`, `GET /access/plans` (catálogo para el CTA) y
+  `POST /access/requests` (email validado, mensaje <= 2000, idempotente si hay
+  una solicitud abierta, máximo 3 por día).
+- Endpoints admin bajo `/admin/access/*`: usuarios paginados con búsqueda y
+  filtros de plan/vencimiento, asignación de plan con `duracionDias`,
+  `expiraAt` o `sinVencimiento`; CRUD de planes y features; matriz
+  plan x feature; solicitudes con filtros y aprobación atómica.
+- `POST /internal/access/expire` (token interno, patrón del tick de
+  notificaciones) ejecuta el job idempotente que pasa los vencidos al default y
+  escribe `plan_cambios` con motivo `vencimiento`.
+- `/auth/me` (GET y PUT) devuelve el perfil más `plan: { codigo, nombre,
+  expiraAt, vencido }`.
+- `requireFeature(featureKey)` en `middleware/feature-middleware.ts`: 401 sin
+  sesión, 403 `FEATURE_REQUIRED` si el plan efectivo no incluye la feature.
+- Reglas de administración: el plan default no se puede desactivar, hacer
+  solicitable, dotar de vencimiento ni borrar; planes/features en uso no se
+  borran; las features se validan antes de asignarlas a un plan.
+- Auditoría `plan_cambios` en cambios manuales, por solicitud y por vencimiento.
+
+### Verificación
+- `npm run build` OK (026 copiada a `dist`, incluye
+  `uq_solicitudes_acceso_activa`); `npx tsc --noEmit` limpio.
+- Backend: 23 suites / 344 tests OK, exit 0. Nuevas suites:
+  `access-service` (54), `access` (Supertest, 39), `access-repository` (7),
+  `feature-middleware` (3). `profile.test` actualizado al nuevo contrato.
+- App: 19 suites / 207 tests OK, exit 0 (sin cambios en App).
+- No se ejecutó `init.ps1` completo: el bloque opcional de Trivy se cuelga
+  descargando su DB y no hay `sonar-verifier` en el entorno. Los bloques de
+  tests se ejecutaron por separado con el código de salida real vía `cmd /c`.
+- No se probó contra Postgres en vivo en esta feature: los tests del
+  repositorio mockean solo la conexión y el SQL es el real; la migración 026 ya
+  estaba aplicada y verificada en la sesión 87.
+
+### Decisiones
+- Las rutas de administración se agrupan bajo `/admin/access/*` (mismo criterio
+  que `/admin/notifications/*`), aunque la aceptación de la 88 menciona
+  `/admin/users` y `/admin/plans` sin el prefijo. La 93 consumirá esta ruta
+  canónica.
+- `GET /access/plans` se añade para que la app obtenga CTA y beneficios sin
+  llamar a endpoints de administración.
+- Un plan sin duración por defecto ni fecha explícita queda permanente. `free`
+  siempre es permanente.
+- La aprobación de una solicitud revalida el estado y el plan dentro de una
+  transacción; el índice parcial único cierra la carrera de dos solicitudes
+  simultáneas.
+
+### Pendiente
+- Feature 89: aplicar `acceso_feature_key` a temas y bloques, redactando el
+  cuerpo no permitido sin ocultar la biblioteca ni las categorías.
+- Features 90-93: base y UX en la app, control de acceso en el plugin de
+  psicoeducación y plugin nuevo de administración.
+- Al desplegar: aplicar la 026 en Supabase producción y reconstruir
+  `backend-api` para que el contenedor incluya el código nuevo.

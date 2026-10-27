@@ -1448,7 +1448,7 @@
         "Tests de servicio y Supertest para acceso, vencimiento, solicitudes y autorización admin"
       ],
       "priority": "alta",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 89,
