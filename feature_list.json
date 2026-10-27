@@ -1483,7 +1483,7 @@
         "Tests del servicio, provider y purga"
       ],
       "priority": "alta",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 91,
