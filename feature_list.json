@@ -1413,6 +1413,127 @@
       ],
       "priority": "alta",
       "status": "done"
+    },
+    {
+      "id": 87,
+      "name": "access_db_schema",
+      "title": "Accesos: esquema de planes, features, vencimientos y solicitudes",
+      "description": "Sustituye el binario free/vip por un modelo de planes N con matriz de features, sin asumir jerarquía. Cada plan recibe un conjunto arbitrario de features y cada tema/bloque puede exigir una de ellas; NULL significa free. Incluye vencimiento por usuario, solicitudes de acceso y auditoría de cambios de plan.",
+      "acceptance": [
+        "Backend: 026_create_access_system.sql crea planes, acceso_features, plan_features, solicitudes_acceso y plan_cambios",
+        "Backend: usuarios_auth.plan_codigo con FK a planes y default free; plan_expira_at, plan_updated_at y plan_updated_by; índices por plan y vencimiento",
+        "Backend: temas_psicoeducacion y contenidos_bloques aceptan acceso_feature_key NULL (NULL = free); el contenido existente no cambia de acceso",
+        "Backend: seeds free (default, sin vencimiento) y vip (solicitable, CTA Ser VIP, 30 días); free conserva las 6 features actuales y vip añade content.vip",
+        "Backend: índice único parcial garantiza una sola solicitud pendiente por usuario",
+        "Backend: RLS habilitado en las 5 tablas nuevas",
+        "Hecho: aplicada dos veces contra Postgres 16 local sin errores; el usuario existente queda free y los 4 temas / 11 bloques siguen free",
+        "Hecho: migración registrada en schema_migrations"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 88,
+      "name": "access_backend_core",
+      "title": "Backend: plan efectivo, vencimiento y API de accesos",
+      "description": "API de accesos sobre el esquema 026. El plan efectivo se calcula desde la DB (no viaja en el JWT), de modo que aprobar o vencer un plan aplica de inmediato. Incluye solicitudes de la app, administración de usuarios/planes/features y el job diario que persiste los vencimientos.",
+      "acceptance": [
+        "GET /access autenticado devuelve plan efectivo (default si venció), expiraAt, features y solicitud pendiente; invitado recibe 401",
+        "POST /access/requests valida email y mensaje, limita a 3 por día, es idempotente si ya hay una pendiente y guarda plan_solicitado",
+        "Admin: GET /admin/users paginado y buscable con filtros de plan y vencimiento; PUT /admin/users/:idAnonimo/plan acepta plan y duración",
+        "Admin: GET/POST/PUT /admin/plans y /admin/access/features; GET/PUT /admin/access/requests con aprobación atómica de plan y fecha",
+        "plan_cambios registra motivo manual, solicitud o vencimiento, actor y fecha",
+        "Job diario idempotente pasa los planes vencidos al default y registra el cambio",
+        "requireFeature(featureKey) devuelve 403 cuando falta la feature; /auth/me incluye el plan efectivo",
+        "Tests de servicio y Supertest para acceso, vencimiento, solicitudes y autorización admin"
+      ],
+      "priority": "alta",
+      "status": "pending"
+    },
+    {
+      "id": 89,
+      "name": "access_psychoeducation_gating",
+      "title": "Backend: gating de temas y bloques de psicoeducación",
+      "description": "Aplica el acceso por feature al contenido. La biblioteca y las categorías siguen siempre visibles; solo temas y bloques pueden requerir acceso. El backend redacta el cuerpo de lo no permitido antes de enviarlo.",
+      "acceptance": [
+        "GET /psychoeducation/:slug/:temaId usa auth opcional; invitado se evalúa como plan default",
+        "Un tema con acceso_feature_key no permitido se devuelve bloqueado, sin bloques ni cuerpo, pero con título y metadatos para la pantalla de bloqueo",
+        "Un bloque no permitido se devuelve con bloqueado true y cuerpoJson null; nunca se envía el cuerpo real",
+        "El progreso del usuario free cuenta solo bloques accesibles para que el 100% sea alcanzable",
+        "POST /psychoeducation/progress sobre un bloque no permitido devuelve 403",
+        "Las rutas admin devuelven accesoFeatureKey y nunca redactan",
+        "Categorías y listados incluyen indicadores de contenido restringido sin ocultar la categoría",
+        "Tests de redacción, tema bloqueado, progreso y guard de progreso"
+      ],
+      "priority": "alta",
+      "status": "pending"
+    },
+    {
+      "id": 90,
+      "name": "access_app_foundation",
+      "title": "App: tipos, servicio de acceso y caché con vencimiento",
+      "description": "Base de la app para consumir /access: tipos, servicio con caché local, provider con hasFeature y refresco al volver a primer plano. Detecta vencimientos localmente y purga descargas/cachés al perder acceso.",
+      "acceptance": [
+        "App: tipos TPlan, IAccessResponse, IAccessRequest y estados de solicitud",
+        "App: access-service con caché SQLite de 5 minutos, fallback offline y forceRefresh",
+        "App: AccessProvider expone plan, expiraAt, features, hasFeature, solicitud, refresh y requestAccess",
+        "App: refresco al montar, al volver a foreground y al enfocar el perfil",
+        "App: si expiraAt ya pasó, se trata como plan default aunque la caché diga otra cosa",
+        "App: al detectar pérdida de acceso se purgan descargas y cachés de psicoeducación",
+        "Tests del servicio, provider y purga"
+      ],
+      "priority": "alta",
+      "status": "pending"
+    },
+    {
+      "id": 91,
+      "name": "access_app_ux",
+      "title": "App: perfil, solicitud y candados de módulos, herramientas y contenido",
+      "description": "UX del acceso: CTA dinámico en perfil, pantalla de solicitud con correo editable y candados visibles en módulos, herramientas, temas y bloques. Nada se oculta: el usuario free descubre lo que puede desbloquear.",
+      "acceptance": [
+        "Perfil muestra plan, fecha de vencimiento, estado de solicitud y CTA con el texto configurado en el plan",
+        "Pantalla de solicitud con correo precargado y editable, mensaje opcional, aviso de privacidad y estados de éxito/error",
+        "Invitado que solicita acceso pasa primero por login",
+        "ModuleCard y ToolsScreen muestran candado cuando falta la feature; el deep link también queda cubierto por AccessGate",
+        "Tema bloqueado muestra pantalla propia; bloque bloqueado muestra card con CTA y no interpreta cuerpoJson null",
+        "Biblioteca y categorías siguen visibles con badges de contenido restringido",
+        "Tests de perfil, solicitud, gates y render de contenido bloqueado; formulario con KeyboardAwareScrollView"
+      ],
+      "priority": "alta",
+      "status": "pending"
+    },
+    {
+      "id": 92,
+      "name": "wp_psicoeducation_access_control",
+      "title": "WordPress: selector de acceso en temas y bloques de psicoeducación",
+      "description": "El plugin existente permite elegir qué feature de contenido requiere cada tema o bloque, en lugar del checkbox VIP binario. Las categorías no se bloquean. Incluye columnas y filtros en los listados.",
+      "acceptance": [
+        "Formularios de tema y bloque incluyen selector Free o feature de tipo contenido, alimentado por el endpoint admin",
+        "Listados muestran la feature requerida y permiten filtrar por contenido restringido",
+        "Guardar y editar conserva accesoFeatureKey en ambos tipos",
+        "Las categorías no tienen selector de acceso",
+        "VMP_VERSION se incrementa y el ZIP se regenera antes de publicar",
+        "Smoke test en Docker: crear tema/bloque restringido desde el panel y verlo bloqueado en la App"
+      ],
+      "priority": "alta",
+      "status": "pending"
+    },
+    {
+      "id": 93,
+      "name": "wp_access_admin_plugin",
+      "title": "WordPress: plugin de usuarios, solicitudes, planes y matriz de accesos",
+      "description": "Plugin nuevo para gestionar el sistema de acceso: listado paginado y buscable de usuarios, cambio de plan con duración, solicitudes con correo de contacto y CRUD de planes/features con matriz de permisos. Comparte la sesión JWT con el plugin de psicoeducación.",
+      "acceptance": [
+        "Plugin nuevo con login compartido (mismos transients de JWT y URL de API) y logout independiente",
+        "Usuarios: búsqueda, 20 por página, filtros por plan y vencimiento, cambio de plan con duración o sin vencimiento",
+        "Solicitudes: filtro por estado, correo con mailto, notas y aprobación que asigna plan y fecha",
+        "Planes: crear y editar, plan default protegido, borrado bloqueado con usuarios asignados",
+        "Matriz plan x feature editable y catálogo de features con creación de nuevas",
+        "Nonces, sanitización y capability manage_options en todas las acciones; sin envío automático de correos",
+        "Smoke test en Docker del flujo solicitud -> aprobación -> app con plan vigente y fecha"
+      ],
+      "priority": "alta",
+      "status": "pending"
     }
   ]
 }

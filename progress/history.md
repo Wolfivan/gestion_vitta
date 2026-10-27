@@ -3025,3 +3025,134 @@ pm ls proxy-addr → 2.0.8.
 - Configurar cron real, INTERNAL_NOTIFICATION_TOKEN y credenciales Expo en Hostinger antes de produccion.
 - Plugin de WordPress implementado pero sin prueba end-to-end manual.
 - No se tocaron los cambios en curso de psicoeducacion (panel admin) ni docs/vulneravilidades.md ni el zip del plugin.
+
+---
+# Sesión actual
+
+> Este archivo se vacía al cerrar cada sesión y se mueve a `history.md`.
+> Mientras trabajas, **manténlo actualizado en tiempo real**, no al final.
+
+<!-- Estado de la sesión activa -->
+
+## Sesión 2026-10-24 — Feature 86: release de psicoeducación
+
+### Objetivo
+Publicar en `main` el arreglo del panel de WordPress y de la TABLA_COMPARATIVA,
+sin arrastrar el trabajo de notificaciones (features 80-85).
+
+### Trabajo realizado
+- Backend: commit `f7d252a` en `desarrollo` (lecturas admin sin HAVING, rutas
+  `GET /psychoeducation/admin/*`, validación de categoría por id y mapeo de
+  errores Postgres 23505/22001/23503). Cherry-pick a `main` (`7456cd6`).
+- Raíz: commit `01eb826` con el plugin v1.0.8 (header `Version` igualado a
+  `VMP_VERSION`), cherry-pick a `main` (`1aee456`). El ZIP regenerado se
+  commiteó aparte (`3a2879d` en `main`, `c6d6351` en `development`) porque el
+  `git add` por directorio no lo había indexado.
+- `App/` no se tocó: sus cambios de notificaciones siguen en `desarrollo`.
+
+### Verificación
+- Backend `tsc --noEmit` y `npm run build` limpios.
+- `main` (sin notificaciones): 15 suites / 201 tests OK.
+- `desarrollo` (con notificaciones): 19 suites / 237 tests OK.
+- API E2E contra Docker: categoría vacía visible, tema creado con 201,
+  TABLA_COMPARATIVA guardada con una clave por columna, slug duplicado 409,
+  valor de 60 caracteres 400.
+- WordPress Docker: el panel muestra las categorías, incluida una creada sin
+  contenido (confirmado por el usuario).
+- Comprobación estática manual de los archivos tocados: sin `console.log`,
+  `eval` ni sumideros nuevos (los `innerHTML` son lecturas del template,
+  preexistentes). `scripts/quality-check.ps1` no termina porque recorre
+  `node_modules`; problema preexistente del script.
+
+### Pendiente operativo
+- Hostinger: pull de `main`, borrar `dist/`, reiniciar. Sin dependencias nuevas
+  y sin migraciones en este release.
+- WordPress producción: subir `vittalmind-psicoeducacion.zip` (1.0.8).
+- Revisar y re-editar los bloques TABLA_COMPARATIVA antiguos (formato
+  clave/valor); query de detección en `docs/entorno-dev-produccion.md` o en el
+  resumen de la sesión.
+- `docs/vulneravilidades.md` quedó sin commitear, fuera de este release.
+
+---
+## Sesión 2026-10-26 — Feature 87: esquema del sistema de accesos
+
+### Objetivo
+Implementar la base de datos del sistema de acceso por planes: planes N (no
+binario free/vip), matriz plan → features, acceso por feature en temas y bloques
+de psicoeducación, vencimiento por usuario, solicitudes de acceso y auditoría de
+cambios. Todo el contenido y las herramientas actuales quedan free.
+
+### Plan
+1. Migración `026_create_access_system.sql` con tablas, columnas, índices,
+   seeds y RLS.
+2. Validarla dos veces contra el Postgres local de Docker (idempotencia).
+3. Registrar la migración en `schema_migrations` y comprobar que ningún
+   usuario/contenido existente cambia de acceso.
+4. Añadir cobertura al test de migraciones.
+5. Compilar Backend, ejecutar suite y revisar seguridad/calidad.
+
+### Trabajo realizado
+- `Backend/src/database/migrations/026_create_access_system.sql`:
+  - `planes` (codigo, nombre, orden, activo, es_default único, es_solicitable,
+    cta_texto, beneficios, duracion_dias_default).
+  - `acceso_features` (feature_key, tipo contenido/modulo/herramienta).
+  - `plan_features` (matriz plan × feature; ausencia = sin acceso).
+  - `usuarios_auth`: `plan_codigo` FK a `planes` default `free`,
+    `plan_expira_at`, `plan_updated_at`, `plan_updated_by`, índices.
+  - `temas_psicoeducacion` y `contenidos_bloques`: `acceso_feature_key`
+    nullable (NULL = free), FK e índices parciales.
+  - `solicitudes_acceso` con `plan_solicitado`, correo de contacto, estado,
+    notas y resolución; índice único parcial de una solicitud activa
+    (`pendiente`/`contactado`) por usuario.
+  - `plan_cambios` para auditoría (manual, solicitud, vencimiento, registro).
+  - Seeds: `free` default sin vencimiento; `vip` solicitable con CTA "Ser VIP"
+    y 30 días. Free recibe las 6 features actuales; vip añade `content.vip`.
+  - RLS en las 5 tablas nuevas.
+- `Backend/tests/database-migration.test.ts`: cobertura de tablas, columnas,
+  nullable de contenido, índice de solicitud activa, RLS y seeds.
+- `feature_list.json`: features 87-93 añadidas; 87 `done` al cerrar (88-93
+  `pending`).
+- `progress/current.md` y `progress/history.md` actualizados.
+
+### Verificación
+- Migración aplicada dos veces contra `backend-db-1` (Postgres 16) con
+  `ON_ERROR_STOP=1`: sin errores; la segunda pasada solo emite NOTICE.
+- Registrada en `schema_migrations` (`026_create_access_system.sql`).
+- Datos comprobados tras aplicar: 2 planes, 7 features (1 contenido, 2 módulos,
+  4 herramientas), free con 6 features, vip con 7; el usuario existente queda
+  `free`; 4 temas y 11 bloques siguen sin restricción.
+- `Backend`: `npm run build` OK (026 copiada a `dist`, ya con
+  `uq_solicitudes_acceso_activa`); `npx tsc --noEmit` limpio.
+- Suites finales con código de salida real (capturado con `cmd /c`):
+  - Backend: 19 suites / 244 tests OK, exit 0.
+  - App: 19 suites / 207 tests OK, exit 0.
+- `init.ps1` al inicio de la sesión: tests Backend y App verdes. El bloque
+  opcional de seguridad se colgó descargando la DB de Trivy (timeout del
+  comando), no por un fallo del código. No hay `sonar-verifier` en el entorno.
+
+#### Nota sobre un fallo intermitente de App (preexistente, ajeno a la 87)
+- En una pasada de la suite App, `__tests__/App.test.tsx` ("renders without
+  crashing") agotó el timeout por defecto de 5 s mientras montaba el árbol
+  completo con la caché de Babel fría y un contenedor de Trivy consumiendo CPU.
+- No es una regresión: ese archivo no se tocó en esta feature; aislado pasa en
+  ~0.9 s y la suite completa pasa 207/207 con exit 0.
+- El "Exited with code 1" que mostraba PowerShell era un artefacto de la
+  redirección de stderr (Jest escribe `PASS` por stderr), no un fallo de Jest.
+- No se modificó App para no mezclar repos ni features; si vuelve a aparecer,
+  la corrección sería subir el timeout de ese smoke test.
+
+### Decisiones
+- Sin jerarquía de planes: la matriz permite combinaciones arbitrarias
+  (ej. un plan con Timeline y sin Traductor).
+- `NULL` en `acceso_feature_key` = free. No se etiqueta contenido existente.
+- El vencimiento se evaluará de forma perezosa en el Backend; esta feature solo
+  guarda la fecha. El job diario llega en la feature 88.
+- `plan_cambios` no tiene FK a `planes` en los códigos histórico para que el
+  historial sobreviva a planes retirados.
+
+### Pendiente
+- Features 88-93 (backend, gating, app y plugins WordPress).
+- Aplicar la migración en Supabase producción al desplegar (nunca desde el
+  `.env` local, que apunta a producción).
+- Reconstruir la imagen `backend-api` para que el contenedor incluya la 026
+  (la DB local ya la tiene y está registrada).
