@@ -3215,3 +3215,130 @@ cambios. Todo el contenido y las herramientas actuales quedan free.
   psicoeducación y plugin nuevo de administración.
 - Al desplegar: aplicar la 026 en Supabase producción y reconstruir
   `backend-api` para que el contenedor incluya el código nuevo.
+
+## Sesión 2026-10-27 — Feature #94: Backend del Kit de Autocuidado / Plan de Seguridad (`safety_plan_backend`)
+
+### Contexto
+- Implementación de la capa backend para el Kit de Autocuidado / Plan de Seguridad (7 pasos clínicos según intervención Stanley & Brown adaptada por el cofundador psicólogo).
+- Trabajo realizado en rama `desarrollo` en `Backend/`.
+
+### Cambios realizados
+- `Backend/src/database/migrations/027_create_safety_plan.sql`: migración para tabla `safety_plans` con clave foránea única a `id_anonimo` (UUIDv4), campos para los 7 pasos (`paso1_signos_alarma`, `paso2_estrategias_afrontamiento`, `paso3_actividades_personas` JSONB, `paso4_contactos_apoyo` JSONB, `paso5_dispositivos_sanitarios` JSONB, `paso6_entorno_seguro`, `paso7_motivos_vivir`), índice en `id_anonimo` y activación de Row Level Security (RLS) revocando accesos a roles `anon` y `authenticated`.
+- `Backend/src/models/safety-plan.ts` e índice de modelos: interfaces `ISafetyContact`, `ISafetySanitaryDevices`, `ISafetyPlan`, `ISafetyPlanInput`, `ISafetyPlanRow`.
+- `Backend/src/services/safety-plan-repository.ts`: consultas `findSafetyPlanByIdAnonimo`, `upsertSafetyPlan` (con `ON CONFLICT (id_anonimo) DO UPDATE`) y `deleteSafetyPlan`.
+- `Backend/src/services/safety-plan-service.ts`: validación, sanitización de textos y listas de contactos, límite de caracteres, funciones de formateo camelCase y `getEmptySafetyPlan`.
+- `Backend/src/controllers/safety-plan-controller.ts`: endpoints para lectura, actualización y eliminación del plan asociado al `id_anonimo` del token.
+- `Backend/src/routes/safety-plan.ts` y `Backend/src/app.ts`: montaje de rutas `GET /safety-plan`, `PUT /safety-plan` y `DELETE /safety-plan` protegidas por `authMiddleware`.
+- `Backend/src/controllers/psychoeducation-controller.ts`: resolución segura de `id_anonimo` a partir de `Authorization: Bearer` en peticiones opcionales, corrigiendo test previo de gating.
+- `Backend/tests/safety-plan.test.ts`: 10 tests de integración y unitarios (Supertest) cubriendo casos 200, 400 (validación de contactos y límites), 401 (sin token) y 204 (eliminación).
+
+### Verificación
+- `npm run build` en `Backend`: OK, migración `027_create_safety_plan.sql` copiada a `dist/`.
+- `npm test` en `Backend`: 25 suites pasadas, 359 tests pasados (100% verde).
+- Tests de `safety-plan.test.ts`: 10/10 pasados.
+
+### Siguiente paso
+- Feature #95: `safety_plan_app_foundation` (App: tipos, persistencia local offline-first, servicio y hook del kit de autocuidado).
+
+---
+
+## Sesión 2026-10-28/29 — Kit de autocuidado (features 95 y 96): CERRADAS
+
+**Cierre:** 95 y 96 en `done`. Revisión final del `reviewer`: 95 APPROVED / 96 APPROVED. Evidencia ejecutada: App `tsc` 0 errores, `eslint` src 0 errores/19 avisos; jest 9 suites / 204 tests OK (kit + palette-guard); Backend `tsc` 0 errores, `eslint` src 0 errores/16 avisos, jest safety-plan + cifrado 29 tests OK. Usuario (Windows): 8 suites / 186 tests OK antes del cambio de indicativo. NO ejecutado aquí: `.\init.ps1` ni `quality-check` en Docker (jscpd/duplicación). Sin commit. Informes: `progress/impl_95.md`, `impl_96.md`, `impl_95_cifrado_backend.md`, `review_95.md`, `review_96.md`, `security_95.md`, `sonar_95.md`, `plan_kit_autocuidado_95-97.md`.
+
+**Cambios del usuario durante la sesión:** local primero (datos del dispositivo mandan, cola en segundo plano, descarga al abrir sesión, aviso al invitado antes de empezar, confirmación al guardar si el kit aún no se descargó); indicativo del país en recuadro aparte sin asumir +57 (formato `+<indicativo> <número>`); teléfonos cifrados en el backend (AES-256-GCM, `SAFETY_PLAN_ENCRYPTION_KEY`, fail-closed).
+
+**Deuda abierta:** 4xx permanentes reintentados en la cola (M3); flush previo al logout; sin merge local/nube; SQLite local sin cifrar; sin AAD ni re-cifrado/rotación masiva; backups previos con teléfonos en claro; contactos antiguos sin indicativo no se ofrecen en pánico (feature 97); textos pendientes de validación clínica (`App/src/data/safety-plan-steps.ts`); pruebas en dispositivo real pendientes; aprovisionar la clave en Hostinger antes de desplegar.
+
+## Feature 95 — safety_plan_app_foundation (sesión kit de autocuidado)
+
+Estado: implementada, pendiente de reviewer (no done; gate init lo corre el usuario). Sin commit. No se toca nada de la feature 98.
+
+Plan
+- Tipos en App/src/types/safety-plan.ts (+ export en types/index.ts).
+- Módulo de caché App/src/services/safety-plan-cache.ts (registro único en app_config, con dueño idAnonimo) compartido por servicio y sync-manager (evita import circular).
+- Servicio safety-plan-service.ts, hook use-safety-plan.ts (+ export en hooks/index.ts).
+- sync-manager.ts: rama entity `safety_plan` (PUT /safety-plan con el plan completo) y helper replacePendingOps (coalescer).
+- Tests: safety-plan-service.test.ts, use-safety-plan.test.tsx, casos nuevos en sync-manager.test.ts.
+
+Archivos tocados
+- Nuevos: types/safety-plan.ts, services/safety-plan-cache.ts, services/safety-plan-service.ts, hooks/use-safety-plan.ts, __tests__/safety-plan-service.test.ts, __tests__/use-safety-plan.test.tsx, progress/impl_95.md.
+- Modificados: types/index.ts, hooks/index.ts, services/sync-manager.ts (rama safety_plan + replacePendingOps; fuera de la lista literal del criterio), __tests__/sync-manager.test.ts, feature_list.json (solo status 95).
+
+Evidencia
+- tsc 0 errores; jest safety-plan-service 27/27, use-safety-plan 14/14, sync-manager 34/34; eslint src 0 errores/0 avisos. Detalle en progress/impl_95.md.
+- Jest: usar `npx jest --roots '<rootDir>/src' '<rootDir>/__tests__' --no-watchman <archivo>` (sin eso se cuelga rastreando node_modules).
+
+Bloqueos
+- Ninguno. Nota: feature_list.json ya venía reformateado (escapes \u0027) por otra sesión; solo se cambió el status de la 95 a in_progress.
+
+Ronda 2 (feature 95): cambios del reviewer aplicados (cola con op nueva en vuelo, edición durante guardado, cerrojo de caché, JWT base64url). tsc/eslint/jest verdes; detalle en progress/impl_95.md.
+
+
+## Feature 96 — safety_plan_app_ui (sesión kit de autocuidado)
+
+Estado: implementada, pendiente de reviewer. No se tocó feature_list.json (status los gestiona el usuario). Sin commit. Jest NO se ejecutó aquí (node_modules de Windows); tsc y eslint sí.
+
+Plan
+- Opción "Kit de autocuidado" en Perfil + ruta SafetyPlan + SafetyPlanScreen (7 pasos en acordeón, un solo KeyboardAwareScrollView).
+- Componentes safety-contact-list y safety-plan-step-card; validación pura (utils/safety-plan-validation.ts) y utils/phone.ts (+57).
+- Textos guía en data/safety-plan-steps.ts (excepción documentada a README 3.B; pendientes de validación clínica).
+- clearSafetyPlanCache() en logout (use-auth.ts) con test. Perfil: menú dentro de ScrollView (sin TextInput) para no empujar disclaimer/logout.
+- Tests: phone, validación, pantalla, opción de Perfil, logout.
+
+Archivos: ver progress/impl_96.md.
+Evidencia: tsc 0 errores; eslint 0 errores y sin avisos nuevos. Comandos de jest para Windows en progress/impl_96.md.
+
+Ronda 2 (feature 96): cambios del reviewer aplicados (B1 guardado protegido con loading/isDirty/lastSyncedAt, confirmación al salir, aviso en cierre de sesión, tests reforzados, menores). tsc 0 errores; eslint sin errores nuevos. Jest sin ejecutar (comandos en progress/impl_96.md, sección "Ronda 2").
+
+Ronda 3 y Ronda 4 (feature 96, kit de autocuidado): documentadas en progress/impl_96.md. Ronda 3 (local primero: downloadState/hydrated/cloudKitSkipped, aviso al invitado, diálogo "Guardar de todas formas"; sin merge, confirmar reemplaza el kit de la nube). Ronda 4: teléfono con indicativo en recuadro aparte, formato canónico `+<indicativo> <número>`, sin lógica +57; getTrustedContacts solo devuelve canónicos válidos. Evidencia en copia Linux: tsc 0 errores; eslint 0 errores en lo tocado de src y tests nuevos; jest 8 suites / 203 tests verdes (+ palette-guard: 9 suites / 204). Sin commit; feature_list.json intacto.
+
+---
+
+## Sesión 2026-10-29/30 — Feature 97 (contactos de confianza en el modal de pánico) + Paso 3 como texto + ronda de correcciones 95/96: CERRADA
+
+**Cierre:** 97 en `done` (2026-10-30) por autorización del usuario tras APPROVED del `reviewer` (`progress/review_97.md`, sin bloqueantes). `.\init.ps1` del usuario verde (2026-10-30 14:28). Textos aprobados por el usuario para la fase de pruebas. Sin commit.
+
+**Pendiente tras el cierre:** prueba en dispositivo real (Android e iOS, con y sin WhatsApp; Paso 3 como cuadro de texto); validación clínica definitiva de los textos antes de producción; aplicar la migración 028 en Hostinger y `SAFETY_PLAN_ENCRYPTION_KEY` antes de desplegar.
+
+**Despliegue (N1 de review_97):** desplegar juntos la migración 028, el backend y las apps de prueba. Una app anterior lee el Paso 3 (ahora texto) como lista vacía y, si la persona guarda, borra ese texto.
+
+**Deuda abierta (observaciones no bloqueantes de review_97):** N3 `syncBeforeLogout` no espera un flush que ya estaba en curso (`sync-manager.ts`, rama `busy`); N4 `useTrustedContacts` conserva los contactos previos hasta la nueva lectura (posible destello tras logout con el modal montado); N5 sin test de que el guardado vacíe la columna JSONB antigua del Paso 3; N6 una op en cola con el Paso 3 como lista sube bien pero el kit queda `pending` hasta la siguiente apertura; N7 el aviso de contactos incompletos no distingue casos; N8 4xx permanentes en todas las entidades (decisión del usuario, revisable); N9 (previo) ops de otras entidades pueden subir con la cuenta siguiente. N2 resuelto: `docs/security-guidelines.md` actualizado (Paso 3 en claro).
+
+## Feature 97 `panic_trusted_contacts`
+- **Inicio**: 2026-10-29 22:50 (Bogotá). Estado `in_progress` por autorización del usuario. Implementación directa (sin subagentes).
+- **Plan breve**: el modal de pánico lee los contactos de confianza (Paso 4) de la copia local del kit (sin red); el botón "Contactar psicólogo de guardia" pasa a "Llamar a mi contacto de confianza" y abre una vista interna con la lista: "Llamar" (`tel:`) y "WhatsApp" (`https://wa.me/<num>?text=Tienes cinco minutos para mí`). Sin contactos válidos: mensaje que guía a Perfil > Kit de autocuidado. Los contactos antiguos sin indicativo no se ofrecen y se avisa de que hay que completarlos.
+- **Decisión del usuario**: los 4xx permanentes se quedan como están (todas las entidades) hasta nuevo aviso.
+- **Hecho** (sin commit):
+  - `components/panic-modal.tsx`: el botón pasa a "Llamar a mi contacto de confianza" y abre una vista interna (sin modal anidado; se quita el `InfoDialog` "Próximamente"). Por contacto: nombre, teléfono y botones "📞 Llamar" (`tel:+<dígitos>`) y "💬 WhatsApp" (`https://wa.me/<dígitos>?text=Tienes%20cinco%20minutos%20para%20m%C3%AD`). Sin contactos: guía a Perfil › Kit de autocuidado, Paso 4. Con contactos sin indicativo: aviso para completarlos. Si `openURL` falla: mensaje no técnico, sin registrar número ni URL. "← Volver a las líneas de ayuda"; al reabrir el modal empieza en las líneas.
+  - `hooks/use-trusted-contacts.ts` (nuevo, exportado en `hooks/index.ts`): lee la copia local cada vez que se abre el modal.
+  - `services/safety-plan-service.ts`: `summarizeTrustedContacts` y `loadTrustedContacts` (solo `getCachedSafetyPlan`, sin red; el invitado ve sus contactos locales; nunca los de otra cuenta).
+  - `utils/trusted-contact-links.ts` (nuevo): `buildCallUrl`, `buildWhatsAppUrl` (reutilizan `toWhatsAppNumber`; sin indicativo devuelven null).
+  - `data/safety-plan-steps.ts`: `TRUSTED_CONTACTS_COPY` (textos pendientes de validación clínica).
+  - Hosts (`app-navigator`, `welcome-screen`, `psychoeducation-topic-screen`) sin cambios: el modal obtiene los contactos por sí mismo.
+- **Evidencia** (copia Linux `$HOME/app-lx`): jest App completo 33 suites / 490 tests PASS (nuevos: 11 en `panic-modal.test.tsx`, `trusted-contacts.test.tsx` con 11); `tsc --noEmit` 0 errores; ESLint 0 errores y 0 avisos en src tocado y tests nuevos (salvo `no-require-imports` ya conocido); palette-guard PASS.
+- **Cambio pedido por el usuario durante la 97 (2026-10-29 23:02) — Paso 3 del kit como texto libre**: el Paso 3 "Actividades con otras personas" deja de ser una lista de personas con teléfono y pasa a un cuadro de texto como los Pasos 1, 2, 6 y 7. El Paso 4 no cambia. Ajuste sobre 94/96 (ya `done`), registrado aquí por pedido explícito; no se cambian sus estados.
+  - Plan: Backend con migración 028 (columna `paso3_actividades_texto TEXT`; la JSONB antigua queda como legado y se vacía al guardar), el campo `paso3ActividadesPersonas` del API pasa a `string`; el PUT acepta aún la lista antigua y la convierte a texto (colas de versiones previas). Lectura: si no hay texto, la lista antigua se convierte (una línea por persona: `nombre — teléfono`). App: tipos, caché local (convierte la lista antigua), validación, hook, pantalla y tests.
+  - Nota de privacidad: los teléfonos de la lista antigua del Paso 3 estaban cifrados; como texto libre quedan en claro igual que los Pasos 1, 2, 6 y 7.
+  - Hecho: migración `028_safety_plan_paso3_texto.sql`; Backend (modelo, servicio con `legacyActivitiesToText`, repositorio) y App (tipos, caché `normalizeActivities`, servicio, validación, hook, pantalla, textos del Paso 3). El Paso 4 no cambia.
+  - Evidencia (2026-10-30, copias Linux `$HOME/app-lx` y `$HOME/be-lx`): App jest 33 suites / 495 tests PASS, `tsc` 0, ESLint 0 en src tocado. Backend jest 26 suites / 386 tests PASS, `tsc` 0, ESLint 0 en src tocado (1 `no-explicit-any` ya existente en `tests/safety-plan.test.ts:221`, no tocado).
+  - Despliegue: aplicar la migración 028 en Hostinger antes de subir el backend. Posible choque de numeración con migraciones de la serie 98-105.
+- **Gate del usuario (2026-10-30 14:28, Windows/Docker)**: `.\init.ps1` verde con la 97 y el Paso 3 como texto. Tests Backend y App PASS; quality-lite PASS (Backend 16 avisos, duplicación 1,93 %; App 19 avisos, duplicación 9,69 %). Avisos: hook `pre-push` sin instalar; security scan omitido (modo desarrollo).
+- **Pendiente para cerrar la 97**: `.\init.ps1` del usuario; revisión; prueba en dispositivo real (abrir marcador y WhatsApp, Android e iOS, con y sin WhatsApp instalado); validación clínica de `TRUSTED_CONTACTS_COPY`.
+
+## Ronda de correcciones 95/96 (pendientes del reviewer, antes de la 97)
+- **Inicio**: 2026-10-29 21:30 (Bogotá). Decisión del usuario: resolver estos pendientes antes de arrancar la 97. No se cambian estados en `feature_list.json` (95 y 96 siguen `done`; la 98 sigue `blocked`).
+- **Plan**:
+  1. O1 `review_96.md`: "Guardar" pide confirmación también cuando hay un kit de la nube que no se aplicó (`cloudKitSkipped`). El aviso se calcula comparando la nube contra el último plan aplicado, no contra `lastSyncedAt`.
+  2. O2 `review_96.md`: cerrar sesión durante una descarga. `fetchSafetyPlan` vuelve a leer la sesión dentro del cerrojo y no escribe si cambió; `clearSafetyPlanCache` entra en el cerrojo.
+  3. O5 `review_96.md`: subir los cambios pendientes (con tiempo máximo) antes de borrar tokens y copia local al cerrar sesión.
+  4. M3 `review_95.md`: los 4xx permanentes (400, 404, 405, 410, 413, 414, 415, 422) ya no se reintentan para siempre: la op se retira de la cola y el dato sigue en el dispositivo. Para el kit, una copia `pending` sin op se vuelve a encolar al abrir el kit o la sesión (un intento por apertura, no un bucle).
+- **Hecho** (2026-10-29, sin commit, sin tocar estados):
+  1. O1: `use-safety-plan.ts` guarda en `baseRef` el último plan aplicado sin editar (o lo último guardado). Si con ediciones sin guardar llega de la caché o de la nube un kit sincronizado, con contenido y distinto de esa base, se activa `cloudKitSkipped` (también tras descargas previas o por el listener de sync). Comparación pura `isSameSafetyPlanContent` en `utils/safety-plan-validation.ts` (sin ids ni fechas). `safety-plan-screen.tsx`: confirmación con motivo `download` o `cloud`; texto nuevo `confirmReplaceCloudText` en `data/safety-plan-steps.ts`.
+  2. O2: `fetchSafetyPlan` vuelve a leer la sesión dentro del cerrojo y no escribe si cambió; `clearSafetyPlanCache` borra dentro del cerrojo.
+  3. O5: `syncBeforeLogout()` (servicio, tope `LOGOUT_SYNC_TIMEOUT_MS` = 5 s, nunca lanza) se llama en `logout` antes de borrar tokens y copia. Perfil muestra "Cerrando sesión…" mientras tanto.
+  4. M3: `ApiError` (con `status`) en `api.ts`; `sync-manager.ts` con `isPermanentPushError` (400, 404, 405, 410, 413, 414, 415, 422): la op sale de la cola, `lastFlushError.discarded = true`, sin backoff ni payload en logs. Aplica a todas las entidades (gratitud y línea de tiempo incluidas: su dato local se conserva). `hasPendingOpsFor(entity)` nuevo. El servicio re-encola un kit `pending` sin op al abrir con conexión (`requeueOrphanPendingPlan`).
+- **Evidencia** (copia Linux nueva en `$HOME/app-lx` del equipo; la de `/tmp/app-lx` es de otro usuario y no es accesible): App jest completo 32 suites / 468 tests PASS; `tsc --noEmit` 0 errores; ESLint de src tocado 0 errores (3 avisos ya existentes en líneas no tocadas); ESLint de tests tocados sin errores nuevos aparte de `no-require-imports` ya conocido. Mutaciones: quitar cada corrección (re-chequeo de sesión, re-encolado, 4xx permanente, subida previa al logout, confirmación por kit de la nube, comparación contra la base) hace fallar al menos un test.
+- **Gate del usuario (2026-10-29 22:35, Windows/Docker)**: `.\init.ps1` verde. Tests Backend y App PASS; quality-lite PASS (Backend 16 avisos, duplicación 1,94 %; App 19 avisos, duplicación 9,81 %). Avisos: hook `pre-push` sin instalar en Backend y App; security scan omitido (modo desarrollo, va en `quality-release`).
+- **Pendiente del usuario**: Validación clínica de los textos nuevos (`confirmReplaceCloudText`, "Cerrando sesión…").
+- **Tests nuevos o ampliados**: `sync-manager.test.ts`, `safety-plan-service.test.ts`, `use-auth-logout.test.tsx`, `use-safety-plan.test.tsx`, `safety-plan-screen.test.tsx`.

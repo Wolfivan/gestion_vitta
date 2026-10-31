@@ -140,6 +140,18 @@ firmaría tokens con una clave pública y conocida**. Verificá que
 el único entorno realmente aislado. **Pero está commiteado en git y contiene
 una `OPENROUTER_API_KEY` real** — hay que rotarla y sanitizarlo.
 
+
+### 4.1 Cifrado de teléfonos del plan de seguridad (Feature 94)
+
+El backend exige `SAFETY_PLAN_ENCRYPTION_KEY` (32 bytes, base64 o hex de 64 caracteres) en **cada entorno que guarde planes de seguridad**, incluido el panel de Hostinger (fuente de verdad en producción). Sin ella, `PUT /safety-plan` responde 500 (fail-closed).
+
+- Generar: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
+- Usar claves distintas en desarrollo y producción; no commitearlas (ni en `.env.docker`).
+- **Perder la clave implica perder los teléfonos guardados.** Guardarla en el gestor de secretos del equipo.
+- **No rotarla sin plan.** `SAFETY_PLAN_ENCRYPTION_KEY_PREVIOUS` permite solo descifrar con la clave anterior, pero no existe re-cifrado masivo: planificarlo antes de rotar.
+- Los datos legados en claro se cifran en el siguiente guardado; los backups previos pueden contener teléfonos en claro.
+- El cifrado del SQLite local de la App **no** está cubierto (deuda M4).
+
 ---
 
 ## 5. Procedimiento de release

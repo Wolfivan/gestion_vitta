@@ -62,6 +62,16 @@
 - **Logs**: filtrar PII. Usar `id_anonimo` para trazas.
 - **Errores cliente**: sin filtrar datos sensibles.
 
+### Teléfonos del plan de seguridad (kit de autocuidado, Feature 94)
+- Los teléfonos de terceros del Paso 4 se cifran en el backend con AES-256-GCM (`Backend/src/utils/field-encryption.ts`) antes de guardarse en PostgreSQL; formato `enc:v1:<iv>:<tag>:<ciphertext>`. El contrato de la API no cambia (HTTPS, en claro).
+- Requiere `SAFETY_PLAN_ENCRYPTION_KEY` (32 bytes, base64 o hex) aprovisionada en el servidor. Generar con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Nunca en el repo.
+- Fail-closed: sin clave válida, el guardado responde 500 genérico y no se persiste nada en claro; un dato que no se puede descifrar devuelve 500 genérico.
+- Perder la clave implica perder los teléfonos guardados. No rotarla sin plan (rotación mínima: `SAFETY_PLAN_ENCRYPTION_KEY_PREVIOUS` solo descifra; no hay re-cifrado masivo).
+- Valores legados en claro se leen tal cual y se cifran en el siguiente guardado; los backups anteriores pueden contener teléfonos en claro.
+- Deuda M4: el SQLite local de la App NO está cifrado (no cubierto por este cambio).
+- Nombre y textos de los pasos no se cifran en esta iteración (decisión de alcance: solo el teléfono, identificador directo de terceros).
+- Paso 3 (desde la migración 028, 2026-10-30): pasa a texto libre (`paso3_actividades_texto`) y va en claro como los Pasos 1, 2, 6 y 7, aunque la persona escriba teléfonos. La columna JSONB antigua (`paso3_actividades_personas`, con teléfonos cifrados) se lee y se convierte a texto si la nueva está vacía, y se vacía en el siguiente guardado.
+
 ## Checklist rápido (para auditoría)
 - [ ] Sin secretos en diff
 - [ ] AuthZ verificado en rutas nuevas

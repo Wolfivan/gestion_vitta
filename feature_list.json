@@ -1534,6 +1534,69 @@
       ],
       "priority": "alta",
       "status": "pending"
+    },
+    {
+      "id": 94,
+      "name": "safety_plan_backend",
+      "title": "Backend: migración, repositorio y API REST del kit de autocuidado / plan de seguridad",
+      "description": "Modelo de datos relacional con RLS, servicio y endpoints RESTful (/safety-plan) para persistir y consultar los 7 pasos clínicos del kit de autocuidado vinculados exclusivamente al id_anonimo.",
+      "acceptance": [
+        "Migración SQL (026_create_safety_plan.sql) con tabla safety_plans o kit_autocuidado vinculada a id_anonimo (UNIQUE)",
+        "Campos para los 7 pasos: signos alarma, estrategias afrontamiento, actividades personas (JSONB), contactos apoyo (JSONB), dispositivos sanitarios (JSONB), entorno seguro y motivos para vivir",
+        "Row Level Security (RLS) habilitado en la tabla de Supabase",
+        "GET /safety-plan retorna el plan del usuario autenticado o estructura base inicial",
+        "PUT /safety-plan valida, sanitiza y realiza upsert del plan por id_anonimo",
+        "Pruebas unitarias de repositorio, servicio y controlador con cobertura de casos exitosos y errores"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 95,
+      "name": "safety_plan_app_foundation",
+      "title": "App: tipos, persistencia local offline-first, servicio y hook del kit de autocuidado",
+      "description": "Infraestructura en la app para el kit de autocuidado: tipos TypeScript, persistencia local (SQLite/AsyncStorage) para acceso sin conexión durante emergencias, sincronizador con backend y hook useSafetyPlan.",
+      "acceptance": [
+        "Tipos TypeScript en App/src/types/safety-plan.ts (ISafetyPlan, ISafetyContact, etc.)",
+        "Persistencia local en SQLite o almacenamiento seguro para consulta instantánea offline",
+        "safetyPlanService con lectura en caché local, fetch al backend y guardado optimista/sincronizado",
+        "Hook useSafetyPlan con estado del plan, carga, error, métodos de actualización y selector de contactos de apoyo (Paso 4)",
+        "Tests unitarios del servicio y hook validando funcionamiento offline y sincronización"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 96,
+      "name": "safety_plan_app_ui",
+      "title": "App: pantalla del kit de autocuidado en perfil con formulario de los 7 pasos clínicos",
+      "description": "Pantalla interactiva SafetyPlanScreen accesible desde Perfil, permitiendo diligenciar y visualizar los 7 pasos del plan de seguridad con soporte para agregar/eliminar contactos y diseño empático de baja fricción.",
+      "acceptance": [
+        "Opción 'Kit de autocuidado' agregada al menú de opciones en ProfileScreen",
+        "Ruta registrada en RootStackParamList y AppNavigator",
+        "Formulario interactivo para los 7 pasos con validaciones y componentes de lista para contactos en Pasos 3 y 4",
+        "Paso 4 permite registrar nombre y número telefónico para contactos de confianza",
+        "Soporte de teclado con KeyboardAvoidingView/KeyboardAwareScrollView y guardado seguro con feedback visual",
+        "Tests de render de la pantalla y validaciones de entrada"
+      ],
+      "priority": "alta",
+      "status": "done"
+    },
+    {
+      "id": 97,
+      "name": "panic_trusted_contacts",
+      "title": "App: integración de contactos de confianza en modal de pánico con llamada y WhatsApp",
+      "description": "Sustitución del botón 'Contactar psicólogo de guardia' por 'Llamar a mi contacto de confianza' en PanicModal, mostrando los contactos del Paso 4 con opciones directas de llamada y WhatsApp ('Tienes cinco minutos para mi').",
+      "acceptance": [
+        "PanicModal reemplaza 'Contactar psicólogo de guardia' por 'Llamar a mi contacto de confianza'",
+        "Si hay contactos configurados en el Paso 4, abre diálogo/modal con la lista de contactos de confianza",
+        "Cada contacto de confianza permite 'Llamar' (tel:telefono) o 'Enviar WhatsApp' (whatsapp://send o wa.me con mensaje 'Tienes cinco minutos para mi')",
+        "Si no hay contactos configurados en el Paso 4, muestra mensaje informativo guiando al usuario a configurarlo en su Perfil",
+        "Funciona 100% offline utilizando la caché local del kit de autocuidado",
+        "Tests unitarios de PanicModal cubriendo estado con y sin contactos y apertura de enlaces"
+      ],
+      "priority": "alta",
+      "status": "done"
     }
   ]
 }
