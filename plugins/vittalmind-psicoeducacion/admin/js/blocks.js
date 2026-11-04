@@ -7,6 +7,15 @@ if (blockFormEl) blockFormEl.remove();
 (function($) {
 VMP.blocks = {
     categories: [],
+    features: [],
+
+    loadFeatures: function(callback) {
+        var self = this;
+        VMP.loadContentFeatures(function(list) {
+            self.features = list;
+            if (callback) callback();
+        });
+    },
 
     loadCategories: function() {
         var self = this;
@@ -136,6 +145,7 @@ VMP.blocks = {
                                     html += '<td><span class="vmp-badge ' + pilarClass + '">' + blk.pilar + '</span></td>';
                                     html += '<td><span class="vmp-badge vmp-badge-type">' + blk.tipoComponente + '</span></td>';
                                     html += '<td>' + blk.orden + '</td>';
+                                    html += '<td>' + (blk.accesoFeatureKey || '<span style="color:#10b981">Free</span>') + '</td>';
                                     html += '<td>';
                                     html += '<button class="vmp-btn-sm" onclick="VMP.blocks.showForm(' + blk.id + ')">Editar</button> ';
                                     html += '<button class="vmp-btn-sm vmp-btn-danger" onclick="VMP.blocks.confirmDelete(' + blk.id + ')">Eliminar</button>';
@@ -619,10 +629,15 @@ VMP.blocks = {
         $form.find('[name="pilar"]').val('');
         $form.find('[name="tipoComponente"]').val('');
         $form.find('[name="orden"]').val('0');
+        $form.find('[name="accesoFeatureKey"]').val('');
         $('#vmp-block-json-fields').empty();
 
         if (!id) {
-            self.loadFilteredTopics();
+            self.loadFilteredTopics(function() {
+                self.loadFeatures(function() {
+                    self.populateFeatureSelector($form);
+                });
+            });
             return;
         }
 
@@ -654,6 +669,9 @@ VMP.blocks = {
                                             self.loadFilteredTopics(function() {
                                                 $form.find('[name="temaId"]').val(blk.temaId);
                                             });
+                                            self.loadFeatures(function() {
+                                                self.populateFeatureSelector($form, blk.accesoFeatureKey || undefined);
+                                            });
                                             return;
                                         }
                                     }
@@ -684,7 +702,9 @@ VMP.blocks = {
             tipoComponente: tipo,
             tituloBloque: $form.find('[name="tituloBloque"]').val(),
             cuerpoJson: this.buildCuerpoJson(),
-            orden: parseInt($form.find('[name="orden"]').val()) || 0
+            orden: parseInt($form.find('[name="orden"]').val()) || 0,
+            // null y no undefined: Free tiene que quitar la restricción anterior.
+            accesoFeatureKey: $form.find('[name="accesoFeatureKey"]').val() || null
         };
 
         if (!data.temaId || !data.pilar || !data.tipoComponente || !data.tituloBloque) {
@@ -718,6 +738,18 @@ VMP.blocks = {
                 }
             });
         });
+    },
+
+    populateFeatureSelector: function($form, selectedKey) {
+        var $selector = $form.find('[name="accesoFeatureKey"]');
+        var options = '<option value="">Gratuito (Free)</option>';
+        this.features.forEach(function(f) {
+            options += '<option value="' + f.featureKey + '">' + VMP.escHtml(f.nombre) + '</option>';
+        });
+        $selector.html(options);
+        if (selectedKey) {
+            $selector.val(selectedKey);
+        }
     }
 };
 

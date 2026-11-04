@@ -16,13 +16,14 @@
                         <th>Icono</th>
                         <th>Slug</th>
                         <th>Descripción</th>
+                        <th>Acceso</th>
                         <th>Temas</th>
                         <th>Orden</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="vmp-categories-list">
-                    <tr><td colspan="8" style="text-align:center;color:#94a3b8">Cargando...</td></tr>
+                    <tr><td colspan="9" style="text-align:center;color:#94a3b8">Cargando...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -54,6 +55,13 @@
             <input type="hidden" id="cat_icono" name="icono" value="">
             <div class="vmp-icon-grid"></div>
             <div class="vmp-icon-note"></div>
+        </div>
+        <div class="vmp-field">
+            <label for="cat_acceso_feature">Acceso</label>
+            <select id="cat_acceso_feature" name="accesoFeatureKey">
+                <option value="">Free (todas las personas)</option>
+            </select>
+            <div class="vmp-help">Con una feature, la categoría se ve con candado y sus temas solo los abre quien tenga un plan que la incluya. El título y la descripción los ve todo el mundo: deben ser neutros.</div>
         </div>
         <div class="vmp-field">
             <label for="cat_orden">Orden</label>

@@ -24,6 +24,7 @@
                         <th>Autor</th>
                         <th>Bloques</th>
                         <th>Orden</th>
+                        <th>Acceso</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -59,6 +60,12 @@
         <div class="vmp-field">
             <label for="top_orden">Orden</label>
             <input type="number" id="top_orden" name="orden" value="0" min="0">
+        </div>
+        <div class="vmp-field">
+            <label for="top_acceso_feature">Requiere acceso (opcional)</label>
+            <select id="top_acceso_feature" name="accesoFeatureKey">
+                <option value="">Gratuito (Free)</option>
+            </select>
         </div>
         <div class="vmp-form-actions">
             <button type="button" class="button" onclick="VMP.closeModal()">Cancelar</button>

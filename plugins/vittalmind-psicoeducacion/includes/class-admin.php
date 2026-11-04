@@ -132,7 +132,8 @@ class VMP_Admin {
         if (isset($pages[$screen]) && $pages[$screen]) {
             $path = VMP_PLUGIN_DIR . 'admin/pages/' . $pages[$screen];
             if (file_exists($path)) {
-                include $path;
+                // La ruta sale de la lista blanca $pages, no de la peticion.
+                include $path; // nosemgrep
             }
         } elseif ($screen === 'vmp-settings') {
             VMP_Settings::render_page();

@@ -7,6 +7,15 @@ if (topicFormEl) topicFormEl.remove();
 (function($) {
 VMP.topics = {
     categories: [],
+    features: [],
+
+    loadFeatures: function(callback) {
+        var self = this;
+        VMP.loadContentFeatures(function(list) {
+            self.features = list;
+            if (callback) callback();
+        });
+    },
 
     loadCategories: function(callback) {
         var self = this;
@@ -26,6 +35,18 @@ VMP.topics = {
                 if (callback) callback();
             }
         });
+    },
+
+    populateFeatureSelector: function($form, selectedKey) {
+        var $selector = $form.find('[name="accesoFeatureKey"]');
+        var options = '<option value="">Gratuito (Free)</option>';
+        this.features.forEach(function(f) {
+            options += '<option value="' + f.featureKey + '">' + VMP.escHtml(f.nombre) + '</option>';
+        });
+        $selector.html(options);
+        if (selectedKey) {
+            $selector.val(selectedKey);
+        }
     },
 
     loadList: function() {
@@ -64,6 +85,7 @@ VMP.topics = {
                             html += '<td>' + VMP.escHtml(t.autor || '—') + '</td>';
                             html += '<td>' + (t.bloquesCount || 0) + '</td>';
                             html += '<td>' + t.orden + '</td>';
+                            html += '<td>' + (t.accesoFeatureKey || '<span style="color:#10b981">Free</span>') + '</td>';
                             html += '<td>';
                             html += '<button class="vmp-btn-sm" onclick="VMP.topics.showForm(' + t.id + ')">Editar</button> ';
                             html += '<button class="vmp-btn-sm vmp-btn-danger" onclick="VMP.topics.confirmDelete(' + t.id + ')">Eliminar</button>';
@@ -73,7 +95,7 @@ VMP.topics = {
                     }
                     done++;
                     if (done === total) {
-                        $tbody.html(html || '<tr><td colspan="8" style="text-align:center;color:#94a3b8">No hay temas' + (filterCatId ? ' en esta categoría' : '') + '.</td></tr>');
+                        $tbody.html(html || '<tr><td colspan="9" style="text-align:center;color:#94a3b8">No hay temas' + (filterCatId ? ' en esta categoría' : '') + '.</td></tr>');
                     }
                 });
             });
@@ -89,9 +111,14 @@ VMP.topics = {
         $form.find('[name="descripcionBreve"]').val('');
         $form.find('[name="autor"]').val('');
         $form.find('[name="orden"]').val('0');
+        $form.find('[name="accesoFeatureKey"]').val('');
 
         if (!id) {
-            self.loadCategories();
+            self.loadCategories(function() {
+                self.loadFeatures(function() {
+                    self.populateFeatureSelector($form);
+                });
+            });
         }
 
         if (id) {
@@ -118,6 +145,9 @@ VMP.topics = {
                                     self.loadCategories(function() {
                                         $form.find('[name="categoriaId"]').val(t.categoriaId);
                                     });
+                                    self.loadFeatures(function() {
+                                        self.populateFeatureSelector($form, t.accesoFeatureKey || undefined);
+                                    });
                                 }
                             }
                             idx++;
@@ -143,7 +173,9 @@ VMP.topics = {
             titulo: $form.find('[name="titulo"]').val(),
             descripcionBreve: $form.find('[name="descripcionBreve"]').val() || undefined,
             autor: $form.find('[name="autor"]').val() || undefined,
-            orden: parseInt($form.find('[name="orden"]').val()) || 0
+            orden: parseInt($form.find('[name="orden"]').val()) || 0,
+            // null y no undefined: Free tiene que quitar la restricción anterior.
+            accesoFeatureKey: $form.find('[name="accesoFeatureKey"]').val() || null
         };
 
         if (!data.categoriaId) {

@@ -1,6 +1,41 @@
 var VMP = window.VMP || {};
 
 (function($) {
+    var MAX_PLAN_NAMES = 3;
+
+    function planNames(plans, featureKey) {
+        var names = plans
+            .filter(function(plan) { return (plan.features || []).indexOf(featureKey) !== -1; })
+            .map(function(plan) { return plan.nombre; });
+        if (names.length === 0) return 'ningún plan';
+        if (names.length <= MAX_PLAN_NAMES) return names.join(', ');
+        return names.slice(0, MAX_PLAN_NAMES).join(', ') + ' y ' + (names.length - MAX_PLAN_NAMES) + ' más';
+    }
+
+    /**
+     * Features de contenido con los planes que las incluyen en el nombre. El selector
+     * pide una feature, no un plan: sin esto no se ve qué plan desbloquea el tema.
+     */
+    VMP.loadContentFeatures = function(callback) {
+        $.when(VMP.api.get('/admin/access/features'), VMP.api.get('/admin/access/plans'))
+            .done(function(featuresRes, plansRes) {
+                var features = featuresRes[0];
+                var plans = plansRes[0];
+                var planList = (plans.success && plans.data && plans.data.plans) || [];
+                var list = ((features.success && features.data && features.data.features) || [])
+                    .filter(function(feature) { return feature.tipo === 'contenido'; })
+                    .map(function(feature) {
+                        return {
+                            featureKey: feature.featureKey,
+                            nombre: feature.nombre + ' — ' + planNames(planList, feature.featureKey) +
+                                (feature.activo ? '' : ' (inactiva)')
+                        };
+                    });
+                callback(list);
+            })
+            .fail(function() { callback([]); });
+    };
+
     VMP.api = {
         get: function(path, data) {
             return $.ajax({

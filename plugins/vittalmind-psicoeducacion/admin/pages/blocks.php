@@ -29,11 +29,12 @@
                         <th>Pilar</th>
                         <th>Tipo</th>
                         <th>Orden</th>
+                        <th>Acceso</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="vmp-blocks-list">
-                    <tr><td colspan="7" style="text-align:center;color:#94a3b8">Cargando...</td></tr>
+                    <tr><td colspan="8" style="text-align:center;color:#94a3b8">Cargando...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -78,6 +79,12 @@
         <div class="vmp-field">
             <label for="blk_orden">Orden</label>
             <input type="number" id="blk_orden" name="orden" value="0" min="0">
+        </div>
+        <div class="vmp-field">
+            <label for="blk_acceso_feature">Requiere acceso (opcional)</label>
+            <select id="blk_acceso_feature" name="accesoFeatureKey">
+                <option value="">Gratuito (Free)</option>
+            </select>
         </div>
     </form>
 

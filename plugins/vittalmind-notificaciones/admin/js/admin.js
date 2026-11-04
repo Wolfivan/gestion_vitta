@@ -63,7 +63,8 @@ var VMPN = window.VMPN || {};
         var labels = {
             gratitude: 'Gratitud',
             motivation: 'Motivación',
-            announcement: 'Avisos'
+            announcement: 'Avisos',
+            access: 'Accesos'
         };
         return labels[category] || category;
     };

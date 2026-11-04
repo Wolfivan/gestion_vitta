@@ -3,7 +3,7 @@
  * Plugin Name: VittalMind Notificaciones
  * Plugin URI: https://vittalmind.com
  * Description: Panel para revisar y ajustar los copys de las notificaciones push de VittalMind. Consume la API del backend con la sesión del psicólogo.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Requires PHP: 7.4
  * Author: VittalMind
  * Text Domain: vittalmind-notificaciones
@@ -11,7 +11,7 @@
 
 defined('ABSPATH') || exit;
 
-define('VMPN_VERSION', '1.0.0');
+define('VMPN_VERSION', '1.0.2');
 define('VMPN_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('VMPN_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('VMPN_PLUGIN_BASENAME', plugin_basename(__FILE__));

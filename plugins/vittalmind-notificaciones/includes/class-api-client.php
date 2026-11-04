@@ -6,6 +6,8 @@ class VMPN_Api_Client {
     const REFRESH_TRANSIENT = 'vmpn_refresh_token';
     const TOKEN_TTL         = 55 * 60;
     const REFRESH_TOKEN_TTL = 29 * 24 * 60 * 60;
+    const RENEW_ATTEMPTS    = 4;
+    const RENEW_WAIT_MICROSECONDS = 250000;
 
     private static string $token = '';
     private static string $refresh_token = '';
@@ -54,30 +56,14 @@ class VMPN_Api_Client {
     }
 
     private static function send(string $method, string $path, $body, bool $auth): array {
-        if ($auth && !self::has_token()) {
-            if (self::try_refresh()) {
-                $result = self::handle_response(self::request($method, $path, $body, $auth));
-                if ($result['status'] !== 401) {
-                    return $result;
-                }
-            }
+        if ($auth && !self::has_token() && !self::renew()) {
             return self::session_expired();
         }
 
         $result = self::handle_response(self::request($method, $path, $body, $auth));
 
         if ($auth && $result['status'] === 401) {
-            if (self::try_refresh()) {
-                $result = self::handle_response(self::request($method, $path, $body, $auth));
-                if ($result['status'] !== 401) {
-                    return $result;
-                }
-            }
-
-            // Otro request en paralelo pudo haber renovado el token.
-            $fresh = (string) get_transient(self::TOKEN_TRANSIENT);
-            if ($fresh !== '' && $fresh !== self::$token) {
-                self::$token = $fresh;
+            if (self::renew()) {
                 $result = self::handle_response(self::request($method, $path, $body, $auth));
                 if ($result['status'] !== 401) {
                     return $result;
@@ -109,6 +95,41 @@ class VMPN_Api_Client {
             $args['body'] = wp_json_encode($body);
         }
         return wp_remote_request($url, $args);
+    }
+
+    /**
+     * El refresh token rota: entre dos peticiones paralelas solo una lo renueva y la otra
+     * recibe 401. Esa debe esperar el token nuevo, no borrar la sesión.
+     */
+    private static function renew(): bool {
+        if (self::try_refresh()) {
+            return true;
+        }
+
+        for ($attempt = 0; $attempt < self::RENEW_ATTEMPTS; $attempt++) {
+            if (self::reload_tokens()) {
+                return true;
+            }
+            usleep(self::RENEW_WAIT_MICROSECONDS);
+        }
+        return false;
+    }
+
+    private static function reload_tokens(): bool {
+        // get_transient responde con la caché de esta petición aunque otra ya lo cambió.
+        foreach ([self::TOKEN_TRANSIENT, self::REFRESH_TRANSIENT] as $key) {
+            wp_cache_delete("_transient_{$key}", 'options');
+            wp_cache_delete("_transient_timeout_{$key}", 'options');
+        }
+
+        $fresh = (string) get_transient(self::TOKEN_TRANSIENT);
+        if ($fresh === '' || $fresh === self::$token) {
+            return false;
+        }
+
+        self::$token         = $fresh;
+        self::$refresh_token = (string) get_transient(self::REFRESH_TRANSIENT);
+        return true;
     }
 
     private static function try_refresh(): bool {

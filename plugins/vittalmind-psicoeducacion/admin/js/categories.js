@@ -6,12 +6,35 @@ if (categoryFormEl) categoryFormEl.remove();
 
 (function($) {
 VMP.categories = {
+    features: [],
+
+    loadFeatures: function(callback) {
+        var self = this;
+        VMP.loadContentFeatures(function(list) {
+            self.features = list;
+            if (callback) callback();
+        });
+    },
+
+    populateFeatureSelector: function($form, selected) {
+        var $selector = $form.find('[name="accesoFeatureKey"]');
+        $selector.find('option:not(:first)').remove();
+        this.features.forEach(function(f) {
+            $selector.append($('<option></option>').val(f.featureKey).text(f.nombre));
+        });
+        // Una feature desactivada sigue guardada en la categoría: se conserva visible.
+        if (selected && !$selector.find('option').filter(function() { return this.value === selected; }).length) {
+            $selector.append($('<option></option>').val(selected).text(selected));
+        }
+        $selector.val(selected || '');
+    },
+
     loadList: function() {
         VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
             var $tbody = $('#vmp-categories-list');
             if (r.success && r.data) {
                 if (r.data.length === 0) {
-                    $tbody.html('<tr><td colspan="8" style="text-align:center;color:#94a3b8">No hay categorías. Crea la primera.</td></tr>');
+                    $tbody.html('<tr><td colspan="9" style="text-align:center;color:#94a3b8">No hay categorías. Crea la primera.</td></tr>');
                     return;
                 }
                 var html = '';
@@ -22,6 +45,7 @@ VMP.categories = {
                     html += '<td class="vmp-icon-cell">' + (c.icono ? VMP.escHtml(c.icono) : '<span class="vmp-icon-empty">—</span>') + '</td>';
                     html += '<td><code>' + VMP.escHtml(c.slug) + '</code></td>';
                     html += '<td>' + VMP.escHtml(c.descripcion || '—') + '</td>';
+                    html += '<td>' + (c.accesoFeatureKey ? VMP.escHtml(c.accesoFeatureKey) : '<span style="color:#10b981">Free</span>') + '</td>';
                     html += '<td>' + (c.temasCount || 0) + '</td>';
                     html += '<td>' + c.orden + '</td>';
                     html += '<td>';
@@ -32,7 +56,7 @@ VMP.categories = {
                 });
                 $tbody.html(html);
             } else {
-                $tbody.html('<tr><td colspan="8" style="text-align:center;color:#dc2626">Error: ' + VMP.escHtml(r.data || 'Sin respuesta') + '</td></tr>');
+                $tbody.html('<tr><td colspan="9" style="text-align:center;color:#dc2626">Error: ' + VMP.escHtml(r.data || 'Sin respuesta') + '</td></tr>');
             }
         });
     },
@@ -50,6 +74,8 @@ VMP.categories = {
         // Se monta después de los resets para que el grid arranque en "Sin
         // icono" y no conserve la selección de la edición anterior.
         var iconPicker = VMP.mountIconPicker($form);
+        var self = this;
+        self.loadFeatures(function() { self.populateFeatureSelector($form); });
 
         if (id) {
             VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
@@ -61,6 +87,9 @@ VMP.categories = {
                         $form.find('[name="slug"]').val(cat.slug);
                         $form.find('[name="descripcion"]').val(cat.descripcion || '');
                         $form.find('[name="orden"]').val(cat.orden);
+                        self.loadFeatures(function() {
+                            self.populateFeatureSelector($form, cat.accesoFeatureKey);
+                        });
                         if (iconPicker) {
                             // set() y no .val() a secas: además de escribir el
                             // valor, marca la opción correspondiente y avisa si el
@@ -96,7 +125,9 @@ VMP.categories = {
             titulo: $form.find('[name="titulo"]').val(),
             descripcion: $form.find('[name="descripcion"]').val() || undefined,
             icono: icono,
-            orden: parseInt($form.find('[name="orden"]').val()) || 0
+            orden: parseInt($form.find('[name="orden"]').val()) || 0,
+            // null y no undefined: Free tiene que quitar la restricción anterior.
+            accesoFeatureKey: $form.find('[name="accesoFeatureKey"]').val() || null
         };
 
         var promise = id

@@ -51,6 +51,8 @@ services:
       # vivo, sin reinstalar nada. Por eso hay que subir `VMP_VERSION` en cada
       # cambio de JS/CSS para invalidar la caché del navegador.
       - ../vittalmind-psicoeducacion:/var/www/html/wp-content/plugins/vittalmind-psicoeducacion
+      - ../vittalmind-accesos:/var/www/html/wp-content/plugins/vittalmind-accesos
+      - ../vittalmind-notificaciones:/var/www/html/wp-content/plugins/vittalmind-notificaciones
     depends_on:
       wpmysql:
         condition: service_healthy

@@ -1,0 +1,200 @@
+<?php
+defined('ABSPATH') || exit;
+
+class VMA_Api_Client {
+    // Mismos transients que VMP_Api_Client: la sesión se comparte con psicoeducación.
+    const TOKEN_TRANSIENT   = 'vmp_jwt_token';
+    const REFRESH_TRANSIENT = 'vmp_refresh_token';
+    const TOKEN_TTL         = 55 * 60;
+    const REFRESH_TOKEN_TTL = 29 * 24 * 60 * 60;
+    const RENEW_ATTEMPTS    = 4;
+    const RENEW_WAIT_MICROSECONDS = 250000;
+
+    private static string $token = '';
+    private static string $refresh_token = '';
+
+    public static function init(): void {
+        self::$token         = (string) get_transient(self::TOKEN_TRANSIENT);
+        self::$refresh_token = (string) get_transient(self::REFRESH_TRANSIENT);
+    }
+
+    public static function set_tokens(string $token, string $refresh_token): void {
+        self::$token         = $token;
+        self::$refresh_token = $refresh_token;
+        set_transient(self::TOKEN_TRANSIENT, $token, self::TOKEN_TTL);
+        set_transient(self::REFRESH_TRANSIENT, $refresh_token, self::REFRESH_TOKEN_TTL);
+    }
+
+    public static function clear_token(): void {
+        self::$token         = '';
+        self::$refresh_token = '';
+        delete_transient(self::TOKEN_TRANSIENT);
+        delete_transient(self::REFRESH_TRANSIENT);
+    }
+
+    /** El token dura 55 minutos; con refresh vigente la sesión sigue abierta. */
+    public static function has_session(): bool {
+        return self::$token !== '' || self::$refresh_token !== '';
+    }
+
+    private static function get_headers(bool $auth = true): array {
+        $headers = ['Content-Type' => 'application/json'];
+        if ($auth && self::$token !== '') {
+            $headers['Authorization'] = 'Bearer ' . self::$token;
+        }
+        return $headers;
+    }
+
+    public static function get(string $path, bool $auth = true): array {
+        return self::send('GET', $path, null, $auth);
+    }
+
+    public static function post(string $path, array $body = [], bool $auth = true): array {
+        return self::send('POST', $path, $body, $auth);
+    }
+
+    public static function put(string $path, array $body = [], bool $auth = true): array {
+        return self::send('PUT', $path, $body, $auth);
+    }
+
+    public static function delete(string $path, array $body = [], bool $auth = true): array {
+        return self::send('DELETE', $path, $body, $auth);
+    }
+
+    private static function send(string $method, string $path, $body, bool $auth): array {
+        if ($auth && self::$token === '' && !self::renew()) {
+            return self::session_expired();
+        }
+
+        $result = self::handle_response(self::request($method, $path, $body, $auth));
+
+        if ($auth && $result['status'] === 401) {
+            if (self::renew()) {
+                $result = self::handle_response(self::request($method, $path, $body, $auth));
+                if ($result['status'] !== 401) {
+                    return $result;
+                }
+            }
+
+            self::clear_token();
+            return self::session_expired();
+        }
+
+        if ($auth && $result['success'] && self::$token !== '') {
+            set_transient(self::TOKEN_TRANSIENT, self::$token, self::TOKEN_TTL);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return array|WP_Error
+     */
+    private static function request(string $method, string $path, $body, bool $auth) {
+        $url  = VMA_Settings::get_api_url() . '/' . ltrim($path, '/');
+        $args = [
+            'method'  => $method,
+            'headers' => self::get_headers($auth),
+            'timeout' => 30,
+        ];
+        if (in_array($method, ['POST', 'PUT', 'DELETE'], true) && is_array($body)) {
+            $args['body'] = wp_json_encode($body);
+        }
+        return wp_remote_request($url, $args);
+    }
+
+    /**
+     * El refresh token rota: entre dos peticiones paralelas solo una lo renueva y la otra
+     * recibe 401. Esa debe esperar el token nuevo, no borrar la sesión compartida.
+     */
+    private static function renew(): bool {
+        if (self::try_refresh()) {
+            return true;
+        }
+
+        for ($attempt = 0; $attempt < self::RENEW_ATTEMPTS; $attempt++) {
+            if (self::reload_tokens()) {
+                return true;
+            }
+            usleep(self::RENEW_WAIT_MICROSECONDS);
+        }
+        return false;
+    }
+
+    private static function reload_tokens(): bool {
+        // get_transient responde con la caché de esta petición aunque otra ya lo cambió.
+        foreach ([self::TOKEN_TRANSIENT, self::REFRESH_TRANSIENT] as $key) {
+            wp_cache_delete("_transient_{$key}", 'options');
+            wp_cache_delete("_transient_timeout_{$key}", 'options');
+        }
+
+        $fresh = (string) get_transient(self::TOKEN_TRANSIENT);
+        if ($fresh === '' || $fresh === self::$token) {
+            return false;
+        }
+
+        self::$token         = $fresh;
+        self::$refresh_token = (string) get_transient(self::REFRESH_TRANSIENT);
+        return true;
+    }
+
+    private static function try_refresh(): bool {
+        if (self::$refresh_token === '') {
+            return false;
+        }
+
+        $result = self::handle_response(
+            self::request('POST', '/auth/refresh', ['refreshToken' => self::$refresh_token], false)
+        );
+
+        if (!$result['success'] || !is_array($result['data'])) {
+            return false;
+        }
+
+        $jwt = isset($result['data']['jwt']) ? (string) $result['data']['jwt'] : '';
+        if ($jwt === '') {
+            return false;
+        }
+
+        $refresh = isset($result['data']['refreshToken'])
+            ? (string) $result['data']['refreshToken']
+            : self::$refresh_token;
+
+        self::set_tokens($jwt, $refresh);
+        return true;
+    }
+
+    private static function session_expired(): array {
+        return [
+            'success' => false,
+            'status'  => 401,
+            'data'    => null,
+            'error'   => 'Tu sesión con el backend expiró. Vuelve a iniciar sesión.',
+        ];
+    }
+
+    private static function handle_response($response): array {
+        if (is_wp_error($response)) {
+            return [
+                'success' => false,
+                'status'  => 0,
+                'data'    => null,
+                'error'   => $response->get_error_message(),
+            ];
+        }
+
+        $status = wp_remote_retrieve_response_code($response);
+        $body   = json_decode(wp_remote_retrieve_body($response), true);
+
+        return [
+            'success' => $status >= 200 && $status < 300,
+            'status'  => $status,
+            'data'    => $body,
+            'error'   => $status >= 400
+                ? (is_array($body) && isset($body['error']['message'])
+                    ? $body['error']['message']
+                    : 'Error del servidor')
+                : null,
+        ];
+    }
+}
