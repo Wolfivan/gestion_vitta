@@ -3239,6 +3239,76 @@ cambios. Todo el contenido y las herramientas actuales quedan free.
 
 ### Siguiente paso
 - Feature #95: `safety_plan_app_foundation` (App: tipos, persistencia local offline-first, servicio y hook del kit de autocuidado).
+# SesiÃ³n actual
+
+> Este archivo se vacÃ­a al cerrar cada sesiÃ³n y se mueve a `history.md`.
+> Mientras trabajas, **mantÃ©nlo actualizado en tiempo real**, no al final.
+
+## Estado
+- Sin tarea en progreso
+
+
+## Feature 92: WordPress - Selector de acceso en temas y bloques de psicoeducaciÃ³n (2026-10-27)
+
+### Resumen
+Se implementÃ³ el selector de acceso en el plugin de WordPress para temas y bloques de psicoeducaciÃ³n. Ahora el psicÃ³logo puede elegir quÃ© feature de contenido requiere cada tema o bloque (en lugar del checkbox VIP binario). Las categorÃ­as no se bloquean.
+
+### Cambios
+
+**Plugin de WordPress:**
+- `vittalmind-psicoeducacion.php`: Incrementado VMP_VERSION a 1.0.9
+- `admin/js/topics.js`: 
+  - Agregado `loadFeatures()` para cargar features de contenido desde `/admin/access/features`
+  - Agregado `populateFeatureSelector()` para poblar el dropdown
+  - Actualizado `showForm()` para cargar y mostrar features al crear/editar temas
+  - Actualizado `save()` para incluir `accesoFeatureKey` en el payload
+  - Actualizado `loadList()` para mostrar la feature requerida en la columna "Acceso"
+- `admin/pages/topics.php`: 
+  - Agregado selector de features en el form modal
+  - Actualizado header de tabla para incluir columna "Acceso"
+  - Actualizado colspan de tbody
+- `admin/js/blocks.js`: 
+  - Agregado `loadFeatures()` y `populateFeatureSelector()`
+  - Actualizado `showForm()` para cargar y mostrar features al crear/editar bloques
+  - Actualizado `save()` para incluir `accesoFeatureKey` en el payload
+- `admin/pages/blocks.php`: 
+  - Agregado selector de features en el form modal
+  - Actualizado header de tabla para incluir columna "Acceso"
+  - Actualizado colspan de tbody
+
+**Backend:**
+- `src/services/psychoeducation-repository.ts`:
+  - Actualizado `findTopicsByCategoryForAdmin()` para incluir `acceso_feature_key`
+  - Actualizado `findTopicByIdForAdmin()` para incluir `acceso_feature_key`
+  - Actualizado `createTopic()` con parÃ¡metro `accesoFeatureKey`
+  - Actualizado `updateTopic()` con campo `acceso_feature_key`
+  - Actualizado `createBlock()` con parÃ¡metro `accesoFeatureKey`
+  - Actualizado `updateBlock()` con campo `acceso_feature_key`
+- `src/services/psychoeducation-service.ts`:
+  - Actualizado `getAdminCategoryDetail()` para incluir `accesoFeatureKey` en temas
+  - Actualizado `getAdminTopicBlocks()` para incluir `accesoFeatureKey` en tema y bloques
+  - Actualizado `createTopic()` con parÃ¡metro `accesoFeatureKey`
+  - Actualizado `updateTopic()` con parÃ¡metro `accesoFeatureKey`
+  - Actualizado `createBlock()` con parÃ¡metro `accesoFeatureKey`
+  - Actualizado `updateBlock()` con parÃ¡metro `acceso_feature_key`
+- `src/controllers/psychoeducation-controller.ts`:
+  - Actualizado `adminCreateTopic()` y `adminUpdateTopic()` para aceptar `accesoFeatureKey`
+  - Actualizado `adminCreateBlock()` y `adminUpdateBlock()` para aceptar `accesoFeatureKey`
+
+**Tests:**
+- `Backend/tests/psychoeducation.test.ts`: Actualizado test para esperar `null` en lugar de `undefined`
+- `App/__tests__/psychoeducation-topic-screen.test.tsx`:
+  - Agregado mock de `useAccess` para evitar error de contexto
+  - Actualizado mock `contenido()` para incluir `accesoFeatureKey`
+
+### VerificaciÃ³n
+- Backend: 25 suites, 359 tests â€” todo verde
+- App: 21 suites, 217 tests â€” todo verde
+- `tsc --noEmit` sin errores en Backend ni App
+
+### Pendiente
+- Smoke test en Docker: crear tema/bloque restringido desde el panel y verificar que se vea bloqueado en la App
+- Generar ZIP del plugin v1.0.9 para publicaciÃ³n
 
 ---
 
@@ -3342,3 +3412,279 @@ Ronda 3 y Ronda 4 (feature 96, kit de autocuidado): documentadas en progress/imp
 - **Gate del usuario (2026-10-29 22:35, Windows/Docker)**: `.\init.ps1` verde. Tests Backend y App PASS; quality-lite PASS (Backend 16 avisos, duplicación 1,94 %; App 19 avisos, duplicación 9,81 %). Avisos: hook `pre-push` sin instalar en Backend y App; security scan omitido (modo desarrollo, va en `quality-release`).
 - **Pendiente del usuario**: Validación clínica de los textos nuevos (`confirmReplaceCloudText`, "Cerrando sesión…").
 - **Tests nuevos o ampliados**: `sync-manager.test.ts`, `safety-plan-service.test.ts`, `use-auth-logout.test.tsx`, `use-safety-plan.test.tsx`, `safety-plan-screen.test.tsx`.
+
+## Feature 98 access_key_alignment
+### Estado
+- **Tarea**: feature 98 `access_key_alignment` (primera de la serie 98-105 del plan `docs/plan-accesos-y-codigos-canje.md`).
+- **Inicio**: 2026-10-28
+- **Estado**: done (2026-10-31)
+- **Decisión del usuario (2026-10-28)**: la serie 98-105 va antes que 95/96/97; el 93 queda `blocked` hasta terminar el 100 (multi-plan).
+- **Plan breve**: constante de claves en App; `GET /access/default` público; invitado = plan default; no purgar al ganar acceso; tests de UI de accesos; smoke test free/invitado.
+
+## Qué se ha hecho
+- Auditoría de 87-93 y plan documentado en `docs/plan-accesos-y-codigos-canje.md`.
+- `feature_list.json`: añadidas 98-105 y reescritos los criterios del 93 (ahora `blocked`).
+
+### Feature 98 — implementado (sin cerrar)
+- Backend: `GET /access/default` público (`getDefaultAccess` en `access-service.ts`, controlador y ruta). Tests en `tests/access.test.ts` y `tests/access-service.test.ts`.
+- App: `src/constants/access-keys.ts` (única fuente de claves, igual que el seed 026); `tools-screen` y `home-screen` la usan; la herramienta Psicoeducación ahora exige `tool.psychoeducation`.
+- App: invitado = plan default (`getGuestAccess`, cache propia con scope `guest` en `access-storage`).
+- App: `isFeatureLocked` no pinta candados mientras carga; `AccessGate` lo usa.
+- App: la purga de descargas solo ocurre al PERDER features (`hasLostFeatures`); ganar acceso no purga.
+- Tests nuevos App: `access-keys`, `access-ui` (Tools, Home, AccessGate, AccessStatusCard), `access-context`, `access-request-screen`; ampliados `access-service` y `access-storage`. Helper en `App/test-utils/access-mock.ts`.
+
+### Corrección tras la prueba del usuario (2026-10-29): todo con candado y sin botón Ser VIP
+- Causa 1: si la app no logra cargar el acceso (backend sin `/access` o `/access/default`, o BD sin la migración 026) `isFeatureLocked` devolvía bloqueado. Ahora, sin datos de acceso no se pinta ningún candado (desconocido no es bloqueado; el servidor sigue siendo quien protege el contenido). Tests en `access-context.test.tsx`.
+- Causa 2: `AccessStatusCard` solo mostraba el botón si el plan ACTUAL era solicitable (free no lo es). Ahora consulta `/access/plans` y ofrece el primer plan solicitable que el usuario no tiene (texto = `ctaTexto`, p. ej. "Ser VIP"). Tests en `access-ui.test.tsx`.
+- El canje de código/bono NO existe todavía: es la feature 104 (backend 102, plugin 103).
+- Entorno: `App/package.json` ya está en Expo SDK 58 / Jest 30 (cambio ajeno a esta sesión). `node_modules` instalado en Windows no corre en Linux (binario nativo de `unrs-resolver`), así que las pruebas de App se ejecutan ahora en una copia en `/tmp/app-lx` con `npm install` propio. Resultado: 27 suites / 316 tests PASS, `tsc` 0 errores, ESLint limpio en los archivos tocados.
+
+### Resultado de los gates del usuario (2026-10-29, Windows/Docker)
+- `quality-release.ps1 -SkipSecurity`: quality-lite PASS (Backend 16 avisos, App 19, duplicación 1,96% / 10,67%); Sonar App PASS; **Sonar Backend FAIL: new_coverage=0.0 (umbral 80)** porque no existe `coverage/lcov.info` (ningún script ejecuta jest con cobertura). Es un hueco del gate de release (aplica antes de `main`, no al `done`).
+- `init.ps1`: tests Backend y App PASS; **FAIL: 2 features en `in_progress`** (98 y 95, esta última abierta por otra sesión); security-scan: gitleaks 19 hallazgos sin detalle (escanea el árbol con `--no-git`, incluye `.env*` locales ignorados por git), osv-scanner "No package sources found", semgrep "Cannot create auto config when metrics are off", trivy sin terminar en el log pegado.
+- Pendiente: decidir qué hacer con 95, triar gitleaks, corregir semgrep/osv/cobertura en los scripts, y la prueba manual free/invitado.
+
+### Evidencia (ejecutada en Linux sobre tu carpeta, sin Docker)
+- Backend: `tsc --noEmit` 0 errores; ESLint 0 errores (4 avisos `no-duplicate-string` ya existentes); 25 suites PASS, 0 FAIL.
+- App: `tsc --noEmit` 0 errores; ESLint 0 errores/avisos en los archivos tocados; 25 suites PASS, 0 FAIL.
+- Nota: las pruebas de la App se ejecutaron con `--roots=./__tests__ --roots=./src --roots=./test-utils --no-watchman` porque el rastreo de `node_modules` en el disco montado tardaba más de 2 min.
+
+### Sesión 2026-10-31: herramientas de los gates
+- `feature_list.json`: 98 `blocked` -> `in_progress` (ninguna otra feature cambió).
+- **Sonar sin cobertura (new_coverage=0.0)**: `quality-release.ps1` / `.sh` ahora corren `npx jest --coverage --coverageReporters=lcov` en `Backend` y `App` antes de cada escaneo y dejan las rutas `SF:` relativas (el scanner corre en Docker con `/repo`). Si jest falla se registra el check "Cobertura <dir>" en FAIL. Probado el `.sh` en Linux sobre una copia del Backend: 26 suites / 386 tests PASS, `lcov.info` con 72 archivos y 0 rutas absolutas; cobertura global de líneas 71,4% (Sonar mide la de código nuevo, umbral 80).
+- **gitleaks (19-21 hallazgos)**: nuevo `.gitleaks.toml` (reglas por defecto + exclusión de archivos locales ignorados por git y artefactos generados + `curl -u "$TOKEN:"` y `admin:admin` de Sonar local). `gitleaks:allow` con motivo en dos claves de prueba (`Backend/tests/safety-plan*.test.ts`) y en el issuer ID de App Store Connect (`App/eas-build-ios.ps1`, no es secreto; el `.p8` está en `DataConf/`). Resultado con gitleaks 8.28.0: **1 hallazgo real**.
+- **HALLAZGO REAL, bloqueante**: `Backend/.env.docker` está versionado y publicado (`origin/main` y `origin/desarrollo`) con un `OPENROUTER_API_KEY` real (distinto al de producción). Pendiente de decisión del usuario: rotar la clave en OpenRouter y sacar el valor del archivo versionado. No se allowlistea.
+- **osv-scanner "No package sources found"**: el `.gitignore` raíz excluye `App/` y `Backend/` y osv lo respeta. Ahora recibe los dos `package-lock.json` explícitos (verificado: 938 + 589 paquetes). Queda informativo (la política bloquea CRITICAL/HIGH y eso lo hace trivy). `npm audit` del Backend: 0 high/critical (4 moderate en prod).
+- **semgrep "Cannot create auto config when metrics are off"**: rulesets explícitos `p/default`, `p/typescript`, `p/react`, `p/php`, solo bloquea severidad ERROR, rutas `App/src`, `App/App.tsx`, `Backend/src`, `plugins`. Dos falsos positivos marcados con `// nosemgrep` y comentario: `include $path` de la lista blanca en `plugins/vittalmind-psicoeducacion/includes/class-admin.php` y el rollback de `use-notification-preferences.ts`. Con las reglas de JS/TS/PHP de semgrep-rules: 0 hallazgos ERROR.
+- **trivy incompleto**: se omite `node_modules` (lo que lo hacía eterno en el bind mount de Windows), `.env` locales y `DataConf/`; `--timeout 20m` y volumen `trivy-cache`. 0.66.0 es anterior al incidente de marzo de 2026 (comprometidas 0.69.4-0.69.6), se mantiene. No se pudo correr aquí (sin Docker ni acceso a su base). Puede marcar DS002 (Dockerfile sin `USER`) en `Backend/Dockerfile` y `scripts/quality/Dockerfile`.
+- Docs: `docs/security-tools-docker.md` (qué bloquea y qué no) y `docs/quality-tools-docker.md` (cobertura).
+
+### Pendiente para cerrar la 98 (lo lanza el usuario en Windows/Docker)
+1. Decidir sobre `Backend/.env.docker` (rotar clave y quitarla del archivo versionado).
+2. `.\scripts\quality-check.ps1` y `.\init.ps1` (PASS) y `.\scripts\security-scan.ps1`.
+3. Smoke test: usuario free e invitado ven módulos y herramientas sin candado y ven el botón de solicitud.
+4. `security-auditor` y `sonar-verifier`; si todo pasa, 98 `done`, resumen a `progress/history.md` y pasar a la 99.
+
+### Cierre (2026-10-31)
+- **Decisión de la usuaria (2026-10-31 11:08)**: el agente corre los gates y, si pasan, cierra la feature y sigue con la siguiente; ella revisa al final de la fase. La prueba manual con usuario free e invitado queda para esa revisión.
+- Gate ejecutado por el agente en el Linux del equipo (sin Docker) sobre copias con dependencias Linux (`$HOME/wk`), porque los `node_modules` de Windows no corren en Linux para la App: pasos de `init.sh` (archivos base, `feature_list.json` con una sola `in_progress`), tests Backend 26 suites / 386 PASS y App 33 suites / 495 PASS, y `scripts/quality/run-quality.mjs` (el mismo de quality-lite en Docker) PASS: Backend 0 errores / 16 avisos / duplicación 1,93 %; App 0 errores / 19 avisos / duplicación 9,69 %.
+- `security-auditor`: OK con notas (`security-reports/SECURITY_AUDIT_98_access_key_alignment_2026-10-31_11-30.md`). `sonar-verifier`: PASS (`quality-reports/SONAR_REPORT_98_access_key_alignment_2026-10-31_11-30.md`).
+- Pendiente fuera de la 98, antes de `main`: rotar la clave de OpenRouter de `Backend/.env.docker`.
+- `eslint-report.json` agregado a `.gitignore` de App y Backend.
+
+## Feature 99 access_server_gating
+### Estado
+- **Tarea**: feature 99 `access_server_gating`.
+- **Inicio**: 2026-10-31 11:35 (Bogotá). **Cierre**: 2026-10-31 11:55. **Estado**: done.
+- **Modo de trabajo (decisión de la usuaria, 2026-10-31)**: el agente corre los gates y, si pasan, cierra y sigue; la usuaria revisa al final de la fase. Sin commits.
+
+### Qué se hizo
+- Backend: `src/constants/access-features.ts` (claves); `requireFeature` después de `authMiddleware` en `POST /tools/cnv-translate` (`tool.cnv_translator`), `/gratitude/*` (`tool.gratitude`) y `/timeline*` (`tool.timeline`), incluidos los DELETE. Swagger del traductor con el 403.
+- Backend tests: `tests/helpers/access-mock.ts` (acceso controlable); `gratitude.test.ts` y `timeline.test.ts` mockean el acceso con el plan free; nuevo `tests/access-server-gating.test.ts`: 403 `FEATURE_REQUIRED` por ruta, sin regresión con free, 401 antes que 403, el traductor no llama a la IA sin la feature, mapa de rutas (falla si una ruta siempre libre usa `requireFeature` o si aparece una protegida no declarada) y punta a punta crear, perder el plan, 403, recuperar y los datos siguen.
+- App: `src/services/access-events.ts` (eventos sin dependencias); `ApiError` con `code`, y `api.ts` avisa cada 403 `FEATURE_REQUIRED`. `sync-manager.ts`: el 403 `FEATURE_REQUIRED` deja la op en la cola, pausa la entidad (sin reintentos ni temporizador), no cuenta las ops en pausa para el reflush (evita bucle) y se reanuda al cargar un acceso con la feature o al cambiar de sesión. `access-context.tsx`: recarga el acceso del servidor tras el 403, avisa las features a la cola y expone `featureNoticeVisible` / `dismissFeatureNotice` (sin repetir el aviso antes de 10 min). `FeatureRequiredNotice` montado en el navegador con "Ver opciones de plan" hacia AccessRequest.
+- App tests: `sync-feature-gating.test.ts`, `access-events.test.ts`, `feature-required-notice.test.tsx`, casos nuevos en `access-context.test.tsx`; `test-utils/access-mock.ts` con los campos nuevos.
+- Docs: `docs/accesos-rutas.md` (qué ruta exige qué feature, rutas siempre libres, perder el plan no borra datos).
+
+### Evidencia (Linux del equipo, copias con dependencias Linux en `$HOME/wk`)
+- Backend: 27 suites / 418 tests PASS; App: 36 suites / 513 tests PASS.
+- `run-quality.mjs` PASS: Backend 0 errores / 16 avisos / duplicación 1,91 %; App 0 errores / 19 avisos / duplicación 9,64 % (`quality-reports/QUALITY_2026-10-31T16-44-14.md`).
+- `security-auditor`: OK con notas (`security-reports/SECURITY_AUDIT_99_access_server_gating_2026-10-31_11-50.md`). `sonar-verifier`: PASS (`quality-reports/SONAR_REPORT_99_access_server_gating_2026-10-31_11-50.md`).
+
+### Para la revisión de fase
+- Decidir si `DELETE /timeline/all` y `DELETE /timeline/:id` quedan libres para que quien perdió el plan pueda borrar sus datos del servidor (no hay endpoint de eliminación de cuenta).
+- Textos nuevos pendientes de validación: aviso "Tu plan no incluye esta herramienta" / "Tus registros siguen guardados…".
+
+
+## Feature 100 access_multi_plan
+### Estado
+- **Tarea**: feature 100 `access_multi_plan`. **Inicio**: 2026-10-31. **Cierre**: 2026-11-02. **Estado**: done. Sin commits.
+
+### Revisión previa en Docker de 98 y 99 (2026-11-02)
+- API contra Docker sin fallos: invitado, free, plan sin features (9 rutas con 403 `FEATURE_REQUIRED`), rutas libres, 401 antes que 403, datos idénticos al recuperar el plan.
+- App en Expo web: invitado y free sin candados, free ve "Ser VIP", plan sin features con 6 candados y salida a "Solicitar acceso".
+- **No verificado en pantalla**: `FeatureRequiredNotice` y la cola offline con 403 (solo Jest). En web, guardar un hito se queda en "Guardando..." sin petición al servidor; falta probar en emulador o dispositivo.
+
+### Qué se hizo
+- Backend: migración `029_create_usuario_planes.sql` (libro de otorgamientos, backfill idempotente, RLS; columna extra `vencimiento_registrado_at`). `utils/plan-expiry.ts` con la regla pura. `access-repository`: `grantPlan`, `revokePlan`, `approveRequest` y `expirePlans` sobre el libro, con `FOR UPDATE` por usuario; `expirePlans` usa una transacción por usuario. `getEffectiveAccess`: unión de vigentes más default, `planes`, `featureExpira`. `listUsers` devuelve todos los planes y filtra por cualquiera. `countUsersForPlan` cuenta el historial por la FK.
+- Admin: `POST /admin/access/users/:idAnonimo/plans` y `DELETE .../plans/:planCodigo` reemplazan al PUT (ningún consumidor). El plan default no se otorga.
+- App: `IAccess.planes` y `featureExpira` opcionales; `utils/access-plans.ts`; `PlanExpiryNotice` en Inicio y Perfil (7 días o menos, hora de Bogotá); `AccessStatusCard` lista todos los planes; la purga solo ocurre al perder features y compara con la caché al abrir (corrige que un plan perdido con la app cerrada no purgaba).
+- Docs: `docs/accesos-rutas.md`.
+
+### Evidencia
+- `init.ps1` verde: tests Backend y App, quality gate PASS (Backend 0 errores / 17 avisos / duplicación 2,12 %; App 0 errores / 20 avisos / duplicación 9,65 %).
+- 029 aplicada dos veces en Postgres local sin errores, con usuario VIP previo para el backfill. Prueba real contra esa base, 26/26: backfill, extensión, adición, unión, feature compartida, revocar uno sin afectar otro, datos intactos al recuperar el plan, job idempotente, FK al borrar plan y 12 otorgamientos concurrentes que suman 120 días. HTTP 20/20, incluido el contrato para apps viejas. Datos de prueba borrados.
+- No se ejecutó en un dispositivo: la vista de varios planes y el aviso de vencimiento solo están cubiertos por Jest. `security-auditor` y `sonar-verifier` no corren por feature (AGENTS.md §3); siguen obligatorios antes de `main`.
+
+### Para la revisión de fase
+- Antes de aplicar en producción: respaldo de Supabase. No correr `npm run migrate` con `Backend/.env`.
+- Con la unión, ninguna feature del plan free puede dar 403: para reservar una herramienta hay que quitarla de free, y eso también se la quita a los invitados.
+- El aviso nuevo agrega el texto "Si vence, tus datos siguen guardados.", pendiente de validación.
+- La 93 sigue `blocked`; la condición que la bloqueaba (terminar la 100) ya se cumplió.
+
+## Feature 93 wp_access_admin_plugin
+### Estado
+- **Tarea**: feature 93 `wp_access_admin_plugin`. **Inicio y cierre**: 2026-11-02. **Estado**: done. Sin commits.
+
+### Qué se hizo
+- Backend: migración `030_planes_oculta_identidad.sql` (flag y reglas contra oculto + solicitable y oculto + default). Códigos y revocación se renumeran a 031 y 032 en `feature_list.json` y en el plan. Enmascarado en el servidor en usuarios y solicitudes; búsqueda por nombre o correo sin identidades ocultas; `GET /access/plans` y `GET /admin/access/requests` sin planes ocultos; marcar un plan como oculto cancela sus solicitudes abiertas.
+- Decisión: basta un otorgamiento no revocado, también vencido, para enmascarar; solo revocar el plan devuelve la identidad.
+- Plugin nuevo `plugins/vittalmind-accesos` v1.0.0 con ZIP: Usuarios, Solicitudes, Planes con matriz, Features, Configuración. Sesión compartida con psicoeducación; logout propio por usuario de WordPress (`vma_logged_out`). Proxy con nonce, `manage_options` y lista blanca de rutas. Montado en `plugins/wp-test/docker-compose.yml`.
+- Docs: `docs/accesos-rutas.md`, `docs/entorno-pruebas.md`.
+
+### Evidencia
+- `init.ps1` verde: tests Backend y App, quality gate PASS (Backend 0 errores / 17 avisos / duplicación 2,11 %; App 0 errores / 20 avisos / duplicación 9,65 %). Backend 480 tests antes del cierre.
+- 030 aplicada dos veces en Postgres local; la base rechazó un plan oculto y solicitable. PHP con `php -l` y JS con `node --check`; lista blanca del proxy 11/11.
+- Smoke en WordPress real: aprobar solicitud y la API de la app devuelve VIP con fecha; crear plan oculto; matriz con "Esto afecta a N personas"; borrado bloqueado con personas asignadas; default sin borrar; enmascarado en Usuarios y Solicitudes sin rastro en el HTML; búsqueda por correo y nombre sin resultados; filtro por plan sí la encuentra; quitar el plan devuelve la identidad; logout de Accesos no cierra psicoeducación. Datos de prueba borrados.
+- La solicitud se creó por la API, no desde la pantalla de la app, y el resultado se leyó en `GET /access`.
+
+### Hallazgo
+- Carrera de sesión: con el token vencido, dos peticiones paralelas renuevan a la vez, el refresh rota y la perdedora lee el token con la caché de su propia petición, cree que no hay uno nuevo y borra la sesión. Corregido y probado en `vittalmind-accesos`. **La misma lógica sigue en `VMP_Api_Client` y `VMPN_Api_Client`.**
+
+### Para la revisión de fase
+- Antes de producción: respaldo de Supabase; aplicar 029 y 030; no correr `npm run migrate` con `Backend/.env`.
+- `notas_admin` no se enmascara: es texto libre del administrador.
+
+## Corrección: carrera de sesión en los plugins (2026-11-02)
+- Hallazgo de la feature 93, a petición de la usuaria. `renew()` y `reload_tokens()` en `VMP_Api_Client` y `VMPN_Api_Client`, igual que en `VMA_Api_Client`.
+- Control negativo en WordPress local, antes del arreglo: JWT invalidado y 6 peticiones paralelas en psicoeducación, 5 fallaron y la sesión quedó borrada.
+- Después del arreglo: 6/6 en psicoeducación, 6/6 mezclando psicoeducación y Accesos, 6/6 en notificaciones; transients vivos en todos los casos.
+- Versiones: psicoeducación 1.0.10 (cabecera y `VMP_VERSION`, cierra F10) con ZIP regenerado; notificaciones 1.0.1 (nunca tuvo ZIP). `vittalmind-notificaciones` montado en `plugins/wp-test/docker-compose.yml`.
+- Solo cambió PHP de plugins: no se volvió a correr `init`, porque no cubre plugins. `php -l` sin errores.
+
+## Feature 101 access_category_lock
+### Estado
+- **Tarea**: feature 101 `access_category_lock`. **Inicio y cierre**: 2026-11-02. **Estado**: done. Sin commits.
+
+### Qué se hizo
+- Backend: migración `031_categorias_acceso.sql`; códigos y revocación se renumeran a 032 y 033. Lista pública con `accesoFeatureKey`; detalle bloqueado con `locked: true` y `temas: []`; tema directo 403 `FEATURE_REQUIRED`; admin sin redacción; validación de feature de contenido; `countFeatureUsage` cuenta categorías.
+- App: candado en Biblioteca, pantalla de categoría bloqueada, caché sin detalle de categorías con feature (`shouldCache` en `getOrFetch`).
+- Plugin psicoeducación 1.0.11 con ZIP: selector y columna Acceso en Categorías.
+- Fallas previas corregidas (features 89 a 92): selector de temas y bloques (`r.data.features`), volver a Free con `null` en plugin y controlador de bloques, `accesoFeatureKey` en temas del detalle público, y `tema.locked` frente a `bloqueado` en la app.
+
+### Evidencia
+- `init.ps1` verde: tests Backend y App, quality gate PASS (Backend 0 errores / 17 avisos / duplicación 2,15 %; App 0 errores / 20 avisos / duplicación 9,63 %). Backend 492 tests antes del cierre.
+- 031 aplicada dos veces en Postgres local. Smoke por API 11/11: invitado y free sin temas y con 403 en tema directo, VIP con acceso, feature en uso no se borra, feature de herramienta rechazada, otra categoría libre.
+- En WordPress real: selector de categorías y temas cargó `content.vip`, guardó y volvió a Free (NULL en base). Tema y bloque, por API: `accesoFeatureKey` en lista, `locked` y redacción; bloque volvió a Free.
+- **No verificado en pantalla**: Biblioteca y categoría bloqueada. En Expo web la Biblioteca queda cargando sin petición, el mismo problema de SQLite en web visto con los hitos; solo las cubre Jest (8 tests nuevos). Falta probar en emulador o dispositivo.
+- El selector de bloques en el panel no se abrió: el mismo cambio que temas, verificado con `node --check`.
+
+### Para la revisión de fase
+- Antes de producción: respaldo de Supabase; aplicar 029, 030 y 031.
+- Una versión vieja de la app ve la categoría bloqueada vacía, sin candado, hasta actualizar.
+
+## Feature 102 access_codes_backend
+### Estado
+- **Tarea**: feature 102 `access_codes_backend`. **Inicio y cierre**: 2026-11-02. **Estado**: done. Sin commits.
+
+### Qué se hizo
+- Migración `032_create_access_codes.sql`: `codigos_acceso`, `canjes_codigo` (solo código, cuenta y fecha), `intentos_canje` (sin IP ni texto), FK de `usuario_planes.codigo_id`, motivo `codigo`, RLS.
+- `utils/access-code.ts`, `utils/redeem-limiter.ts`, `access-code-repository.ts`, `access-code-service.ts`, `admin-access-code-controller.ts`. `POST /access/redeem` y `/admin/access/codes` con QR. `insertGrant` exportado como único punto de escritura de otorgamientos. `deletePlan` cuenta códigos. `TRUST_PROXY_HOPS`. `qrcode` 1.5.4 y `@types/qrcode` 1.5.5.
+- Decisiones: el limitador solo cuenta `INVALID_CODE`; canjes por usuario se validan antes que el cupo; código y plan no se editan; una fecha fin ya pasada se rechaza como vencido.
+
+### Hallazgo durante el smoke
+- La primera versión reservaba el intento también por IP antes de validar. Con 20 canjes simultáneos desde una IP, 11 recibieron 429 sin haber fallado: en un taller con wifi compartido bloquearía a gente con código correcto. Los mocks no lo mostraban. Ahora la cuenta reserva y la IP suma solo fallos reales. Hay test para 30 cuentas simultáneas.
+
+### Evidencia
+- `init.ps1` verde: tests Backend (566) y App, quality gate PASS (Backend 0 errores / 18 avisos / duplicación 2,12 %; App 0 errores / 20 avisos / duplicación 9,63 %).
+- 032 aplicada dos veces en Postgres local. Smoke por HTTP contra API y Postgres reales, sin fallos: canje con minúsculas, espacios y URL del QR, invitado 401, ya canjeado, extensión a 15 días, plan distinto, plan oculto enmascarado, conteos sin identidad, vencido, no vigente, inactivo, desactivar no quita acceso, eliminar con y sin canjes, QR PNG.
+- Concurrencia real: 20 sobre `max_usos=1` dan 1 y 19 agotado; 40 sobre cupo 25 dan 25 y 15; misma cuenta con 8 simultáneos respeta 2 por usuario. Límite por IP y por cuenta tras reiniciar la API verificados. Datos de prueba borrados.
+- `npm audit`: 4 moderadas ya existentes, sin altas ni críticas.
+- No probado: el borrado de intentos por el job real (solo revisado por tipos y mock) y el comportamiento detrás de un proxy real.
+
+### Para la revisión de fase
+- Antes de producción: respaldo de Supabase, aplicar 029 a 032 y fijar `TRUST_PROXY_HOPS` según el servidor.
+- El límite por IP se reinicia con cada despliegue y no se comparte entre procesos.
+
+## Feature 103 access_codes_plugin
+### Estado
+- **Tarea**: feature 103 `access_codes_plugin`. **Inicio y cierre**: 2026-11-02. **Estado**: done. Sin commits.
+
+### Qué se hizo
+- `vittalmind-accesos` 1.1.0 con ZIP: página Códigos, tarjeta imprimible con QR, PDF por impresión y PNG en `canvas`, enlaces de tiendas en Configuración.
+- Página pública `/canjear` (`includes/class-public.php`, `public/canjear.php`) sin tema ni `wp_head()`, con CSP y nonce, `no-referrer` y `noindex`.
+- Decisión: la tarjeta no imprime plan ni etiqueta, solo "Bono de acceso".
+- Mejoras futuras (enlaces universales, recuperar el código tras instalar) registradas en `docs/plan-accesos-y-codigos-canje.md`.
+
+### Evidencia
+- En WordPress real: crear generado y personalizado (con advertencia), editar con datos precargados, plan de solo lectura, desactivar, eliminar sin canjes, sin botón Eliminar con canjes, conteo "1 de 9", tarjeta y PNG revisados en captura sin plan ni etiqueta.
+- `/canjear`: el servidor recibió `GET /canjear` sin el código; sin scripts ni hojas externas; sin errores de CSP; fragmento malicioso ignorado con el tutorial visible; deep link correcto; enlaces de tiendas según Configuración.
+- QR decodificado con jsQR: coincide con la URL. Canje por API con esa URL: 200 y plan otorgado. Datos de prueba borrados. `php -l` y `node --check` sin errores.
+- **No verificado**: la impresión real del CSS `@media print`; Copiar con portapapeles disponible (en el panel de pruebas usó la alternativa de seleccionar); Abrir en la app en un teléfono; canje desde la pantalla de la app, que llega con la 104.
+
+### Para la revisión de fase
+- Confirmar que `www.vittaminds.com` es el WordPress del plugin antes de imprimir bonos: si no, `/canjear` da 404 en papel.
+- Configurar el enlace real de App Store (vacío oculta el botón) y comprobar el de Google Play.
+- Comprobar que no exista ya una página `canjear`: el plugin la taparía.
+
+## Feature 104 access_codes_app
+### Estado
+- **Tarea**: feature 104 `access_codes_app`. **Inicio y cierre**: 2026-11-02. **Estado**: done en código, pendiente de build y prueba en dispositivo. Sin commits.
+
+### Qué se hizo
+- `RedeemCodeScreen`, `RedeemScanner` (expo-camera, solo QR), `utils/redeem-input.ts`, `services/redeem-service.ts`, `hooks/use-redeem-link.ts`, `navigateToRedeem`. Botón Redimir en Perfil, "¿Tienes un código?" en solicitud y aviso en Welcome con código pendiente.
+- `app.json`: plugin expo-camera sin micrófono, `CAMERA`, `NSCameraUsageDescription`, RECORD_AUDIO bloqueado, versión 0.3.2, `versionCode` 13, `buildNumber` 14.
+- `docs/revision-tiendas.md`: procedimiento para revisores; el código real no va al repositorio.
+- Decisión: un QR o enlace solo deja el código escrito; canjear siempre exige un toque.
+
+### Hallazgo
+- Las claves de la caché de acceso (`@vittalmind/access:v1`) no son válidas para SecureStore. En teléfono cada lectura y escritura fallaba y el `try/catch` lo ocultaba: la caché nunca existió en nativo, lo que anulaba el acceso sin conexión y la purga al abrir de la feature 100. Corregido con claves válidas y un test. No se había visto porque los tests simulan `storage`.
+
+### Evidencia
+- `init.ps1` verde: tests Backend y App (574), quality gate PASS (App 0 errores / 20 avisos / duplicación 9,38 %).
+- Expo web contra la API de Docker: código pendiente sin sesión con aviso en Welcome; al iniciar sesión abre la pantalla con el código y borra el pendiente; 0 usos antes del toque; Canjear da plan y vencimiento, 1 uso y otorgamiento con origen `codigo`; Perfil actualizado; segundo intento "Ya canjeaste este código."; invitado sin Redimir.
+- `expo config` confirma `CAMERA`, `NSCameraUsageDescription` y RECORD_AUDIO eliminado.
+- **No verificado**: cámara real, permisos del sistema, deep link real desde `/canjear` y el diálogo de invitado (Jest con simulaciones). Necesitan build y teléfono.
+
+### Para la revisión de fase
+- `expo install --check` marca versiones de parche pendientes: expo 58.0.22, expo-sqlite 58.0.15 y react-native 0.88.1. Ya existían; conviene alinearlas antes del build.
+- Tras publicar la caché corregida, comprobar en teléfono el acceso sin conexión y la purga al abrir.
+
+## Feature 106 access_code_revoke
+### Estado
+- **Tarea**: feature 106 `access_code_revoke`. **Inicio y cierre**: 2026-11-02. **Estado**: done. Sin commits.
+
+### Qué se hizo
+- Migración `033_code_revocation.sql`. `POST /admin/access/codes/:id/revoke` en una transacción, idempotente, y `GET :id/revoke-preview` con solo el total. `CODE_REVOKED` al reactivar. `CODE_HAS_REDEMPTIONS` remite a Revocar.
+- `GET /access` agrega `accesoCodigoRevocado` (30 días, solo si perdió el plan). App: `RevokedAccessNotice` en Inicio y Perfil.
+- Plugin 1.2.0 con ZIP: botón Revocar, explicación de las tres acciones, modal con total y motivo, insignia Revocado; un código revocado ya no ofrece Tarjeta ni Activar.
+- Decisión: un otorgamiento de plan oculto que vino de un código sigue enmascarando aunque esté revocado, para que comparar el panel antes y después no revele a la población.
+- `testTimeout` de App a 20 s: el primer test de un archivo fallaba al azar con la caché fría.
+
+### Evidencia
+- `init.ps1` verde: tests Backend y App, quality gate PASS (Backend 0 errores / 19 avisos / duplicación 2,08 %; App 0 errores / 20 avisos / duplicación 9,56 %).
+- 033 aplicada dos veces en Postgres local. Smoke real 23/23: un otorgamiento, datos intactos (comprobado por SQL), idempotencia, plan por otra vía, extensión de 15 a 5 días, recuperar el plan, quitar a mano sin aviso de código, enmascarado tras revocar, búsqueda sin resultados. Revocación simultánea con 30 canjes: sin errores 500, ningún otorgamiento vivo, contadores coherentes.
+- Panel: tres acciones explicadas, modal, motivo, insignia. Datos de prueba borrados.
+- No verificado: el aviso en pantalla real de la app (solo Jest), y la versión final del botón Tarjeta oculto en el panel (`node --check`).
+
+### Para la revisión de fase
+- Antes de producción: respaldo de Supabase y aplicar 029 a 033.
+- Quien canjeó un plan oculto queda enmascarado en el panel aunque se revoque.
+
+## Feature 105 access_notifications
+### Estado
+- **Tarea**: feature 105 `access_notifications`. **Inicio y cierre**: 2026-11-02. **Estado**: done. Sin commits. Última de la serie 98 a 106.
+
+### Qué se hizo
+- Migración `034_access_notifications.sql`: categoría `access`, `access_enabled` y tres plantillas sin nombre de plan.
+- `services/access-notifications.ts` (preferencias, silencio, encolado tras el commit que nunca tumba la aprobación) y `access-expiry-resolver`. El dispatcher revisa la preferencia otra vez al enviar.
+- App: interruptor "Mi acceso y planes" y destino Perfil. Plugin de notificaciones 1.0.2.
+- `vittalmind-accesos` 1.3.0 con ZIP: `VMA_Notifier` con WP-Cron por hora, correo sin datos de quien solicita, contador en el menú, aviso de sesión perdida y correo destino en Configuración.
+
+### Evidencia
+- `init.ps1` verde: tests Backend (602) y App, quality gate PASS (Backend 0 errores / 19 avisos / duplicación 2,05 %; App 0 errores / 20 avisos / duplicación 9,56 %).
+- 034 aplicada dos veces en Postgres local. Jobs reales 9/9: aprobar, rechazar, preferencia apagada, vencimiento sin duplicar aunque corra dos veces, extensión con aviso nuevo, plan corto y lejano sin aviso.
+- Correo con `pre_wp_mail` en WordPress real, 10/10: un correo, destinatario, sin datos personales, sin repetir, reintento si falla, sesión perdida marcada, contador. Datos de prueba borrados.
+- **No verificado**: envío real por Expo o SMTP, entrega en un teléfono, tocar el push, interruptor en la app real y contador visible en el menú (la función sí). No se llamó a Expo ni a un servidor de correo.
+
+### Para la revisión de fase
+- Producción necesita cron del tick y de `/internal/access/expire`, `INTERNAL_NOTIFICATION_TOKEN`, FCM y APNs, SMTP en WordPress y tráfico o cron real para WP-Cron.
+- Si se editan plantillas en el plugin, no poner el nombre del plan.
+- Tras aplicar la migración, un aviso puede salir la primera vez para planes ya dentro de los 7 días.
+
+## Ajuste de Perfil (2026-11-02)
+- A petición de la usuaria: Kit de autocuidado primero, tarjeta de Acceso en una fila (Acceso, plan y botón) y Redimir justo debajo. `AccessStatusCard.tsx` y `profile-screen.tsx`. Jest App 580 PASS, `tsc` limpio y revisado en Expo web a 375 px con free y VIP. Sin commits.
+
+## Mejoras del panel con muchos planes (2026-11-02)
+- A petición de la usuaria. `vittalmind-accesos` 1.3.1: la matriz se desplaza dentro de su propio contenedor con la columna de features, la cabecera y la fila Guardar fijas; texto que explica cómo hacer exclusivo un tema. `vittalmind-psicoeducacion` 1.0.12: `VMP.loadContentFeatures` muestra en el selector de temas, bloques y categorías los planes que incluyen cada feature ("ningún plan" si ninguno). ZIPs regenerados.
+- Probado en WordPress real con 24 planes: sin desborde de página y la primera columna pegada al desplazar. `node --check` sin errores. Sin commits.
+- Visto en los datos locales de la usuaria: `content.ansiedad` no está asignada a ningún plan.
