@@ -292,12 +292,129 @@ In v3 & v4, merge is enabled by default. So, the severity score is higher.
 
 
 
+### Vulnerabilidad: CVE-2026-41907
+#### Estado
+Activo
+#### Descripción
+Summary
+The v3(), v5(), and v6() API methods (not uuid release versions) accept external output buffers but do not reject out-of-range writes (small buf or large offset).
+By contrast, v4(), v1(), and v7() API methods explicitly throw RangeError on invalid bounds.
+
+This inconsistency allows silent partial writes into caller-provided buffers.
+
+Affected code
+src/v35.ts (v3()/v5() path) writes buf[offset + i] without bounds validation.
+src/v6.ts writes buf[offset + i] without bounds validation.
+Reproducible PoC
+cd /home/StrawHat/uuid
+npm ci
+npm run build
+
+node --input-type=module -e "
+import {v4,v5,v6} from './dist-node/index.js';
+const ns='6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+for (const [name,fn] of [
+  ['v4()',()=>v4({},new Uint8Array(8),4)],
+  ['v5()',()=>v5('x',ns,new Uint8Array(8),4)],
+  ['v6()',()=>v6({},new Uint8Array(8),4)],
+]) {
+  try { fn(); console.log(name,'NO_THROW'); }
+  catch(e){ console.log(name,'THREW',e.name); }
+}"
+Observed:
+
+v4() THREW RangeError
+v5() NO_THROW
+v6() NO_THROW
+Example partial overwrite evidence captured during audit:
+
+same true buf [
+  170, 170, 170, 170,
+   75, 224, 100,  63
+]
+v6 [
+  187, 187, 187, 187,
+   31,  19, 185,  64
+]
+Security impact
+Primary: integrity/robustness issue (silent partial output).
+If an application assumes full UUID writes into preallocated buffers, this can produce malformed/truncated/partially stale identifiers without error.
+In systems where caller-controlled offsets/buffer sizes are exposed indirectly, this may become a security-relevant logic flaw.
+Suggested fix
+Add the same guard used by v4()/v1()/v7():
+
+if (offset < 0 || offset + 16 > buf.length) {
+  throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+}
+Apply to:
+
+src/v35.ts (covers v3() and v5())
+src/v6.ts
+
+### Vulnerabilidad: CVE-2023-2251
+#### Estado
+Activo
+#### Descripción
+Detalles
+Uncaught Exception in GitHub repository eemeli/yaml starting at version 2.0.0-5 and prior to 2.2.2.
+
+7.5 Alto
+CWE-248
+< 2.2.2
+Acción requerida
+Actualiza yaml a 2.2.2 o posterior para resolver esta vulnerabilidad.
+
+
+
 ### Vulnerabilidad: CVE-2026-84292
 #### Estado
 Activo
 #### Descripción
 
-
 ## Moderadas
+
+
+### Vulnerabilidad: CVE-2026-33532
+#### Estado
+Activo
+#### Descripción
+Detalles
+Parsing a YAML document with yaml may throw a RangeError due to a stack overflow.
+
+The node resolution/composition phase uses recursive function calls without a depth bound. An attacker who can supply YAML for parsing can trigger a RangeError: Maximum call stack size exceeded with a small payload (~2–10 KB). The RangeError is not a YAMLParseError, so applications that only catch YAML-specific errors will encounter an unexpected exception type. Depending on the host application's exception handling, this can fail requests or terminate the Node.js process.
+
+Flow sequences allow deep nesting with minimal bytes (2 bytes per level: one [ and one ]). On the default Node.js stack, approximately 1,000–5,000 levels of nesting (2–10 KB input) exhaust the call stack. The exact threshold is environment-dependent (Node.js version, stack size, call stack depth at invocation).
+
+Note: the library's Parser (CST phase) uses a stack-based iterative approach and is not affected. Only the compose/resolve phase uses actual call-stack recursion.
+
+All three public parsing APIs are affected: YAML.parse(), YAML.parseDocument(), and YAML.parseAllDocuments().
+
+PoC
+const YAML = require('yaml');
+
+// ~10 KB payload: 5000 levels of nested flow sequences
+const payload = '['.repeat(5000) + '1' + ']'.repeat(5000);
+
+try {
+  YAML.parse(payload);
+} catch (e) {
+  console.log(e.constructor.name); // RangeError (NOT YAMLParseError)
+  console.log(e.message);          // Maximum call stack size exceeded
+}
+Test environment: Node.js v24.12.0, macOS darwin arm64
+
+Version	Nesting Depth	Input Size	Result
+1.0.0	5,000	10,001 B	RangeError
+1.10.2	5,000	10,001 B	RangeError
+2.0.0	5,000	10,001 B	RangeError
+2.8.2	5,000	10,001 B	RangeError
+2.8.3	5,000	10,001 B	YAMLParseError
+Depth threshold on yaml 2.8.2:
+
+Nesting Depth	Input Size	Result
+500	1,001 B	Parses successfully
+1,000	2,001 B	RangeError (threshold varies by stack size)
+5,000	10,001 B	RangeError
+
 
 ## Bajas

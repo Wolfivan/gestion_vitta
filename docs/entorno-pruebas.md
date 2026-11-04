@@ -146,6 +146,28 @@ secreto que deba documentarse, pero conviene saber que está ahí.
 | `backend-api-1` | `backend-api` | `3000:3000` | ninguno | `backend_default` |
 | `backend-db-1` | `postgres:16-alpine` | `5432:5432` | `backend_pgdata` | `backend_default` |
 
+## Plugin de accesos
+
+`plugins/vittalmind-accesos` también se monta en bind (panel **VM Accesos**). Usa los mismos
+transients de sesión (`vmp_jwt_token`, `vmp_refresh_token`) y la misma URL (`vmp_api_url`) que
+psicoeducación, así que iniciar sesión en uno sirve para el otro. Su botón de cerrar sesión
+solo guarda una marca por usuario de WordPress (`vma_logged_out`) y no cierra psicoeducación.
+Si cambias su JS o CSS, sube `VMA_VERSION` y la cabecera del plugin.
+
+Este plugin también sirve la página pública `/canjear` (`http://localhost:8082/canjear#codigo=VM-XXXX-XXXX`),
+sin tema de WordPress. El QR apunta a `https://www.vittaminds.com/canjear`: el plugin debe estar activo
+en ese sitio antes de imprimir bonos.
+
+## Sesión con el backend en los plugins
+
+El refresh token rota, y los paneles hacen peticiones paralelas. Si el JWT vence, solo una
+renueva y las demás reciben 401: `renew()` en cada `class-api-client.php` las hace esperar el
+token nuevo en lugar de borrar la sesión. Lee el transient saltando la caché de la petición
+(`wp_cache_delete`), porque `get_transient` devolvería el valor viejo.
+
+Al activar `vittalmind-notificaciones` su URL por defecto es producción: cámbiala a
+`http://api:3000` en su Configuración **antes** de iniciar sesión.
+
 ## El plugin se monta en bind, no se copia
 
 El compose monta `plugins/vittalmind-psicoeducacion/` del repo directamente en
