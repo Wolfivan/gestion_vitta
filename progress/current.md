@@ -20,6 +20,17 @@
   - Gitleaks: falso positivo `PENDING_KEY` marcado (App `bae18bd`). **Bloqueante real**: `Backend/.env.docker` versionado con una clave real de OpenRouter desde `778b384` (ya en GitHub).
   - Sonar App PASS. Sonar Backend FAIL solo por 24 hotspots sin revisar (23 S2077 en `access-repository.ts`, todos con constantes y `$n`; 1 S5122 CORS abierto con Bearer). Revisados como seguros, falta marcarlos en el panel (el usuario).
 
+- 2026-11-04: a petición del usuario, limpieza de Sonar en Backend sin marcar hotspots a mano:
+  - `access-repository.ts`: todas las consultas son literales completos. UPDATE parcial de planes y
+    features con un JSON de cambios (`$2::jsonb ? 'campo'`); listados de usuarios y solicitudes con
+    filtros opcionales (`$n IS NULL OR ...`) y página + total en una sola consulta (CTE + LATERAL).
+    `insertGrant` recibe un objeto (`IGrantWrite`) en lugar de 8 parámetros.
+  - Complejidad: `processJob` (dispatcher), `getTopicContent`, `createEntry` (gratitud) y
+    `updatePreferences` divididos en funciones pequeñas. Aserciones innecesarias e import duplicado fuera.
+  - Verificado: tsc, 602 tests, ESLint sin avisos nuevos; smoke contra Postgres local (24 checks de
+    accesos, 6 llamadas de temas con y sin sesión).
+  - El hotspot de CORS (`app.ts`) queda para marcarlo como seguro: la API usa Bearer, sin cookies.
+
 ## Pendiente
 - Rotar la clave de OpenRouter y sacar el valor de `Backend/.env.docker` (decisión del usuario).
 - Marcar los hotspots del Backend en Sonar y relanzar `quality-release` completo para obtener `release-pass.json`.
