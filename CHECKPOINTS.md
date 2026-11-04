@@ -35,8 +35,10 @@
 - [ ] Cada módulo en `App/` tiene su test correspondiente.
 - [ ] Los tests usan datos reales o de prueba, no mocks del filesystem.
 - [ ] `npm test` en ambos proyectos muestra > 0 tests y todos verdes.
-- [ ] **Security & Quality**: `security-auditor` ejecutado sin bloqueantes CRITICAL/HIGH.
-- [ ] **Quality Gate**: `sonar-verifier` en PASS según `docs/quality-gate.md`.
+- [ ] **Security & Quality (pre-main)**: `security-auditor` sobre `main..desarrollo` sin bloqueantes CRITICAL/HIGH.
+- [ ] **Quality Gate (pre-main)**: `sonar-verifier` sobre `main..desarrollo` en PASS según `docs/quality-gate.md`.
+- [ ] **Quality Gate automático**: `scripts/quality-check` en PASS (bloqueante dentro de `init`).
+- [ ] **SonarQube (pre-main)**: `scripts/quality-release` completo (sin `-SkipSecurity`) en PASS antes de mergear a `main`; el hook `githooks/pre-push` está instalado en `App` y `Backend`.
 - [ ] **Seguridad de la información**: anonimato respetado, sin PII/secrets en logs, RLS revisado si aplica.
 
 ## C5 — La sesión se cerró bien

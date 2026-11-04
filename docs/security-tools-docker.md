@@ -37,6 +37,12 @@ docker compose -f docker-compose.security-tools.yml run --rm semgrep
 docker compose -f docker-compose.security-tools.yml run --rm trivy
 ```
 
+## Qué bloquea y qué no
+- **gitleaks** (bloquea): usa `.gitleaks.toml`. Escanea el árbol completo con `--no-git`, así que excluye los archivos locales que git ignora (`.env`, `.env.production`, `.env.sonar`, `DataConf/`, `graphify-out/`, `node_modules/`, `coverage/`). Lo versionado se sigue revisando; un falso positivo puntual se marca en su línea con `gitleaks:allow` y el motivo.
+- **semgrep** (bloquea solo severidad `ERROR`): rulesets `p/default`, `p/typescript`, `p/react` y `p/php`. `--config=auto` no sirve con las métricas apagadas. Un falso positivo se marca con `// nosemgrep` y un comentario encima que explique por qué.
+- **trivy** (bloquea `CRITICAL,HIGH`): omite `node_modules` (los lockfiles ya listan las dependencias), los `.env` locales y `DataConf/`; guarda la base de vulnerabilidades en el volumen `trivy-cache`.
+- **osv-scanner** (informativo): recibe `App/package-lock.json` y `Backend/package-lock.json` de forma explícita, porque el `.gitignore` de la raíz excluye `App/` y `Backend/` y sin eso decía "No package sources found".
+
 ## Seguridad
 - Montajes en modo `:ro` (solo lectura)
 - `SEMGREP_SEND_METRICS=off`

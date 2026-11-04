@@ -74,8 +74,15 @@ cd App && npx expo start
 ## Verificación final antes de cerrar
 
 ```bash
-./init.sh           # debe terminar con [OK] Entorno listo
+./scripts/quality-check.sh   # gate de calidad: debe dar PASS
+./init.sh                    # debe terminar con [OK] Entorno listo
 ```
+
+El gate de calidad es bloqueante: `init` falla si `quality-check` falla. En
+desarrollo `init` **no** ejecuta el security scan (usa `--full` / `-Full` si lo
+quieres). Antes de mergear a `main`, `./scripts/quality-release.sh` completo
+(security scan + SonarQube) debe dar PASS; el hook `githooks/pre-push` bloquea
+el push a `main` si no. Ver `docs/quality-tools-docker.md`.
 
 Si `./init.sh` está rojo, **no** marques nada como `done`. Anota el bloqueo
 en `progress/current.md` con estado `blocked` en `feature_list.json`.

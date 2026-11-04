@@ -28,11 +28,12 @@ fi
 
 if [ "$HAVE_OSV" = "yes" ]; then
   echo -e "\n[2] OSV-Scanner..."
-  osv-scanner --recursive . || true
+  osv-scanner scan source --lockfile=App/package-lock.json --lockfile=Backend/package-lock.json || true
 else
   if docker info >/dev/null 2>&1 && [ -f "docker-compose.security-tools.yml" ]; then
     echo -e "\n[2] OSV-Scanner via Docker..."
-    docker compose -f docker-compose.security-tools.yml run --rm osv-scanner || blockers=$((blockers+1))
+    # Informativo: los CRITICAL/HIGH los bloquea trivy sobre los mismos lockfiles.
+  docker compose -f docker-compose.security-tools.yml run --rm osv-scanner || echo "osv-scanner reporta vulnerabilidades o fallo (informativo, no bloquea)"
   else
     echo -e "\n[2] OSV-Scanner not found - consider npm audit"
   fi
@@ -40,7 +41,7 @@ fi
 
 if [ "$HAVE_SEMGREP" = "yes" ]; then
   echo -e "\n[3] Semgrep..."
-  semgrep --config auto --error || blockers=$((blockers+1))
+  semgrep scan --metrics=off --config=p/default --config=p/typescript --config=p/react --config=p/php --severity=ERROR --error --exclude=node_modules --exclude=coverage --exclude=dist App/src App/App.tsx Backend/src plugins || blockers=$((blockers+1))
 else
   if docker info >/dev/null 2>&1 && [ -f "docker-compose.security-tools.yml" ]; then
     echo -e "\n[3] Semgrep via Docker..."

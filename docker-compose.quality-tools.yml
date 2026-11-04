@@ -1,0 +1,72 @@
+# Herramientas de calidad de VittalMind.
+#
+# Perfiles:
+#   quality  -> gate rápido (tsc + ESLint + jscpd) para ejecutar antes de `done`
+#   release  -> SonarQube + Postgres + sonar-scanner para ejecutar antes de mergear a main
+#
+# Uso:
+#   docker compose -f docker-compose.quality-tools.yml --profile quality run --rm quality-lite
+#   docker compose -f docker-compose.quality-tools.yml --profile release up -d sonar-db sonarqube
+services:
+  quality-lite:
+    build:
+      context: .
+      dockerfile: scripts/quality/Dockerfile
+    image: vittalmind/quality-lite:1
+    working_dir: /repo
+    volumes:
+      - ./:/repo:ro
+      - ./quality-reports:/reports
+    environment:
+      - REPORTS_DIR=/reports
+    profiles: ["quality"]
+
+  sonar-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - sonar-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    profiles: ["release"]
+
+  sonarqube:
+    image: sonarqube:lts-community
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonar-data:/opt/sonarqube/data
+      - sonar-extensions:/opt/sonarqube/extensions
+      - sonar-logs:/opt/sonarqube/logs
+    profiles: ["release"]
+
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli:11
+    depends_on:
+      - sonarqube
+    volumes:
+      - ./:/repo:ro
+    working_dir: /repo
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+    profiles: ["release"]
+
+volumes:
+  sonar-db-data:
+  sonar-data:
+  sonar-extensions:
+  sonar-logs:

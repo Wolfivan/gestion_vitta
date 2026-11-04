@@ -25,9 +25,11 @@
 | `docs/verification.md`       | Cómo verificar que tu trabajo funciona                    | Antes de declarar una tarea como `done` |
 | `docs/entorno-pruebas.md`    | Entorno Docker de pruebas (WordPress + plugin), credenciales y procedimiento end-to-end | Para probar contra WordPress antes de producción |
 | `docs/entornos-dev-produccion.md` | Qué está y qué NO está separado entre desarrollo y producción, trampas conocidas y procedimiento de release | **Antes de mergear a `main` o desplegar** |
+| `docs/quality-tools-docker.md` | Gates de calidad en Docker: quality-lite (antes de `done`) y SonarQube (antes de `main`), comandos y umbrales | Antes de ejecutar o tocar el gate de calidad |
 | `CHECKPOINTS.md`             | Criterios objetivos de "estado final correcto"            | Para auto-evaluarte |
-| `.claude/agents/`            | Definiciones de subagentes (líder, implementador, revisor) | Si orquestas trabajo |
-| `init.ps1` / `init.sh`       | Script de verificación multiplataforma                   | Antes de empezar y antes de cerrar |
+| `.claude/agents/` o `.agents/agents/`           | Definiciones de subagentes (líder, implementador, revisor) | Si orquestas trabajo |
+| `init.ps1` / `init.sh`       | Script de verificación multiplataforma (modo rápido; `-Full` / `--full` añade el security scan) | Antes de empezar y antes de cerrar |
+| `githooks/pre-push`          | Hook que bloquea el push a `main` sin release gate en PASS (instalar con `scripts/install-hooks`) | Antes de mergear a `main` |
 | `App/`                       | Frontend Expo (React Native) con TypeScript              | Para implementar UI |
 | `Backend/`                   | API Node.js + Express con TypeScript                     | Para implementar backend |
 | `tests/`                     | Tests automáticos (Jest)                                  | Para verificar |
@@ -38,10 +40,14 @@
 - **Una sola feature a la vez.** No mezcles cambios de varias tareas en la misma sesión.
 - **No declares una tarea `done` sin pruebas verdes.** Ejecuta `.\init.ps1` (PowerShell) o `./init.sh` (Linux/macOS) y
   asegúrate de que el bloque de tests pasa al 100%.
-- **Seguridad y calidad obligatorias antes de `done`.** Antes de marcar una tarea como `done`, ejecuta:
-  - `security-auditor` (análisis estático, solo lectura). Ver `docs/security-guidelines.md`.
-  - `sonar-verifier` (Quality Gate). Ver `docs/quality-gate.md`. Si hay bloqueantes CRITICAL/HIGH → **NO marcar `done`**.
-  - Opcional pero recomendado: `.\scripts\security-scan.ps1` / `./scripts/security-scan.sh` y `.\scripts\quality-check.ps1` / `./scripts/quality-check.sh`.
+- **Gate rápido antes de `done` (en `desarrollo`).** `init` ya lo incluye:
+  - Tests + `.\scripts\quality-check.ps1` / `./scripts/quality-check.sh` → **PASS obligatorio** (bloquea `init`). Reporte en `quality-reports/`.
+  - El security scan, `security-auditor`, `sonar-verifier` y SonarQube **no** se ejecutan por cada feature (son lentos). Si quieres el scan igualmente: `.\init.ps1 -Full`.
+- **Gate completo obligatorio antes de mergear a `main`** (en `App` y `Backend`, working tree limpio):
+  - `.\scripts\quality-release.ps1` / `./scripts/quality-release.sh` **sin** `-SkipSecurity` ni `-SkipLite` → quality-lite + security scan + SonarQube Quality Gate **PASS**.
+  - `security-auditor` y `sonar-verifier` sobre el diff `main..desarrollo`. Ver `docs/security-guidelines.md` y `docs/quality-gate.md`. Bloqueantes CRITICAL/HIGH → **no se mergea**.
+  - Los hallazgos se corrigen en `desarrollo` y se repite hasta PASS.
+  - El PASS escribe `quality-reports/release-pass.json`; el hook `githooks/pre-push` **rechaza** cualquier push a `main` cuyo contenido no coincida. Instalar una vez: `.\scripts\install-hooks.ps1`. Ver `docs/quality-tools-docker.md`.
 - **Privacidad y seguridad de la información.** Respetar anonimato (`id_anonimo`), minimizar datos, no loggear PII/secrets, revisar RLS si toca DB. Ver `docs/security-guidelines.md`.
 - **Documenta lo que haces** en `progress/current.md` mientras trabajas, no al final.
 - **Deja el repositorio limpio** antes de cerrar la sesión (ver §5).

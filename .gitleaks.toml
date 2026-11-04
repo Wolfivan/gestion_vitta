@@ -1,0 +1,32 @@
+# Configuracion de gitleaks para el security scan (scripts/security-scan.*).
+# El scan corre con --no-git sobre el arbol completo, asi que tambien ve archivos
+# locales que git ignora y que nunca se publican. Esos se excluyen aqui; lo que
+# esta versionado se sigue revisando. Un falso positivo puntual en un archivo
+# versionado se marca en la propia linea con "gitleaks:allow" y su motivo.
+title = "VittalMind"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Archivos locales ignorados por git y artefactos generados"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)\.env$''',
+  '''(^|/)\.env\.local$''',
+  '''(^|/)\.env\.production$''',
+  '''(^|/)\.env\.sonar$''',
+  '''(^|/)DataConf/''',
+  '''(^|/)graphify-out/''',
+  '''(^|/)coverage/''',
+  '''(^|/)quality-reports/''',
+  '''(^|/)security-reports/''',
+]
+
+[[allowlists]]
+description = "curl -u con el token en una variable de shell, o con admin:admin (credencial por defecto de SonarQube local, que el script cambia al arrancar)"
+regexTarget = "line"
+regexes = [
+  '''curl .*-u "\$[A-Z_]+:"''',
+  '''curl .*-u admin:admin ''',
+]

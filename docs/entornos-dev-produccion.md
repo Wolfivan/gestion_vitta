@@ -172,7 +172,12 @@ esas rutas y las migraciones `019`/`020` no existían en el backend desplegado.
 2. `npm run build` — `init.ps1` **no** corre `tsc`, así que "tests verdes" no
    significa que compile. Hay que verificarlo aparte.
 3. `npm test`.
-4. Merge a `main` + push de ambas ramas.
+4. `.\scripts\quality-release.ps1` **completo** (sin `-SkipSecurity`) →
+   security scan + Quality Gate de SonarQube **PASS** en `vittalmind-backend` y
+   `vittalmind-app` (ver `docs/quality-tools-docker.md`). Si falla, se corrige en
+   `desarrollo` y se repite; no se mergea. El hook `githooks/pre-push` rechaza
+   el push a `main` sin ese PASS.
+5. Merge a `main` + push de ambas ramas.
 
 Los merges son limpios: `App` es fast-forward, `Backend` tiene un merge-commit
 redundante pero sus árboles son idénticos en el merge-base (verificado con

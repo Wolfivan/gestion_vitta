@@ -34,3 +34,10 @@ graphify-out/
 
 # Skills reinstalables (ver skills-lock.json)
 .agents/skills/
+
+# SonarQube local (token generado por scripts/quality-release.ps1)
+.env.sonar
+
+# Reportes generados por el quality gate
+quality-reports/*
+!quality-reports/.gitkeep

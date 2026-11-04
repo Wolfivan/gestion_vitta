@@ -44,10 +44,11 @@ if ($useDocker -and -not $hasGitleaks) {
 if ($useDocker -and -not $hasOsv) {
   Write-Host "`n[2] OSV-Scanner (Docker)..." -ForegroundColor Yellow
   docker compose -f docker-compose.security-tools.yml run --rm osv-scanner 2>&1 | Out-Host
-  if ($LASTEXITCODE -ne 0) { $blockers++ }
+  # Informativo: los CRITICAL/HIGH los bloquea trivy sobre los mismos lockfiles.
+  if ($LASTEXITCODE -ne 0) { Write-Host "osv-scanner reporta vulnerabilidades o fallo (informativo, no bloquea)" -ForegroundColor Yellow }
 } elseif ($hasOsv) {
   Write-Host "`n[2] OSV-Scanner..." -ForegroundColor Yellow
-  osv-scanner --recursive . 2>&1 | Out-Host
+  osv-scanner scan source --lockfile=App/package-lock.json --lockfile=Backend/package-lock.json 2>&1 | Out-Host
 } else {
   Write-Host "`n[2] OSV-Scanner not found - consider npm audit in App/Backend if needed" -ForegroundColor Yellow
 }
@@ -57,8 +58,8 @@ if ($useDocker -and -not $hasSemgrep) {
   docker compose -f docker-compose.security-tools.yml run --rm semgrep 2>&1 | Out-Host
   if ($LASTEXITCODE -ne 0) { $blockers++ }
 } elseif ($hasSemgrep) {
-  Write-Host "`n[3] Semgrep (quick)..." -ForegroundColor Yellow
-  semgrep --config auto --error 2>&1 | Out-Host
+  Write-Host "`n[3] Semgrep..." -ForegroundColor Yellow
+  semgrep scan --metrics=off --config=p/default --config=p/typescript --config=p/react --config=p/php --severity=ERROR --error --exclude=node_modules --exclude=coverage --exclude=dist App/src App/App.tsx Backend/src plugins 2>&1 | Out-Host
   if ($LASTEXITCODE -ne 0) { $blockers++ }
 } else {
   Write-Host "`n[3] Semgrep not found - fallback grep for dangerous patterns..." -ForegroundColor Yellow

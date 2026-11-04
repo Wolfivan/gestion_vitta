@@ -6,7 +6,23 @@
 #
 # Salida esperada: códigos de salida claros y bloques marcados con [OK]/[FAIL].
 
+# Uso:
+#   ./init.sh          # modo desarrollo (rápido): entorno + tests + quality-check
+#   ./init.sh --full   # además ejecuta el security scan (lento)
+#
+# El gate completo (security scan + SonarQube) es obligatorio antes de mergear
+# a main: ./scripts/quality-release.sh. Ver docs/quality-tools-docker.md.
+
 set -u
+
+FULL=0
+for arg in "$@"; do
+  case "$arg" in
+    --full) FULL=1 ;;
+    *) printf "Argumento desconocido: %s\n" "$arg"; exit 1 ;;
+  esac
+done
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -125,7 +141,46 @@ for dir in Backend App; do
 done
 
 echo ""
-echo "── 6. Resumen ──────────────────────────────────────────"
+echo "── 6. Security & Quality ───────────────────────────────"
+
+# Security scan: solo con --full. En desarrollo se omite; es obligatorio en
+# quality-release antes de mergear a main.
+if [ "$FULL" = "0" ]; then
+  warn "Security scan omitido (modo desarrollo). Corre en quality-release antes de main; usa --full para forzarlo."
+elif [ -x scripts/security-scan.sh ]; then
+  echo "   → Ejecutando security-scan..."
+  if ./scripts/security-scan.sh; then
+    ok "Security scan: OK"
+  else
+    warn "Security scan: bloqueantes o avisos detectados (ver arriba)"
+  fi
+fi
+
+# Quality gate: bloqueante (docs/quality-gate.md)
+if [ -x scripts/quality-check.sh ]; then
+  echo "   → Ejecutando quality-check..."
+  if ./scripts/quality-check.sh; then
+    ok "Quality check: PASS"
+  else
+    fail "Quality check: FAIL (ver quality-reports/ o el detalle arriba)"
+    EXIT_CODE=1
+  fi
+else
+  fail "scripts/quality-check.sh no existe (gate de calidad obligatorio)"
+  EXIT_CODE=1
+fi
+
+# Hook pre-push que bloquea main sin release gate (solo aviso)
+for dir in Backend App; do
+  if [ -e "$dir/.git" ]; then
+    if [ "$(git -C "$dir" config --get core.hooksPath 2>/dev/null)" != "../githooks" ]; then
+      warn "Hook pre-push no instalado en $dir. Ejecuta ./scripts/install-hooks.sh"
+    fi
+  fi
+done
+
+echo ""
+echo "── 7. Resumen ──────────────────────────────────────────"
 
 if [ $EXIT_CODE -eq 0 ]; then
   ok "Entorno listo. Puedes empezar a trabajar."

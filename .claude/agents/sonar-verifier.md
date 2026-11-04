@@ -29,12 +29,13 @@ Verificador de calidad estilo SonarQube. Genera **Quality Gate** PASS/FAIL con r
 
 ## Proceso
 1. **Contexto**: feature in_progress, diff/archivos tocados
-2. **Lint/estilo**: revisar contra convenciones
-3. **Complejidad**: funciones críticas
-4. **Seguridad-ligero**: hotspots
-5. **Tests**: existencia/coherencia con lo modificado
-6. **Gate**: aplicar `docs/quality-gate.md`
-7. **Reporte**: `quality-reports/SONAR_REPORT_<feature>_<timestamp>.md`
+2. **Gate automático**: ejecutar `.\scripts\quality-check.ps1` (o `./scripts/quality-check.sh`) y leer `quality-reports/QUALITY_<timestamp>.md`. Si falla, es bloqueante: no seguir.
+3. **Lint/estilo**: revisar contra convenciones
+4. **Complejidad**: funciones críticas
+5. **Seguridad-ligero**: hotspots
+6. **Tests**: existencia/coherencia con lo modificado
+7. **Gate**: aplicar `docs/quality-gate.md`
+8. **Reporte**: `quality-reports/SONAR_REPORT_<feature>_<timestamp>.md` (complementa el reporte automático, no lo sustituye)
 
 ## Formato de reporte
 ```markdown

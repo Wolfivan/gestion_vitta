@@ -1,0 +1,17 @@
+# Contexto de build minimo para la imagen quality-lite.
+# La imagen no copia el repo (se monta en tiempo de ejecucion), asi que
+# excluir node_modules evita mandar cientos de MB al daemon.
+**/node_modules
+**/dist
+**/coverage
+**/.expo
+**/android
+**/ios
+.git
+graphify-out
+quality-reports
+security-reports
+plugins
+manuales
+images
+DataConf

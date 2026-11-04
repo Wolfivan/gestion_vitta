@@ -1,10 +1,18 @@
+# Herramientas de seguridad en Docker (scripts/security-scan.ps1 / .sh).
+# Bloquean: gitleaks (secretos, config en .gitleaks.toml), semgrep (solo
+# severidad ERROR) y trivy (CRITICAL/HIGH). osv-scanner es informativo: la
+# politica (docs/security-guidelines.md) bloquea CRITICAL/HIGH y eso ya lo
+# hace trivy sobre los mismos lockfiles.
+#
+# App/ y Backend/ son repos propios y el .gitignore de la raiz los excluye,
+# por eso osv y semgrep reciben las rutas de forma explicita.
 services:
   gitleaks:
     image: zricethezav/gitleaks:v8.28.0
     working_dir: /repo
     volumes:
       - ./:/repo:ro
-    command: ["detect", "--source=/repo", "--no-git", "--redact", "--exit-code", "1"]
+    command: ["detect", "--source=/repo", "--config=/repo/.gitleaks.toml", "--no-git", "--redact", "--exit-code", "1"]
     profiles: ["scan"]
 
   osv-scanner:
@@ -12,7 +20,7 @@ services:
     working_dir: /repo
     volumes:
       - ./:/repo:ro
-    command: ["scan", "source", "-r", "/repo"]
+    command: ["scan", "source", "--lockfile=/repo/App/package-lock.json", "--lockfile=/repo/Backend/package-lock.json"]
     profiles: ["scan"]
 
   semgrep:
@@ -22,7 +30,13 @@ services:
       - ./:/repo:ro
     environment:
       - SEMGREP_SEND_METRICS=off
-    command: ["semgrep", "scan", "--config=auto", "--error", "/repo"]
+    # --config=auto exige enviar metricas; con metricas apagadas se usan
+    # rulesets explicitos del registro.
+    command: ["semgrep", "scan", "--metrics=off",
+              "--config=p/default", "--config=p/typescript", "--config=p/react", "--config=p/php",
+              "--severity=ERROR", "--error",
+              "--exclude=node_modules", "--exclude=coverage", "--exclude=dist",
+              "/repo/App/src", "/repo/App/App.tsx", "/repo/Backend/src", "/repo/plugins"]
     profiles: ["scan"]
 
   trivy:
@@ -30,5 +44,18 @@ services:
     working_dir: /repo
     volumes:
       - ./:/repo:ro
-    command: ["fs", "--scanners", "vuln,secret,misconfig", "--exit-code", "1", "--severity", "CRITICAL,HIGH", "/repo"]
+      # Cache de la base de vulnerabilidades: sin ella se descarga en cada corrida.
+      - trivy-cache:/root/.cache/trivy
+    # node_modules se omite (los lockfiles ya listan las dependencias y recorrerlo
+    # en un bind mount de Windows es lo que dejaba el escaneo sin terminar).
+    # Los .env locales y DataConf/ estan ignorados por git; los secretos los cubre gitleaks.
+    command: ["fs", "--scanners", "vuln,secret,misconfig", "--exit-code", "1", "--severity", "CRITICAL,HIGH",
+              "--timeout", "20m",
+              "--skip-dirs", "**/node_modules", "--skip-dirs", "/repo/DataConf", "--skip-dirs", "/repo/graphify-out",
+              "--skip-dirs", "**/coverage", "--skip-dirs", "/repo/quality-reports", "--skip-dirs", "/repo/security-reports",
+              "--skip-files", "**/.env", "--skip-files", "**/.env.production", "--skip-files", "**/.env.local", "--skip-files", "/repo/.env.sonar",
+              "/repo"]
     profiles: ["scan"]
+
+volumes:
+  trivy-cache:

@@ -1,4 +1,14 @@
 # init.ps1 - Verificacion e inicializacion del entorno (PowerShell)
+#
+# Uso:
+#   .\init.ps1         # modo desarrollo (rapido): entorno + tests + quality-check
+#   .\init.ps1 -Full   # ademas ejecuta el security scan (lento)
+#
+# El gate completo (security scan + SonarQube) es obligatorio antes de mergear
+# a main: .\scripts\quality-release.ps1. Ver docs/quality-tools-docker.md.
+param(
+  [switch]$Full
+)
 
 $EXIT_CODE = 0
 
@@ -137,11 +147,14 @@ foreach ($dir in @('Backend', 'App')) {
   }
 }
 
-Write-Host "`n-- 6. Security & Quality (opcional) ------------------------------"
+Write-Host "`n-- 6. Security & Quality -----------------------------------------"
 
-# Security scan
+# Security scan: solo con -Full. En desarrollo se omite; es obligatorio en
+# quality-release antes de mergear a main.
 $secScript = ".\scripts\security-scan.ps1"
-if (Test-Path -LiteralPath $secScript) {
+if (-not $Full) {
+  warn "Security scan omitido (modo desarrollo). Corre en quality-release antes de main; usa -Full para forzarlo."
+} elseif (Test-Path -LiteralPath $secScript) {
   Write-Host "   -> Ejecutando security-scan..."
   try {
     & $secScript
@@ -157,22 +170,35 @@ if (Test-Path -LiteralPath $secScript) {
   warn "scripts/security-scan.ps1 no existe (omitido)"
 }
 
-# Quality check
+# Quality check (bloqueante: es el gate de calidad de docs/quality-gate.md)
 $qualScript = ".\scripts\quality-check.ps1"
 if (Test-Path -LiteralPath $qualScript) {
   Write-Host "   -> Ejecutando quality-check..."
   try {
     & $qualScript
     if ($LASTEXITCODE -eq 0) {
-      ok "Quality check: OK"
+      ok "Quality check: PASS"
     } else {
-      warn "Quality check: avisos detectados (ver arriba)"
+      fail "Quality check: FAIL (ver quality-reports/ o el detalle arriba)"
+      $EXIT_CODE = 1
     }
   } catch {
-    warn "Quality check no ejecutado: $_"
+    fail "Quality check no ejecutado: $_"
+    $EXIT_CODE = 1
   }
 } else {
-  warn "scripts/quality-check.ps1 no existe (omitido)"
+  fail "scripts/quality-check.ps1 no existe (gate de calidad obligatorio)"
+  $EXIT_CODE = 1
+}
+
+# Hook pre-push que bloquea main sin release gate (solo aviso)
+foreach ($dir in @('Backend', 'App')) {
+  if (Test-Path -LiteralPath (Join-Path $dir '.git')) {
+    $hooksPath = git -C $dir config --get core.hooksPath 2>$null
+    if ($hooksPath -ne '../githooks') {
+      warn "Hook pre-push no instalado en $dir. Ejecuta .\scripts\install-hooks.ps1"
+    }
+  }
 }
 
 Write-Host "`n-- 7. Resumen ----------------------------------------------------"

@@ -1,0 +1,39 @@
+#!/bin/sh
+# pre-push: bloquea el push a main si el codigo no tiene el release gate en PASS.
+#
+# Se instala en App/ y Backend/ con scripts/install-hooks.ps1 (o .sh), que
+# configura core.hooksPath=../githooks en cada repo.
+#
+# El release gate (scripts/quality-release.ps1 / .sh) escribe
+# quality-reports/release-pass.json con el tree de HEAD de cada repo cuando
+# pasa completo. Aqui se compara ese tree con el del commit que se empuja.
+# Se compara el tree (contenido) y no el commit para que valga tanto con
+# fast-forward como con merge-commit.
+
+top=$(git rev-parse --show-toplevel)
+key=$(basename "$top" | tr 'A-Z' 'a-z')
+stamp="$top/../quality-reports/release-pass.json"
+zero="0000000000000000000000000000000000000000"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$remote_ref" = "refs/heads/main" ] || continue
+  [ "$local_sha" = "$zero" ] && continue   # borrado de rama: no aplica
+
+  tree=$(git rev-parse "$local_sha^{tree}")
+  if [ -f "$stamp" ] && grep -q "\"$key\": *\"$tree\"" "$stamp"; then
+    echo "[pre-push] release gate PASS para $key ($tree)."
+    continue
+  fi
+
+  echo ""
+  echo "[pre-push] BLOQUEADO: push a main sin release gate en PASS para '$key'."
+  echo "  El contenido de $local_sha no coincide con el ultimo PASS registrado."
+  echo "  1. Desde la raiz: .\\scripts\\quality-release.ps1  (sin -SkipSecurity ni -SkipLite)"
+  echo "  2. Corrige los hallazgos en desarrollo y repite hasta PASS."
+  echo "  3. Mergea a main y vuelve a hacer push."
+  echo "  Ver docs/quality-tools-docker.md"
+  echo ""
+  exit 1
+done
+
+exit 0
