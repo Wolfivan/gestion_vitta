@@ -15,6 +15,7 @@ paths = [
   '''(^|/)\.env$''',
   '''(^|/)\.env\.local$''',
   '''(^|/)\.env\.production$''',
+  '''(^|/)Backend/\.env\.docker$''',
   '''(^|/)\.env\.sonar$''',
   '''(^|/)DataConf/''',
   '''(^|/)graphify-out/''',
