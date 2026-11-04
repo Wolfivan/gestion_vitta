@@ -13,4 +13,6 @@ ENV HOME=/tmp \
     CI=1 \
     NODE_OPTIONS=--max-old-space-size=2048
 
+USER node
+
 ENTRYPOINT ["node", "/repo/scripts/quality/run-quality.mjs"]
