@@ -11,6 +11,16 @@ jQuery(function($) {
         return '<a href="mailto:' + VMA.escHtml(encodeURIComponent(request.emailContacto)) + '">' + email + '</a>';
     }
 
+    // El plan va a la cuenta que hizo la solicitud, que puede no ser el correo de contacto.
+    function accountHtml(request) {
+        if (request.identidadOculta || !request.cuentaEmail) return '—';
+        return VMA.escHtml(request.cuentaEmail);
+    }
+
+    function accountLabel(request) {
+        return request.cuentaEmail && !request.identidadOculta ? request.cuentaEmail : 'la cuenta que la pidió';
+    }
+
     function actionsHtml(request) {
         if (ESTADOS_ABIERTOS.indexOf(request.estado) === -1) return '';
         var id = parseInt(request.id, 10);
@@ -30,10 +40,11 @@ jQuery(function($) {
 
         VMA.api.get('/admin/access/requests?' + query.toString()).done(VMA.handle(function(data) {
             requestsById = {};
-            var html = '<table class="vma-table"><thead><tr><th>Contacto</th><th>Plan</th><th>Mensaje</th><th>Notas</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>';
+            var html = '<table class="vma-table"><thead><tr><th>Contacto</th><th>Cuenta que recibe el plan</th><th>Plan</th><th>Mensaje</th><th>Notas</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>';
             data.items.forEach(function(request) {
                 requestsById[request.id] = request;
                 html += '<tr><td>' + contactHtml(request) + '</td>' +
+                    '<td>' + accountHtml(request) + '</td>' +
                     '<td>' + VMA.escHtml(request.planNombre || request.planSolicitado) + '</td>' +
                     '<td>' + VMA.escHtml(request.mensaje) + '</td>' +
                     '<td>' + VMA.escHtml(request.notasAdmin) + '</td>' +
@@ -77,7 +88,8 @@ jQuery(function($) {
 
     function openApprove(request) {
         VMA.renderModal('Aprobar plan ' + (request.planNombre || request.planSolicitado),
-            '<p>El plan se agrega a los que la persona ya tenga.</p>' +
+            '<p>El plan se asigna a la cuenta <strong>' + VMA.escHtml(accountLabel(request)) + '</strong> ' +
+            'y se suma a los que ya tenga.</p>' +
             VMA.expiryFieldsHtml() + notesFieldHtml(request) + VMA.formActionsHtml('Aprobar'));
         VMA.bindExpiryFields();
 
@@ -87,7 +99,8 @@ jQuery(function($) {
                 VMA.notice('Elige una fecha.', 'error');
                 return;
             }
-            update(request.id, $.extend({ estado: 'aprobada', notasAdmin: readNotes() }, expiry), 'Solicitud aprobada.');
+            update(request.id, $.extend({ estado: 'aprobada', notasAdmin: readNotes() }, expiry),
+                'Solicitud aprobada: plan asignado a ' + accountLabel(request) + '.');
         });
     }
 

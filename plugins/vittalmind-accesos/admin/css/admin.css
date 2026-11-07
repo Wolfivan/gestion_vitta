@@ -284,3 +284,13 @@
 .vma-matrix .vma-matrix-actions td:first-child {
     z-index: 3;
 }
+
+/* Aviso de columnas de la matriz con cambios sin guardar. */
+.vma-dirty-notice {
+    margin: 8px 0;
+    padding: 8px 12px;
+    border-left: 4px solid #d97706;
+    background: #fffbeb;
+    color: #92400e;
+    font-weight: 600;
+}

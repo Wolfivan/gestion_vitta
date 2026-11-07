@@ -36,6 +36,23 @@ var VMP = window.VMP || {};
             .fail(function() { callback([]); });
     };
 
+    /** Features de tipo herramienta para asignarlas a una categoría. */
+    VMP.loadToolFeatures = function(callback) {
+        VMP.api.get('/admin/access/features')
+            .done(function(res) {
+                var list = ((res.success && res.data && res.data.features) || [])
+                    .filter(function(feature) { return feature.tipo === 'herramienta'; })
+                    .map(function(feature) {
+                        return {
+                            featureKey: feature.featureKey,
+                            nombre: feature.nombre + (feature.activo ? '' : ' (inactiva)')
+                        };
+                    });
+                callback(list);
+            })
+            .fail(function() { callback([]); });
+    };
+
     VMP.api = {
         get: function(path, data) {
             return $.ajax({

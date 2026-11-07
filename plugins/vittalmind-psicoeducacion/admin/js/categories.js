@@ -7,6 +7,63 @@ if (categoryFormEl) categoryFormEl.remove();
 (function($) {
 VMP.categories = {
     features: [],
+    // Herramientas disponibles, las marcadas en su orden y los temas de la categoría
+    // abierta en el formulario (para avisar si al abrirla no se vería nada).
+    tools: [],
+    selectedTools: [],
+    temasCount: 0,
+
+    toolName: function(key) {
+        var tool = this.tools.find(function(t) { return t.featureKey === key; });
+        return tool ? tool.nombre : key;
+    },
+
+    renderTools: function() {
+        var self = this;
+        var $list = $('#vmp-category-tools');
+        if (!$list.length) return;
+        var unselected = self.tools.filter(function(t) { return self.selectedTools.indexOf(t.featureKey) === -1; });
+        if (self.selectedTools.length === 0 && unselected.length === 0) {
+            $list.html('<span class="vmp-help">No hay features de tipo Herramienta en VM Accesos.</span>');
+        } else {
+            var html = '';
+            self.selectedTools.forEach(function(key, i) {
+                html += '<div class="vmp-tool-row">';
+                html += '<label><input type="checkbox" class="vmp-tool-check" checked value="' + VMP.escHtml(key) + '"> ' + VMP.escHtml(self.toolName(key)) + '</label> ';
+                html += '<button type="button" class="vmp-btn-sm vmp-tool-move" data-dir="-1" data-index="' + i + '"' + (i === 0 ? ' disabled' : '') + ' aria-label="Subir">↑</button> ';
+                html += '<button type="button" class="vmp-btn-sm vmp-tool-move" data-dir="1" data-index="' + i + '"' + (i === self.selectedTools.length - 1 ? ' disabled' : '') + ' aria-label="Bajar">↓</button>';
+                html += '</div>';
+            });
+            unselected.forEach(function(t) {
+                html += '<div class="vmp-tool-row"><label><input type="checkbox" class="vmp-tool-check" value="' + VMP.escHtml(t.featureKey) + '"> ' + VMP.escHtml(t.nombre) + '</label></div>';
+            });
+            $list.html(html);
+        }
+        $('.vmp-tool-warning').toggle(self.temasCount === 0 && self.selectedTools.length === 0);
+    },
+
+    bindTools: function() {
+        var self = this;
+        $('#vmp-category-tools')
+            .on('change', '.vmp-tool-check', function() {
+                var key = this.value;
+                if (this.checked) {
+                    if (self.selectedTools.indexOf(key) === -1) self.selectedTools.push(key);
+                } else {
+                    self.selectedTools = self.selectedTools.filter(function(k) { return k !== key; });
+                }
+                self.renderTools();
+            })
+            .on('click', '.vmp-tool-move', function() {
+                var i = parseInt($(this).data('index'), 10);
+                var j = i + parseInt($(this).data('dir'), 10);
+                if (j < 0 || j >= self.selectedTools.length) return;
+                var moved = self.selectedTools[i];
+                self.selectedTools[i] = self.selectedTools[j];
+                self.selectedTools[j] = moved;
+                self.renderTools();
+            });
+    },
 
     loadFeatures: function(callback) {
         var self = this;
@@ -34,7 +91,7 @@ VMP.categories = {
             var $tbody = $('#vmp-categories-list');
             if (r.success && r.data) {
                 if (r.data.length === 0) {
-                    $tbody.html('<tr><td colspan="9" style="text-align:center;color:#94a3b8">No hay categorías. Crea la primera.</td></tr>');
+                    $tbody.html('<tr><td colspan="11" style="text-align:center;color:#94a3b8">No hay categorías. Crea la primera.</td></tr>');
                     return;
                 }
                 var html = '';
@@ -47,6 +104,8 @@ VMP.categories = {
                     html += '<td>' + VMP.escHtml(c.descripcion || '—') + '</td>';
                     html += '<td>' + (c.accesoFeatureKey ? VMP.escHtml(c.accesoFeatureKey) : '<span style="color:#10b981">Free</span>') + '</td>';
                     html += '<td>' + (c.temasCount || 0) + '</td>';
+                    html += '<td>' + (c.enHome ? 'Sí' : 'No') + '</td>';
+                    html += '<td>' + ((c.herramientas || []).length) + '</td>';
                     html += '<td>' + c.orden + '</td>';
                     html += '<td>';
                     html += '<button class="vmp-btn-sm" onclick="VMP.categories.showForm(' + c.id + ')">Editar</button> ';
@@ -56,7 +115,7 @@ VMP.categories = {
                 });
                 $tbody.html(html);
             } else {
-                $tbody.html('<tr><td colspan="9" style="text-align:center;color:#dc2626">Error: ' + VMP.escHtml(r.data || 'Sin respuesta') + '</td></tr>');
+                $tbody.html('<tr><td colspan="11" style="text-align:center;color:#dc2626">Error: ' + VMP.escHtml(r.data || 'Sin respuesta') + '</td></tr>');
             }
         });
     },
@@ -77,6 +136,15 @@ VMP.categories = {
         var self = this;
         self.loadFeatures(function() { self.populateFeatureSelector($form); });
 
+        $form.find('[name="enHome"]').prop('checked', false);
+        self.selectedTools = [];
+        self.temasCount = 0;
+        self.bindTools();
+        VMP.loadToolFeatures(function(list) {
+            self.tools = list;
+            self.renderTools();
+        });
+
         if (id) {
             VMP.api.get('/psychoeducation/admin/categories').done(function(r) {
                 if (r.success && r.data) {
@@ -87,6 +155,10 @@ VMP.categories = {
                         $form.find('[name="slug"]').val(cat.slug);
                         $form.find('[name="descripcion"]').val(cat.descripcion || '');
                         $form.find('[name="orden"]').val(cat.orden);
+                        $form.find('[name="enHome"]').prop('checked', !!cat.enHome);
+                        self.selectedTools = (cat.herramientas || []).slice();
+                        self.temasCount = cat.temasCount || 0;
+                        self.renderTools();
                         self.loadFeatures(function() {
                             self.populateFeatureSelector($form, cat.accesoFeatureKey);
                         });
@@ -127,7 +199,10 @@ VMP.categories = {
             icono: icono,
             orden: parseInt($form.find('[name="orden"]').val()) || 0,
             // null y no undefined: Free tiene que quitar la restricción anterior.
-            accesoFeatureKey: $form.find('[name="accesoFeatureKey"]').val() || null
+            accesoFeatureKey: $form.find('[name="accesoFeatureKey"]').val() || null,
+            enHome: $form.find('[name="enHome"]').is(':checked'),
+            // Lista completa en el orden visible: el Backend reemplaza la anterior.
+            herramientas: this.selectedTools.slice()
         };
 
         var promise = id

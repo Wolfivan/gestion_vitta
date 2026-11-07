@@ -1,6 +1,12 @@
 jQuery(function($) {
     var features = [];
     var TIPOS = { contenido: 'Contenido', modulo: 'Módulo', herramienta: 'Herramienta' };
+    // Solo las de contenido se eligen en psicoeducación; las otras las lee el código de la app.
+    var TIPO_AYUDA = {
+        contenido: 'Para hacer exclusivos categorías, temas o bloques: aparece en el selector "Requiere acceso" del plugin de psicoeducación.',
+        modulo: 'Secciones de la app que el código ya conoce (por ejemplo module.parejas). Una clave nueva de módulo no bloquea nada hasta que la app la use, y no aparece en psicoeducación.',
+        herramienta: 'Herramientas de la app que el código ya conoce (por ejemplo tool.timeline). Una clave nueva de herramienta no bloquea nada hasta que la app la use, y no aparece en psicoeducación.'
+    };
 
     function findFeature(key) {
         return features.filter(function(feature) { return feature.featureKey === key; })[0];
@@ -41,11 +47,17 @@ jQuery(function($) {
             '<div class="vma-field"><label for="vma-feature-descripcion">Descripción</label>' +
             '<textarea id="vma-feature-descripcion" rows="2" maxlength="2000">' + VMA.escHtml(feature && feature.descripcion) + '</textarea></div>' +
             '<div class="vma-field"><label for="vma-feature-tipo">Tipo</label>' +
-            '<select id="vma-feature-tipo">' + options + '</select></div>' +
+            '<select id="vma-feature-tipo">' + options + '</select>' +
+            '<p class="vma-help" id="vma-feature-tipo-ayuda"></p></div>' +
             '<p><label><input type="checkbox" id="vma-feature-activo"' + (!feature || feature.activo ? ' checked' : '') + '> Activa</label></p>' +
             VMA.formActionsHtml(feature ? 'Guardar cambios' : 'Crear feature');
 
         VMA.renderModal(feature ? 'Editar feature' : 'Nueva feature', html);
+
+        var $tipo = $('#vma-feature-tipo');
+        var showTipoHelp = function() { $('#vma-feature-tipo-ayuda').text(TIPO_AYUDA[$tipo.val()] || ''); };
+        $tipo.on('change', showTipoHelp);
+        showTipoHelp();
 
         $('.vma-modal .vma-save').on('click', function() {
             var data = {

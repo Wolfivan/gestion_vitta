@@ -18,12 +18,14 @@
                         <th>Descripción</th>
                         <th>Acceso</th>
                         <th>Temas</th>
+                        <th>Home</th>
+                        <th>Herramientas</th>
                         <th>Orden</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="vmp-categories-list">
-                    <tr><td colspan="9" style="text-align:center;color:#94a3b8">Cargando...</td></tr>
+                    <tr><td colspan="11" style="text-align:center;color:#94a3b8">Cargando...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -61,7 +63,19 @@
             <select id="cat_acceso_feature" name="accesoFeatureKey">
                 <option value="">Free (todas las personas)</option>
             </select>
-            <div class="vmp-help">Con una feature, la categoría se ve con candado y sus temas solo los abre quien tenga un plan que la incluya. El título y la descripción los ve todo el mundo: deben ser neutros.</div>
+            <div class="vmp-help">Con una feature, la psicoeducación de la categoría se ve con candado y sus temas solo los abre quien tenga un plan que la incluya. El título y la descripción los ve todo el mundo: deben ser neutros.</div>
+            <div class="vmp-help">Solo aparecen las features de tipo <strong>Contenido</strong> del plugin VM Accesos, con los planes que las incluyen.</div>
+        </div>
+        <div class="vmp-field">
+            <label><input type="checkbox" name="enHome" value="1"> Mostrar en Home</label>
+            <div class="vmp-help">La categoría aparece como módulo en el Inicio de la app, en el orden indicado abajo.</div>
+        </div>
+        <div class="vmp-field">
+            <label>Herramientas de esta categoría</label>
+            <div id="vmp-category-tools" class="vmp-tool-list"><span class="vmp-help">Cargando...</span></div>
+            <div class="vmp-help">La categoría se abre siempre. Las herramientas se bloquean con su propia clave. El acceso de la categoría solo bloquea su contenido de psicoeducación.</div>
+            <div class="vmp-help">Solo aparecen las features de tipo <strong>Herramienta</strong> del plugin VM Accesos. Usa ↑ y ↓ para cambiar el orden.</div>
+            <div class="vmp-tool-warning" style="display:none;color:#b45309">No se mostrará nada al abrirla.</div>
         </div>
         <div class="vmp-field">
             <label for="cat_orden">Orden</label>

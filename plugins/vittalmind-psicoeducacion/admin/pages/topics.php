@@ -66,6 +66,7 @@
             <select id="top_acceso_feature" name="accesoFeatureKey">
                 <option value="">Gratuito (Free)</option>
             </select>
+            <div class="vmp-help">Solo aparecen las features de tipo <strong>Contenido</strong> del plugin VM Accesos, con los planes que las incluyen. Si falta una, revisa su tipo en Features y márcala en la matriz de Planes.</div>
         </div>
         <div class="vmp-form-actions">
             <button type="button" class="button" onclick="VMP.closeModal()">Cancelar</button>

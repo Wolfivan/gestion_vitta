@@ -413,3 +413,20 @@
 .vmp-icon-cell .vmp-icon-empty {
     color: #cbd5e1;
 }
+
+.vmp-tool-list {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.vmp-tool-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.vmp-tool-row label {
+    flex: 1;
+}

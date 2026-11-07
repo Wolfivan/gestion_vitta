@@ -11,6 +11,54 @@ jQuery(function($) {
         return plans.filter(function(plan) { return plan.codigo === codigo; })[0];
     }
 
+    function cellsFor(codigo) {
+        return $('.vma-cell').filter(function() { return String($(this).data('plan')) === codigo; });
+    }
+
+    function selectedFor(codigo) {
+        return cellsFor(codigo).filter(':checked').map(function() {
+            return String($(this).data('feature'));
+        }).get();
+    }
+
+    // Una columna con casillas distintas a lo guardado: si no se pulsa su Guardar, se pierde.
+    function isDirty(plan) {
+        var selected = selectedFor(plan.codigo);
+        return selected.length !== plan.features.length ||
+            selected.some(function(key) { return plan.features.indexOf(key) === -1; });
+    }
+
+    function dirtyPlans() {
+        return plans.filter(isDirty);
+    }
+
+    function refreshDirty() {
+        var dirty = dirtyPlans();
+        $('.vma-save-column').each(function() {
+            var changed = dirty.indexOf(findPlan(String($(this).data('codigo')))) !== -1;
+            $(this).toggleClass('button-primary', changed).text(changed ? 'Guardar *' : 'Guardar');
+        });
+        var names = dirty.map(function(plan) { return plan.nombre; }).join(', ');
+        $('#vma-matrix-dirty')
+            .text(dirty.length ? 'Cambios sin guardar en: ' + names + '. Pulsa Guardar en cada columna marcada.' : '')
+            .toggle(dirty.length > 0);
+    }
+
+    // Casillas sin guardar de cada columna, para no perderlas al recargar la matriz.
+    function pendingSelections() {
+        var pending = {};
+        dirtyPlans().forEach(function(plan) { pending[plan.codigo] = selectedFor(plan.codigo); });
+        return pending;
+    }
+
+    function applySelections(pending) {
+        Object.keys(pending).forEach(function(codigo) {
+            cellsFor(codigo).each(function() {
+                $(this).prop('checked', pending[codigo].indexOf(String($(this).data('feature'))) !== -1);
+            });
+        });
+    }
+
     function renderPlans() {
         var html = '<table class="vma-table"><thead><tr><th>Plan</th><th>Código</th><th>Opciones</th><th>Personas</th><th>Features</th><th></th></tr></thead><tbody>';
         plans.forEach(function(plan) {
@@ -63,11 +111,14 @@ jQuery(function($) {
     function load() {
         $.when(VMA.api.get('/admin/access/plans'), VMA.api.get('/admin/access/features')).done(function(p, f) {
             VMA.handle(function(data) {
+                var pending = pendingSelections();
                 plans = data.plans;
                 VMA.handle(function(featureData) {
                     features = featureData.features;
                     renderPlans();
                     renderMatrix();
+                    applySelections(pending);
+                    refreshDirty();
                 })(f[0]);
             })(p[0]);
         });
@@ -75,9 +126,7 @@ jQuery(function($) {
 
     function saveColumn(codigo) {
         var plan = findPlan(codigo);
-        var selected = $('.vma-cell[data-plan="' + codigo + '"]:checked').map(function() {
-            return $(this).data('feature');
-        }).get();
+        var selected = selectedFor(codigo);
 
         var quitadas = plan.features.filter(function(key) { return selected.indexOf(key) === -1; });
         var message = affectedText(plan);
@@ -191,6 +240,12 @@ jQuery(function($) {
     });
     $('#vma-matrix').on('click', '.vma-save-column', function() {
         saveColumn(String($(this).data('codigo')));
+    });
+    $('#vma-matrix').on('change', '.vma-cell', refreshDirty);
+    $(window).on('beforeunload', function(event) {
+        if (dirtyPlans().length === 0) return undefined;
+        event.preventDefault();
+        return '';
     });
 
     load();
