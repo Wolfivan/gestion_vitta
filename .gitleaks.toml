@@ -19,6 +19,7 @@ paths = [
   '''(^|/)\.env\.sonar$''',
   '''(^|/)DataConf/''',
   '''(^|/)docs/secretos/''',
+  '''(^|/)App/google-services\.json$''',
   '''(^|/)graphify-out/''',
   '''(^|/)coverage/''',
   '''(^|/)quality-reports/''',
