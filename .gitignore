@@ -41,3 +41,6 @@ graphify-out/
 # Reportes generados por el quality gate
 quality-reports/*
 !quality-reports/.gitkeep
+
+# Secretos locales de produccion (claves generadas, nunca se versionan)
+docs/secretos/

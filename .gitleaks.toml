@@ -18,6 +18,7 @@ paths = [
   '''(^|/)Backend/\.env\.docker$''',
   '''(^|/)\.env\.sonar$''',
   '''(^|/)DataConf/''',
+  '''(^|/)docs/secretos/''',
   '''(^|/)graphify-out/''',
   '''(^|/)coverage/''',
   '''(^|/)quality-reports/''',
