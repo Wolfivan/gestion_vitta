@@ -3688,3 +3688,63 @@ Ronda 3 y Ronda 4 (feature 96, kit de autocuidado): documentadas en progress/imp
 - A petición de la usuaria. `vittalmind-accesos` 1.3.1: la matriz se desplaza dentro de su propio contenedor con la columna de features, la cabecera y la fila Guardar fijas; texto que explica cómo hacer exclusivo un tema. `vittalmind-psicoeducacion` 1.0.12: `VMP.loadContentFeatures` muestra en el selector de temas, bloques y categorías los planes que incluyen cada feature ("ningún plan" si ninguno). ZIPs regenerados.
 - Probado en WordPress real con 24 planes: sin desborde de página y la primera columna pegada al desplazar. `node --check` sin errores. Sin commits.
 - Visto en los datos locales de la usuaria: `content.ansiedad` no está asignada a ningún plan.
+
+## Feature 107: Psicoeducación solo en Biblioteca y tarjeta de plan (2026-11-04)
+### Qué se hizo
+- App `tools-screen.tsx`: fuera la tarjeta Psicoeducación de Parejas (sus categorías ya viven en la Biblioteca, que sigue abriendo `PsychoeducationHome`). Inicio: Parejas pasa a "2 actividades". `tool.psychoeducation` se conserva en constantes y backend sin uso en Herramientas (quitarla pediría migración; deuda menor).
+- App `AccessStatusCard`: tarjeta en columna con etiqueta "Plan actual" ("Planes actuales" si hay varios), nombre en negrita y "Vence el 15 nov 2026" en gris pequeño, separador fino entre planes y un solo botón a todo el ancho: "Solicitar otro plan" con un plan propio; si no, el `ctaTexto` del plan solicitable. `formatPlanDate` en `utils/access-plans.ts` con fecha de Bogotá.
+- Backend `035_plan_copy_esencial.sql`: `free` se muestra como "Esencial" y el CTA de `vip` pasa a "Ampliar mi acompañamiento", solo si conservan el valor del seed. Códigos internos sin cambios.
+
+### Evidencia
+- `init.ps1` verde: tests Backend y App, quality gate PASS.
+- 035 aplicada dos veces en el Postgres local (UPDATE 1/1 y luego 0/0).
+- Expo web a 375 px como invitado: Herramientas sin Psicoeducación y tarjeta "PLAN ACTUAL · Esencial".
+- **No verificado en pantalla**: tarjeta con varios planes y botón (el invitado no puede listar planes; `/access/plans` exige sesión). Cubierto por tests.
+
+### Para la revisión de fase
+- Aplicar 035 en Supabase con el resto (029 a 034) tras el respaldo.
+- Para un usuario Esencial el botón muestra el CTA del primer plan solicitable del catálogo, que puede no ser el VIP.
+
+
+## 2026-11-04 — Paneles de accesos: features de contenido, matriz sin guardar y cuenta de la solicitud
+
+A petición de la usuaria, tras dos reportes del panel. Diagnóstico con los datos locales:
+- "Las features de los planes no aparecen para un tema": la feature creada (`mn-jj`) era de tipo
+  módulo, y el selector de psicoeducación solo lista las de tipo contenido. Además `power-ranger`
+  no tenía ninguna feature guardada: guardar una columna recargaba la matriz y borraba en silencio
+  las casillas sin guardar de las demás columnas.
+- "Aprobar no asigna el plan": sí lo asignó, a la cuenta que hizo la solicitud
+  (`sugrinblandos@gmail.com`, #10). La de `test@vittal.com` (#9) seguía pendiente. El panel solo
+  mostraba el correo de contacto, no la cuenta que recibe el plan.
+
+### Cambios
+- Backend: las solicitudes del panel traen `cuentaEmail` (oculto si la identidad está oculta).
+- `vittalmind-accesos` 1.3.2: columna "Cuenta que recibe el plan" y el modal y el aviso de aprobar
+  nombran la cuenta; la matriz marca las columnas con cambios ("Guardar *" y aviso), conserva las
+  casillas sin guardar al recargar y avisa al salir de la página; el formulario de features explica
+  cada tipo.
+- `vittalmind-psicoeducacion` 1.0.13: ayuda bajo "Requiere acceso" (solo features de contenido).
+- ZIPs regenerados.
+
+### Evidencia
+- `init.ps1` verde (605 tests Backend). Probado en el WordPress local: columna de cuenta y modal,
+  dos columnas marcadas y guardar una conserva la otra, ayudas de tipo y del selector. Los cambios
+  de prueba en `plan_features` se revirtieron; la solicitud #9 sigue pendiente.
+
+## Feature 108: la App detecta features nuevas sin reiniciar (2026-11-04)
+### Diagnóstico
+- Tras quitar features a Esencial y sumarlas a otro plan, la App seguía con candados. El backend respondía bien (Power Ranger Rojo → `tool.timeline` para el usuario `30df178c`; al `3690dc7d` se le revocó ese plan a las 00:11 UTC). La App guardaba el acceso 5 min y, con la app abierta, solo lo refrescaba al canjear, al solicitar, tras un 403 o al volver con la caché vencida. Perder una feature se corregía por el 403; ganarla no, porque el candado mandaba a Solicitar acceso sin consultar.
+
+### Qué se hizo
+- `access-context.tsx`: `loadAccess` devuelve el acceso y agrupa peticiones simultáneas (una forzada no reutiliza una carga de caché). `refreshIfStale` consulta si el acceso tiene más de 60 s (`ACCESS_STALE_MS`) o la caché venció, sin mostrar carga; se usa al volver al primer plano. `checkFeature(key)` pregunta al servidor y, sin red, responde con la caché.
+- `hooks/use-access-refresh.ts`: `useRefreshAccessOnFocus` (Inicio, Herramientas, Biblioteca, Perfil, Psicoeducación) y `useLockedPress` (toque en candado: consulta, abre si ya llegó la feature y si no lleva a Solicitar acceso; ignora toques repetidos mientras consulta).
+- Tests: contexto (desbloqueo, sin red, antigüedad, sin carga, una sola petición), Herramientas y Biblioteca con candado viejo que abre, mocks de foco y de `checkFeature`.
+
+### Evidencia
+- `init.ps1` verde: tests Backend y App, quality gate PASS (App 0 errores / 20 avisos / duplicación 9,33 %).
+- Los 28 avisos "Cannot log after tests are done" de `PanicButton` ya existían antes del cambio.
+- **No verificado en pantalla**: sumar una feature desde el panel con la app abierta y ver el candado desaparecer (falta cuenta de prueba local).
+
+### Para la revisión de fase
+- La categoría bloqueada dentro de Psicoeducación (`categoria.locked`) viene de la respuesta de contenido, no del acceso: se actualiza al volver a cargar la categoría.
+

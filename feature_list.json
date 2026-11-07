@@ -1770,6 +1770,91 @@
                                         ],
                          "priority":  "alta",
                          "status":  "done"
+                     },
+                     {
+                         "id":  107,
+                         "name":  "library_only_psychoeducation_and_plan_card",
+                         "title":  "Psicoeducacion solo en Biblioteca y rediseno de la tarjeta de plan en Perfil",
+                         "description":  "Decision del 2026-11-04. La psicoeducacion tiene sus propias categorias y ya vive en la Biblioteca, asi que sale de Herramientas de Parejas. La tarjeta de plan del Perfil se redisena para ser mas clara: etiqueta Plan actual, lista de planes con su vencimiento y un solo boton. El plan free se muestra como Esencial y el CTA del VIP pasa a Ampliar mi acompañamiento, para un lenguaje menos despectivo en una app de salud mental.",
+                         "acceptance":  [
+                                            "Herramientas de Parejas ya no muestra Psicoeducacion; la Biblioteca sigue abriendo PsychoeducationHome",
+                                            "AccessStatusCard en columna: etiqueta Plan actual (Planes actuales si hay varios) arriba a la izquierda; cada plan con su nombre y debajo, en gris y mas pequeno, Vence el <fecha>; un plan sin vencimiento no lleva esa linea",
+                                            "Un solo boton: Solicitar otro plan si el usuario tiene un plan no default; si solo tiene el default, el ctaTexto del plan solicitable",
+                                            "Migracion 035 idempotente: nombre de free a Esencial y cta_texto de vip a Ampliar mi acompañamiento, sin pisar valores que el admin ya haya editado",
+                                            "Tests de App y Backend actualizados; init.ps1 en verde"
+                                        ],
+                         "priority":  "media",
+                         "status":  "done"
+                     },
+                     {
+                         "id":  108,
+                         "name":  "access_refresh_on_unlock",
+                         "title":  "Accesos: la App detecta en segundos las features nuevas sin cerrar la app",
+                         "description":  "Decision del 2026-11-04. Al sumar una feature a un plan desde el panel, la App seguia mostrando el candado: guarda el acceso 5 minutos y, con la app abierta, solo lo refresca al canjear, al solicitar, tras un 403 o al volver del segundo plano con la cache vencida. Perder una feature se corregia solo por el 403; ganarla no, porque el candado lleva a Solicitar acceso sin consultar al servidor.",
+                         "acceptance":  [
+                                            "Al tocar algo con candado la App consulta el acceso al servidor; si la feature ya llego abre el destino, si no lleva a Solicitar acceso",
+                                            "Al volver la app al primer plano refresca si el acceso tiene mas de 60 segundos, aunque la cache de 5 minutos no haya vencido",
+                                            "Inicio, Herramientas, Biblioteca, Perfil y Psicoeducacion refrescan al recibir el foco si el acceso tiene mas de 60 segundos, sin parpadeo de carga",
+                                            "Consultas simultaneas se agrupan en una sola peticion; sin conexion se conserva el acceso en cache y el candado",
+                                            "Tests del contexto y de las pantallas; init.ps1 en verde"
+                                        ],
+                         "priority":  "alta",
+                         "status":  "done"
+                     },
+                     {
+                         "id":  109,
+                         "name":  "category_tools_backend",
+                         "title":  "Categorias como modulos: herramientas por categoria en el Backend",
+                         "description":  "Decision del 2026-11-04. Spec docs/superpowers/specs/2026-11-04-categorias-herramientas-design.md y plan docs/superpowers/plans/2026-11-04-categorias-herramientas.md (Feature A). Los modulos del Home pasan a ser las categorias de psicoeducacion, con relacion muchos a muchos con las herramientas.",
+                         "acceptance":  [
+                                            "Migracion 036 idempotente: en_home, tabla categoria_herramientas, siembra de relaciones-pareja y ansiedad, borra module.parejas y module.ansiedad",
+                                            "Admin de categorias lee y guarda enHome y herramientas (reemplazo completo en una transaccion); clave no herramienta o repetida responde 400 INVALID_TOOL_FEATURE",
+                                            "GET /home/categories devuelve las categorias con en_home, con temasCount, accesoFeatureKey, contentLocked y herramientas con locked",
+                                            "La Biblioteca sigue excluyendo categorias sin temas",
+                                            "Tests de repositorio, servicio y rutas; init.ps1 en verde"
+                                        ],
+                         "priority":  "alta",
+                         "status":  "done"
+                     },
+                     {
+                         "id":  110,
+                         "name":  "category_tools_plugin",
+                         "title":  "Plugin Psicoeducacion 1.0.14: Mostrar en Home y herramientas por categoria",
+                         "description":  "Plan docs/superpowers/plans/2026-11-04-categorias-herramientas.md (Feature B).",
+                         "acceptance":  [
+                                            "Formulario de categoria con casilla Mostrar en Home y lista ordenable de herramientas",
+                                            "Tabla de categorias con columnas Home y Herramientas",
+                                            "Aviso No se mostrara nada al abrirla para categorias sin temas ni herramientas",
+                                            "Version 1.0.14 y ZIP regenerado; init.ps1 en verde"
+                                        ],
+                         "priority":  "alta",
+                         "status":  "done"
+                     },
+                     {
+                         "id":  111,
+                         "name":  "category_tools_app",
+                         "title":  "App: Home con categorias de la API y pantalla de categoria",
+                         "description":  "Plan docs/superpowers/plans/2026-11-04-categorias-herramientas.md (Feature C). Requiere build nueva de EAS.",
+                         "acceptance":  [
+                                            "Home muestra las categorias de GET /home/categories con cache sin conexion y estado vacio",
+                                            "Pantalla de categoria con tarjeta Psicoeducacion (si hay temas) y sus herramientas, cada una con su candado",
+                                            "Herramientas lista todo el catalogo sin modulos; se quitan module.* y MODULE_FEATURE_BY_ID",
+                                            "Tests de hook y pantallas; init.ps1 en verde"
+                                        ],
+                         "priority":  "alta",
+                         "status":  "pending"
+                     },
+                     {
+                         "id":  112,
+                         "name":  "plans_matrix_default_locked",
+                         "title":  "Matriz de planes: lo que trae Esencial aparece marcado y fijo en los demas planes",
+                         "description":  "Feature aparte acordada el 2026-11-04 (spec 2026-11-04-categorias-herramientas-design.md, D7).",
+                         "acceptance":  [
+                                            "En VM Accesos, las features del plan default se ven marcadas y no editables en las columnas de los otros planes",
+                                            "init.ps1 en verde"
+                                        ],
+                         "priority":  "media",
+                         "status":  "pending"
                      }
                  ]
 }
