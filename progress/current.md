@@ -271,6 +271,21 @@
     `docs/entorno-pruebas.md`.
 - Botón "← Volver" en la línea del tiempo (`timeline-screen.tsx`), con el mismo estilo que el
   Círculo de Gratitud. `timeline-screen.test.tsx` (nuevo) de rojo a verde. `init.ps1` en verde.
+- 2026-11-11, commits y gate para el paso a `main` (pedido de la usuaria):
+  - App `desarrollo`: `ce8d0d6` (scroll de Perfil), `c98e135` (111), `54c142f` (borrado de datos al
+    cerrar sesión), `ca3d609` (Volver en la línea del tiempo).
+  - Raíz `development`: `7f3ca7a` (VM Accesos 1.3.4), `1dec879` (docs).
+  - Primer `quality-release`: Sonar Backend FAIL por 3 hotspots S2077 en los UPDATE dinámicos de
+    `psychoeducation-repository.ts` (no inyectables: claves fijas de los controladores). Reescritos
+    como SQL literal con `$2::jsonb ? 'campo'`; tests de rojo a verde, SQL probado en Docker con
+    ROLLBACK. Backend `43b4b17`, 684/684.
+  - Segundo `quality-release`: **PASS** (quality-lite, security, Sonar Backend y Sonar App).
+    `release-pass.json` coincide con los árboles de App (`ca3d609`) y Backend (`43b4b17`), y `main`
+    es ancestro de `desarrollo` en los dos (fast-forward).
+  - Sin push ni merge: espera la decisión de la usuaria.
+  - El paso a `main` trae todo el sistema de accesos y las migraciones 026 y 029 a 036. Antes de
+    desplegar: respaldo de Supabase, borrar `dist/` en Hostinger, plugins VM Accesos 1.3.4 y
+    Psicoeducación 1.0.14, marcar `en_home` y build nueva de EAS.
 - Ruling: el refactor de `processJob` (dispatcher) no viaja porque estaba mezclado con los avisos de
   acceso. Costo si está mal: un aviso de complejidad en Sonar sobre ese archivo.
 
