@@ -285,6 +285,15 @@
     z-index: 3;
 }
 
+/* Casilla que da el plan default: marcada y fija en los demas planes. */
+.vma-matrix td.vma-cell-inherited {
+    background: #f1f5f9;
+}
+
+.vma-matrix td.vma-cell-inherited input[disabled] {
+    cursor: not-allowed;
+}
+
 /* Aviso de columnas de la matriz con cambios sin guardar. */
 .vma-dirty-notice {
     margin: 8px 0;

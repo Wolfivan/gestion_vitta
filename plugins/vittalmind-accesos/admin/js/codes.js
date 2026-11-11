@@ -4,7 +4,7 @@ jQuery(function($) {
     var plans = [];
     var STEPS = [
         'Abre la app e inicia sesión o crea tu cuenta.',
-        'Entra a Cuenta y toca Redimir.',
+        'Entra a Perfil y toca Redimir.',
         'Escribe el código o escanea el QR.'
     ];
 

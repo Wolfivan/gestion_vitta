@@ -15,10 +15,26 @@ jQuery(function($) {
         return $('.vma-cell').filter(function() { return String($(this).data('plan')) === codigo; });
     }
 
+    // Lo que trae el plan default ya lo tiene toda persona: en los demas planes se ve
+    // marcado y fijo. Se usa lo guardado del default, no sus casillas sin guardar.
+    function defaultFeatures() {
+        var plan = plans.filter(function(item) { return item.esDefault; })[0];
+        return plan ? plan.features : [];
+    }
+
+    function isInheritedCell(plan, featureKey) {
+        return !plan.esDefault && defaultFeatures().indexOf(featureKey) !== -1;
+    }
+
+    // Las casillas fijas no cuentan: se conserva lo que el plan ya tenia guardado de esas
+    // features, para que Guardar no las agregue ni las quite.
     function selectedFor(codigo) {
-        return cellsFor(codigo).filter(':checked').map(function() {
+        var plan = findPlan(codigo);
+        var editable = cellsFor(codigo).filter(':checked:not(:disabled)').map(function() {
             return String($(this).data('feature'));
         }).get();
+        var kept = plan.features.filter(function(key) { return isInheritedCell(plan, key); });
+        return editable.concat(kept);
     }
 
     // Una columna con casillas distintas a lo guardado: si no se pulsa su Guardar, se pierde.
@@ -53,7 +69,7 @@ jQuery(function($) {
 
     function applySelections(pending) {
         Object.keys(pending).forEach(function(codigo) {
-            cellsFor(codigo).each(function() {
+            cellsFor(codigo).not(':disabled').each(function() {
                 $(this).prop('checked', pending[codigo].indexOf(String($(this).data('feature'))) !== -1);
             });
         });
@@ -82,6 +98,8 @@ jQuery(function($) {
     }
 
     function renderMatrix() {
+        var defaultPlan = plans.filter(function(item) { return item.esDefault; })[0];
+        var defaultName = defaultPlan ? defaultPlan.nombre : 'el plan default';
         // Columna de features y cabecera fijas: con muchos planes la tabla se desplaza
         // y sin ellas se marcaria una casilla sin ver a que feature o plan pertenece.
         var html = '<div class="vma-matrix-scroll"><table class="vma-table vma-matrix"><thead><tr><th>Feature</th>';
@@ -93,10 +111,14 @@ jQuery(function($) {
         features.forEach(function(feature) {
             html += '<tr><td>' + VMA.escHtml(feature.nombre) + '<br><code>' + VMA.escHtml(feature.featureKey) + '</code></td>';
             plans.forEach(function(plan) {
-                var checked = plan.features.indexOf(feature.featureKey) !== -1 ? ' checked' : '';
-                html += '<td class="vma-center"><input type="checkbox" class="vma-cell"' + checked +
+                var inherited = isInheritedCell(plan, feature.featureKey);
+                var checked = inherited || plan.features.indexOf(feature.featureKey) !== -1 ? ' checked' : '';
+                var label = plan.nombre + ': ' + feature.nombre + (inherited ? ' (incluida por ' + defaultName + ')' : '');
+                html += '<td class="vma-center' + (inherited ? ' vma-cell-inherited' : '') + '">' +
+                    '<input type="checkbox" class="vma-cell"' + checked + (inherited ? ' disabled' : '') +
                     ' data-plan="' + VMA.escHtml(plan.codigo) + '" data-feature="' + VMA.escHtml(feature.featureKey) + '"' +
-                    ' aria-label="' + VMA.escHtml(plan.nombre + ': ' + feature.nombre) + '"></td>';
+                    (inherited ? ' title="' + VMA.escHtml('Incluida en ' + defaultName + ', el plan de todas las personas') + '"' : '') +
+                    ' aria-label="' + VMA.escHtml(label) + '"></td>';
             });
             html += '</tr>';
         });

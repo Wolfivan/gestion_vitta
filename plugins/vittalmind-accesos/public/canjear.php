@@ -85,7 +85,7 @@ defined('ABSPATH') || exit;
         <h2>Cómo canjearlo</h2>
         <ol>
             <li>Abre la app e inicia sesión o crea tu cuenta.</li>
-            <li>Entra a Cuenta y toca Redimir.</li>
+            <li>Entra a Perfil y toca Redimir.</li>
             <li>Escribe el código o escanea el QR.</li>
         </ol>
     </section>

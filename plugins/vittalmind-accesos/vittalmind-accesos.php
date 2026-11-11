@@ -3,7 +3,7 @@
  * Plugin Name: VittalMind Accesos
  * Plugin URI: https://vittalmind.com
  * Description: Panel de usuarios, solicitudes, planes y matriz de accesos de VittalMind. Consume la API del backend con la misma sesión del plugin de psicoeducación.
- * Version: 1.3.2
+ * Version: 1.3.4
  * Requires PHP: 7.4
  * Author: VittalMind
  * Text Domain: vittalmind-accesos
@@ -11,7 +11,7 @@
 
 defined('ABSPATH') || exit;
 
-define('VMA_VERSION', '1.3.2');
+define('VMA_VERSION', '1.3.4');
 define('VMA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('VMA_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('VMA_PLUGIN_BASENAME', plugin_basename(__FILE__));
