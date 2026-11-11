@@ -137,6 +137,21 @@ instalación del WordPress, en el login que muestra el propio plugin. El plugin
 guarda además un `transient_vmp_refresh_token` en `wp_options`; no es un
 secreto que deba documentarse, pero conviene saber que está ahí.
 
+### Segunda cuenta de la app — para probar el cambio de cuenta
+
+Sirve para comprobar que los datos de una cuenta no quedan en el teléfono para
+otra (línea del tiempo, gratitud, kit). Solo existe en la base de Docker.
+
+| Campo | Valor |
+|---|---|
+| Email | `test2@vittal.com` |
+| Contraseña | `test1234` |
+| Rol | `user` |
+| Plan | `vip` manual, sin vencimiento (incluye `tool.timeline`) |
+
+Se creó el 2026-11-10 con `POST /auth/register` y un `INSERT` en
+`usuario_planes`; no está en `seed.ts`. Si se recrea la base, hay que repetirlo.
+
 ## Inventario
 
 | Contenedor | Imagen | Puertos | Volumen | Redes |

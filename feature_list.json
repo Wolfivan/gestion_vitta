@@ -1842,7 +1842,7 @@
                                             "Tests de hook y pantallas; init.ps1 en verde"
                                         ],
                          "priority":  "alta",
-                         "status":  "pending"
+                         "status":  "done"
                      },
                      {
                          "id":  112,
@@ -1854,7 +1854,114 @@
                                             "init.ps1 en verde"
                                         ],
                          "priority":  "media",
-                         "status":  "pending"
+                         "status":  "done"
+                     },
+                     {
+                         "id": 113,
+                         "name": "caja_backend",
+                         "title": "Caja de mensajes: Backend (tablas cifradas, endpoints, QR e invitaciones)",
+                         "description": "Spec docs/superpowers/specs/2026-11-10-caja-de-mensajes-design.md. Plan docs/superpowers/plans/2026-11-10-caja-de-mensajes.md (Feature 113, Tareas 1 a 7). Va despues de la 112.",
+                         "acceptance": [
+                             "Migracion 037_caja_mensajes.sql idempotente con RLS, siembra de tool.caja (free y vip) y 10 ejemplos",
+                             "Texto y nombre cifrados con CAJA_ENCRYPTION_KEY; field-encryption.ts acepta keyEnv sin cambiar el plan de seguridad",
+                             "Endpoints /caja/* con requireFeature(tool.caja), salvo POST /caja/escribir/:token que solo exige sesion",
+                             "QR: token de 32 bytes, solo se guarda su hash, regenerar invalida el anterior; 20 pendientes max, 10/h por cuenta, 30/h por IP",
+                             "La cuenta de quien escribe por QR no se guarda junto al mensaje",
+                             "CAJA_COOLDOWN_DAYS (default 7) en GET /caja/config; .env.example, docs y PRIVACY_POLICY.md actualizados",
+                             "init.ps1 en verde"
+                         ],
+                         "priority": "media",
+                         "status": "pending"
+                     },
+                     {
+                         "id": 114,
+                         "name": "caja_app",
+                         "title": "Caja de mensajes: App (bolsa offline, animacion, escribir yo o alguien en mi celular)",
+                         "description": "Spec docs/superpowers/specs/2026-11-10-caja-de-mensajes-design.md. Plan docs/superpowers/plans/2026-11-10-caja-de-mensajes.md (Feature 114, Tareas 8 a 12). Requiere build nueva de EAS. La animacion se aprueba antes como prototipo HTML en docs/prototipos/caja-animacion.html.",
+                         "acceptance": [
+                             "Prototipo HTML de la animacion aprobado por la usuaria antes de implementarla en Reanimated",
+                             "elegirMensaje: sin repeticion dentro de la bolsa, respeta el enfriamiento, nunca dos seguidos iguales, nunca abre vacia si hay mensajes",
+                             "Mismo celular pide nombre y pregunta leer primero o guardar como sorpresa",
+                             "Se puede borrar un mensaje desde la tarjeta y todos los de un autor desde Mis mensajes",
+                             "Ejemplos solo con menos de 3 mensajes y cada uno una sola vez",
+                             "Offline-first con pending_ops; logout vacia la caja local y sus ops",
+                             "Reducir movimiento y lector de pantalla soportados",
+                             "init.ps1 en verde"
+                         ],
+                         "priority": "media",
+                         "status": "pending"
+                     },
+                     {
+                         "id": 115,
+                         "name": "caja_qr",
+                         "title": "Caja de mensajes: invitar por QR, escribirle a alguien mas y aprobar pendientes",
+                         "description": "Spec docs/superpowers/specs/2026-11-10-caja-de-mensajes-design.md. Plan docs/superpowers/plans/2026-11-10-caja-de-mensajes.md (Feature 115, Tareas 13 a 15).",
+                         "acceptance": [
+                             "Invitar a escribirme muestra el QR (en cache sin conexion) y permite regenerarlo",
+                             "Escribele a alguien mas escanea el QR o abre el deep link vittalmind://caja/escribir/<token> y pide mensaje y nombre",
+                             "Los mensajes por QR llegan como pendientes y se aceptan o rechazan viendo el texto completo",
+                             "Los pendientes se recargan al volver al primer plano",
+                             "Prueba de punta a punta con dos cuentas",
+                             "init.ps1 en verde"
+                         ],
+                         "priority": "media",
+                         "status": "pending"
+                     },
+                     {
+                         "id": 116,
+                         "name": "caja_favoritos",
+                         "title": "Caja de mensajes (adicional): marcar mensajes como favoritos",
+                         "description": "Adicional de la spec docs/superpowers/specs/2026-11-10-caja-de-mensajes-design.md (seccion 10).",
+                         "acceptance": [
+                             "init.ps1 en verde"
+                         ],
+                         "priority": "baja",
+                         "status": "pending"
+                     },
+                     {
+                         "id": 117,
+                         "name": "caja_historial",
+                         "title": "Caja de mensajes (adicional): historial de mensajes que ya salieron",
+                         "description": "Adicional de la spec docs/superpowers/specs/2026-11-10-caja-de-mensajes-design.md (seccion 10).",
+                         "acceptance": [
+                             "init.ps1 en verde"
+                         ],
+                         "priority": "baja",
+                         "status": "pending"
+                     },
+                     {
+                         "id": 118,
+                         "name": "caja_compartir_imagen",
+                         "title": "Caja de mensajes (adicional): compartir un mensaje como imagen",
+                         "description": "Adicional de la spec docs/superpowers/specs/2026-11-10-caja-de-mensajes-design.md (seccion 10).",
+                         "acceptance": [
+                             "init.ps1 en verde"
+                         ],
+                         "priority": "baja",
+                         "status": "pending"
+                     },
+                     {
+                         "id": 119,
+                         "name": "caja_push_pendiente",
+                         "title": "Caja de mensajes (adicional): push al llegar un mensaje por QR, sin el texto",
+                         "description": "Adicional de la spec docs/superpowers/specs/2026-11-10-caja-de-mensajes-design.md (seccion 10).",
+                         "acceptance": [
+                             "La notificacion no incluye el texto ni el nombre",
+                             "init.ps1 en verde"
+                         ],
+                         "priority": "baja",
+                         "status": "pending"
+                     },
+                     {
+                         "id": 120,
+                         "name": "caja_ejemplos_wordpress",
+                         "title": "Caja de mensajes (adicional): editar los mensajes de ejemplo desde un plugin de WordPress",
+                         "description": "Adicional de la spec docs/superpowers/specs/2026-11-10-caja-de-mensajes-design.md (seccion 10). Usa los endpoints /admin/caja/ejemplos de la 113.",
+                         "acceptance": [
+                             "init.ps1 en verde"
+                         ],
+                         "priority": "baja",
+                         "status": "pending"
                      }
                  ]
 }

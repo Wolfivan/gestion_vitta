@@ -21,7 +21,7 @@ Estado al 2026-11-07:
 - **Android:** `google-services.json` está en `App/`, con el proyecto `220224673708` y el paquete
   `com.vittalmind.app`, ignorado por git. La usuaria subió la clave FCM V1 a expo.dev.
   `app.config.js` declara `googleServicesFile`.
-  **Falta** la variable de archivo `GOOGLE_SERVICES_JSON` en EAS (production).
+  La variable de archivo secreta `GOOGLE_SERVICES_JSON` ya está en EAS (production).
 - **iOS:** falta la clave APNs.
 
 ## Android: FCM V1
@@ -47,11 +47,37 @@ Estado al 2026-11-07:
 
 Necesita la membresía de Apple Developer, que ya existe (`ascAppId` 6798471228).
 
-1. En una terminal tuya, desde `App/`: `eas credentials -p ios`, perfil `production`.
+> `DataConf/AuthKey_V485A9QT8C.p8` es la llave de la **API de App Store Connect**. Sirve para que
+> `eas-build-ios.ps1` compile y suba la app, pero **no envía push**. APNs necesita una llave aparte,
+> y la API de App Store Connect no puede crearla: hace falta tu Apple ID o el portal web.
+
+Lo que ya está listo en el código:
+- el plugin `expo-notifications` agrega el entitlement `aps-environment` en la build;
+- el perfil `production` de `eas.json` usa el entorno production de EAS;
+- iOS `buildNumber` 14.
+
+**Ruta A, por la web (sin terminal):**
+1. <https://developer.apple.com/account/resources/authkeys/list> → **+**.
+2. Nombre `VittalMind APNs`, marca **Apple Push Notifications service (APNs)**, entorno
+   **Sandbox & Production**, y **Continue → Register**.
+3. **Download**. El `.p8` se descarga **una sola vez**: guárdalo en `DataConf/`, que está ignorado,
+   y en tu gestor de contraseñas. Anota el **Key ID** y tu **Team ID** (arriba a la derecha en el
+   portal).
+4. expo.dev → proyecto vittalmind → **Credentials → iOS → com.vittalmind.app → Push Key → Add**:
+   sube el `.p8` con su Key ID y Team ID.
+
+**Ruta B, por terminal:**
+1. Desde `App/` (en la rama `release/kit-notificaciones` o en `main` después del merge):
+   `npx eas-cli credentials -p ios`, perfil `production`.
 2. *Push Notifications: Manage your Apple Push Notifications Key → Set up a new key*.
-3. Inicia sesión con tu Apple ID cuando lo pida. EAS crea la clave `.p8` en Apple y la guarda.
-4. Alternativa: en la próxima `eas build -p ios` responde **sí** a *"Would you like to set up Push
-   Notifications for your project?"*.
+3. Inicia sesión con tu Apple ID cuando lo pida. EAS crea la llave en Apple y la guarda.
+
+**Después, con cualquiera de las dos rutas:**
+- Corre `.\eas-build-ios.ps1` desde `App/` en `main`. Si EAS pregunta si regenera el
+  provisioning profile para agregar Push Notifications, responde **sí**: el perfil actual no tiene
+  esa capacidad.
+- En expo.dev → Credentials → iOS revisa que aparezcan **Push Key** y **Provisioning Profile**
+  con fecha nueva.
 
 ## `EXPO_ACCESS_TOKEN` (opcional)
 
