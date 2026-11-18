@@ -9,11 +9,161 @@
 - **Estado**: in_progress.
 - **Plan breve**: `docs/superpowers/plans/2026-11-04-categorias-herramientas.md`, Feature A (Tareas 1 a 4). Spec en `docs/superpowers/specs/2026-11-04-categorias-herramientas-design.md`. Ejecución nativa, sin commits.
 
+## Feature 122 `caja_badge_pendientes` — done (2026-11-17)
+- Se registra como 122 porque otra sesion tiene la 121 en su worktree.
+- Plan: (1) quitar la tarjeta "Escríbele a alguien más" de Herramientas y `openWriteOther`; (2) store compartido de pendientes (`caja-pendientes-store`) que alimenta `useCaja`, el badge de la tarjeta de la Caja, el icono de Herramientas y "Mis mensajes".
+- Hecho (App):
+  - Quitada la tarjeta suelta de `tools-screen.tsx` y `openWriteOther` de `use-open-tool.ts` (ambos vuelven a quedar como en HEAD). Escribir a otro sigue desde el botón de la Caja y el deep link.
+  - `src/services/caja-pendientes-store.ts`: store en memoria de los pendientes. Solo consulta si está habilitado; ante cualquier error conserva lo último; un número de petición evita que una respuesta vieja pise otra o que llegue después de un reinicio.
+  - `src/hooks/use-caja-pendientes.ts`: `useCajaPendientes` (lectura con `useSyncExternalStore`), `useToolBadgeCount` y `useCajaPendientesSync`. Este último se monta en `App.tsx` (`AppContent`); habilita el store solo con cuenta, sin invitado y con `tool.caja`. Consulta al arrancar y en AppState `active`; con logout, invitado o sin la feature vuelve a 0.
+  - `useCaja` ya no guarda su propia lista ni escucha AppState: lee el store y lo refresca al montar, al enfocar y después de aceptar o rechazar.
+  - `src/components/count-badge.tsx`: badge redondo (`COLORS.accent` con texto `COLORS.surface`, tope "9+", etiqueta "N mensajes esperando").
+  - El badge aparece en `ToolCard` (prop `badgeCount`, solo en la Caja, en Herramientas y en la categoría), en el icono de Herramientas (`TabIcon`, que pasó a `src/navigation/tab-icon.tsx`) y en "Mis mensajes" de `caja-screen.tsx`.
+  - Tests: nuevo `__tests__/caja-badge.test.tsx` con 21 tests. `caja-pendientes.test.tsx` ahora habilita el store y monta el sync para los tests de AppState, y suma 2 tests del badge de Mis mensajes. Jest: 811 en verde.
+- `init.ps1` en verde: tests de Backend y App pasan, quality gate en PASS (App: tsc 0, eslint 0 errores, duplicación 8.80 %). Sin commit.
+- Pendiente manual: verlo en el dispositivo con una cuenta que tenga pendientes por QR.
+
+## Bug: "No se pudo generar el QR" en desarrollo (2026-11-17)
+- Causa raíz: el contenedor `backend-api-1` se había construido el 4 de noviembre, antes de la 113, así que respondía 404 en `/caja/*`. La App muestra cualquier error que no sea de red como "No se pudo generar el QR".
+- Arreglo del entorno (sin cambios de código de la caja):
+  - Se recreó `Backend/.env.docker` (ignorado por git) con las variables del contenedor más una `CAJA_ENCRYPTION_KEY` solo para local y `CAJA_COOLDOWN_DAYS=7`.
+  - Se reconstruyó solo el servicio `api`.
+- Segundo problema: el `Dockerfile` estaba con CRLF en el disco y el entrypoint fallaba ("no such file or directory"). Se convirtió a LF (en git ya estaba con LF, así que no hay diff) y se agregó `Backend/.gitattributes` (`Dockerfile` y `*.sh` con `eol=lf`).
+- Se agregaron las variables `CAJA_*` a `Backend/.env.docker.example`.
+- Smoke: `POST /caja/invitacion` autenticado devuelve 201 con url y png. La migración 037 corrió al arrancar sin efecto, porque ya estaba aplicada.
+- Nota: el smoke generó una invitación para el último usuario de la base local. Si era tu cuenta, ese QR ya existe y la App lo pedirá con "Mostrar mi QR".
+
+## Feature 115 `caja_qr` — done (2026-11-17)
+- Rulings:
+  - R6: textos para `CAJA_RATE_LIMITED` y `CAJA_AUTOESCRITURA`.
+  - R7: "Escríbele a alguien más" no lleva el candado de plan.
+- Tareas:
+  - Tarea 13 (Invitar a escribirme): pantalla del QR con caché.
+  - Tarea 14 (Escríbele a alguien más): escáner, deep link y envío. Se corrigió que el enlace inicial se releyera en cada cambio de sesión.
+  - Tarea 15 (pendientes): aviso, sección Pendientes y recarga al volver a la App.
+- Revisión final "con correcciones", aplicadas en una sola ola de 9 y re-revisión limpia:
+  - sin caché, el QR ya no se regenera solo: aparece "Mostrar mi QR" con advertencia;
+  - un enlace nuevo con la pantalla de escribir al frente cambia de destinatario;
+  - texto del permiso de cámara en `app.json` y texto de cámara bloqueada;
+  - un 404 al aceptar recupera el mensaje del servidor;
+  - botón "Escanear otro QR";
+  - "Verá tu nombre";
+  - el aviso de pendientes se puede tocar;
+  - texto de rechazo;
+  - un test reforzado.
+- `init.ps1` en verde: App con 788 tests, quality gate en PASS y Docker activo (duplicación en App: 9.03 %).
+- Pendiente con la usuaria:
+  - Prueba de punta a punta con dos cuentas y dos teléfonos (plan, Tarea 15, paso 5), con build nueva de EAS porque cambió `app.json`.
+  - Prueba de humo en Docker del Backend.
+  - Asignar `tool.caja` a una categoría del Home.
+- Fuera de alcance, propuesto aparte:
+  - ~~`useRedeemLink` relee `getInitialURL` en cada cambio de sesión~~: era un falso positivo. Se verificó el 2026-11-17: el efecto ya tiene `[]` como dependencias.
+  - `api.ts` reintenta los POST no idempotentes tras un timeout.
+  - "Rechazar todos los de una persona" en pendientes, sin decidir.
+
+## Feature 114 `caja_app` — done (2026-11-17)
+- Ajustes pedidos por la usuaria antes de cerrarla:
+  - El recuadro de la animación se amplió hacia arriba (viewBox `0 -80 240 320`), porque la tapa abierta se cortaba.
+  - "Lo escribe alguien más" ya no pregunta leer o sorpresa: se guarda directo como sorpresa y solo muestra "Mensaje de {nombre} guardado". Se actualizaron D2 y §3.2 de la spec.
+  - La revisión los aprobó.
+- `init.ps1` en verde, con quality gate en PASS y Docker activo. Marcada done a pedido de la usuaria. La prueba en dispositivo sigue recomendada.
+
+### Historial de la 114
+- La usuaria aprobó la animación tal como está en el prototipo: `CAJA_TIMINGS = { wobble: 400, lid: 350, particles: 300, card: 550 }`. Las curvas están en el ledger.
+- La App pasó de `main` a `desarrollo` (los dos apuntaban al mismo commit y el árbol estaba limpio).
+- Rulings del pre-flight:
+  - R4: un 404 de `DELETE` o de `/mostrado` cuenta como éxito en la sincronización (gana el borrado).
+  - R5: `access-keys.test.ts` y `FREE_FEATURES` suman `tool.caja` y la migración 037.
+- Tarea 9 completa, con la revisión aprobada:
+  - `caja-bag.ts` (`elegirMensaje`, función pura) y `caja-input.ts` en la App.
+  - Tests: 652/652.
+- Tarea 10 completa, con la revisión aprobada tras 2 rondas:
+  - `caja-service.ts` y `caja-sync.ts` (sin ciclo de imports con sync-manager), tablas SQLite y entidad `caja` en la cola.
+  - Limpieza en `personal-data.ts`; `TOOL_CAJA` en la App.
+  - `api.ts`: una respuesta 204 se devuelve como `undefined`.
+  - Correcciones de la revisión: un borrado mientras sube el create ya no resucita el mensaje (si el DELETE falla, queda en la cola); `refreshFromServer` conserva el estado local de la bolsa.
+  - Tests: 678/678. El implementador original se trabó dos veces y la corrección la hizo otro subagente.
+- Tarea 11 completa, con la revisión aprobada tras 1 ronda:
+  - `caja-animation.tsx` con los tiempos, curvas, geometría y pivotes del prototipo.
+  - Corrección: `onRevealed` se dispara una sola vez por apertura, y la limpieza cancela las animaciones.
+  - Tests: 685/685.
+  - Pendiente: verlo en un dispositivo (el giro de la tapa en react-native-svg no tiene precedente en el repo).
+- Tarea 12 completa, con la revisión aprobada:
+  - `useCaja`, la tarjeta y las pantallas Caja, CajaWrite y CajaMessages; entrada en el catálogo y rutas.
+  - La caja se bloquea mientras se abre, así que un doble toque saca un solo mensaje.
+  - Las sorpresas nunca muestran su texto antes de salir.
+  - Tests: 704/704.
+- Revisión final de toda la 114: "con correcciones". Se aplicó una sola ronda de 8 correcciones y la re-revisión salió limpia (8 de 8):
+  - el texto de la sorpresa queda cubierto al devolver el celular;
+  - la tarjeta es una capa superpuesta con scrim, sube y crece como en el prototipo;
+  - la pantalla se recarga al volver;
+  - un ejemplo borrado (400/404) cuenta como éxito;
+  - "Abrir otro" usa `playId`;
+  - un contador de mutaciones frena las carreras con `refreshFromServer`;
+  - ya no puede haber dos grupos "Yo";
+  - los borrados fallidos muestran un aviso.
+- Cierre:
+  - El primer `init.ps1` falló por la complejidad cognitiva de `refreshFromServer` (35, el máximo es 25). Se dividió en 6 helpers y la revisión confirmó que el comportamiento es idéntico.
+  - El segundo `init.ps1`: exit 0, tests de Backend y App en verde (App 722) y quality gate en PASS **en modo local**. Docker no respondía, así que la duplicación no se midió.
+- **La 114 sigue in_progress** hasta la prueba en dispositivo (plan, Tarea 12, paso 5). Hay que mirar:
+  - el giro de la tapa en react-native-svg y la tarjeta superpuesta;
+  - que el scrim deja tocar los botones de debajo;
+  - el cierre brusco de "Abrir otro" y de Borrar;
+  - que "Volver" desde el estado cubierto descarta sin confirmar.
+- Además hay que asignar `tool.caja` a una categoría del Home en el plugin Psicoeducación. La 114 requiere una build nueva de EAS.
+
+## Feature 113 `caja_backend` — done (2026-11-12)
+- Ruling: se empieza antes que la 111 y la 112 porque la usuaria lo pidió explícitamente. Costo si está mal: reordenar.
+- Ejecución con subagentes. Ledger en `.superpowers/sdd/2026-11-10-caja-de-mensajes/progress.md`. Sin commits: cada tarea se revisa como diff entre árboles de git.
+- Arranque: `init.ps1` en verde, con exit 0 y el quality gate en PASS. Aviso: el hook pre-push no está instalado en Backend ni en App.
+- Tarea 1: `037_caja_mensajes.sql` y 5 tests en `database-migration.test.ts`, de rojo a verde. Suite completa 691/691. Aplicada dos veces en `backend-db-1`: 10 ejemplos y `tool.caja` en free y vip. Revisión aprobada. Ruling: se mantiene `DEFAULT 'aceptado'` en `estado`, porque el servicio siempre pasa el estado explícito; la Tarea 6 lo cubre con un test. Costo si está mal: un pendiente por QR entraría aceptado.
+- Tarea 2 completa, con la revisión aprobada:
+  - `field-encryption.ts` acepta `keyEnv` (por defecto la clave del plan de seguridad) y exporta `CAJA_KEY_ENV`.
+  - Nuevo `rate-limiter.ts` con `createRateLimiter`; `redeem-limiter.ts` delega en él sin cambiar su API.
+  - `.env.example` y la documentación de seguridad y de entornos están actualizados.
+  - Tests: 698/698, `tsc` limpio.
+- Tarea 3 completa, con la revisión aprobada:
+  - `caja-input.ts` con `normalizeCajaTexto`, `normalizeCajaNombre`, `sameAutor` y `parseCooldownDays`. Los textos se cuentan en code points.
+  - `models/caja.ts` con los tipos de la caja.
+  - Tests: 705/705.
+- Tarea 4 completa, con la revisión aprobada:
+  - `caja-repository.ts` con 19 tests; todo el SQL va parametrizado y filtra por `id_anonimo`.
+  - `acceptPendiente` se probó en Docker con ROLLBACK.
+  - Tests: 724/724.
+  - Ruling: `markMostrado` solo aplica a mensajes aceptados; se corrige dentro de la Tarea 5.
+- Tarea 5 completa, con la revisión aprobada:
+  - `caja-service.ts` cubre config, listar, crear (cifrado), borrar, borrar por autor, marcar mostrado y ejemplos.
+  - `markMostrado` en el repositorio ahora filtra los mensajes aceptados.
+  - Tests: 740/740.
+- Tarea 6 completa, con la revisión aprobada tras una ronda de corrección:
+  - Invitación: el token es aleatorio y solo se guarda su SHA-256. El PNG del QR se genera como en los códigos de canje.
+  - Escritura por QR: crea mensajes pendientes sin guardar la cuenta de quien escribe.
+  - La revisión encontró que una ráfaga concurrente saltaba los límites. Se corrigió reservando el cupo antes de consultar la base, con un test de 15 envíos simultáneos que deja pasar 10.
+  - Tests: 757/757.
+  - Quedan 4 detalles menores para la revisión final.
+- Tarea 7 completa, con la revisión aprobada:
+  - Controlador, rutas `/caja/*` con swagger, admin `/admin/caja/ejemplos`, `TOOL_CAJA`, mock de acceso (R3) y sección 1.6 de `PRIVACY_POLICY.md`.
+  - Tests: 770/770, `tsc` limpio.
+  - Ruling: la prueba de humo en Docker queda pendiente para la usuaria. Falta `Backend/.env.docker`, y reconstruir la API habría significado copiar secretos reales. Costo: el cifrado no está verificado de punta a punta en la base real.
+- Revisión final de toda la 113: "con correcciones". Se aplicó una sola ronda de 6 correcciones y la re-revisión salió limpia:
+  - un id mal formado en la ruta respondía 500; ahora responde 404;
+  - el test fija la IP real;
+  - la documentación swagger de los ejemplos;
+  - los errores de Postgres se loggean sin `detail`;
+  - el QR se genera antes de invalidar la invitación anterior;
+  - la política de privacidad menciona la IP.
+- Cierre: `init.ps1` exit 0, quality gate en PASS, Backend 774 tests. **Feature 113 → done (2026-11-12).**
+- Pendiente para la usuaria: la prueba de humo en Docker (falta `Backend/.env.docker`) y aprobar el prototipo de la animación.
+- Siguiente: la 114 (`caja_app`). La Tarea 11 espera la aprobación de la animación. Hay que sumar `tool.caja` a `SEEDED_KEYS` en `App/__tests__/access-keys.test.ts` y hacer que lea la migración 037. El ledger SDD sigue en `.superpowers/sdd/2026-11-10-caja-de-mensajes/`.
+- Prototipo de la animación listo en `docs/prototipos/caja-animacion.html`, pendiente de aprobación por la usuaria (bloquea solo la Tarea 11).
+- Ramas: se borraron `claude/vigorous-mestorf-e9497a` (raíz) y `release/kit-notificaciones` local (App y Backend), que estaban integradas. Con el visto bueno de la usuaria también se borraron `upgrade/expo-sdk-57` (último commit `2b0c948`, recuperable desde el reflog) y `origin/release/kit-notificaciones` en App y Backend. En los tres repos quedan solo `development`/`desarrollo` y `main`.
+
 ## Diseño en curso: Caja de mensajes (2026-11-10)
 - Spec: `docs/superpowers/specs/2026-11-10-caja-de-mensajes-design.md` (aprobada).
-- Plan: `docs/superpowers/plans/2026-11-10-caja-de-mensajes.md`, con 15 tareas en tres features, pendiente de revisión por la usuaria.
+- Plan: `docs/superpowers/plans/2026-11-10-caja-de-mensajes.md`, con 15 tareas en tres features, aprobado.
+- Método de ejecución elegido por la usuaria (2026-11-12): **subagentes** (`superpowers:subagent-driven-development`), con implementador y revisor por tarea y una revisión de toda la rama al final. Empieza cuando la 111 y la 112 estén `done`.
 - `feature_list.json`: 113 a 115 (`caja_backend`, `caja_app`, `caja_qr`) y los adicionales 116 a 120, todos `pending`. Se implementan después de la 112.
-- Hallazgo: `logout` (`use-auth.ts`) solo limpia el plan de seguridad. Los datos locales de gratitud y de la línea del tiempo quedan en el celular para la siguiente cuenta. El plan lo resuelve para la caja (Tarea 10); para el resto queda fuera de alcance.
+- Corrección (2026-11-12): la limpieza de datos locales al cerrar sesión ya existe. El commit `54c142f` de App agregó `personal-data.ts` (`clearPersonalLocalData` y `ensurePersonalDataOwner`). El plan de la caja se ajustó para extender esas funciones (Tarea 10).
 
 ## Registro de la serie 109 a 112
 - Arranque: `init.ps1` con tests de Backend y App en verde (el quality gate de Docker siguió en segundo plano).

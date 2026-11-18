@@ -1871,7 +1871,7 @@
                              "init.ps1 en verde"
                          ],
                          "priority": "media",
-                         "status": "pending"
+                         "status": "done"
                      },
                      {
                          "id": 114,
@@ -1889,7 +1889,7 @@
                              "init.ps1 en verde"
                          ],
                          "priority": "media",
-                         "status": "pending"
+                         "status": "done"
                      },
                      {
                          "id": 115,
@@ -1905,7 +1905,7 @@
                              "init.ps1 en verde"
                          ],
                          "priority": "media",
-                         "status": "pending"
+                         "status": "done"
                      },
                      {
                          "id": 116,
@@ -1962,6 +1962,21 @@
                          ],
                          "priority": "baja",
                          "status": "pending"
+                     },
+                     {
+                         "id": 122,
+                         "name": "caja_badge_pendientes",
+                         "title": "Caja de mensajes: quitar la tarjeta suelta de escribir a otro y badge de pendientes",
+                         "description": "Se quita de Herramientas la tarjeta 'Escribele a alguien mas' (sigue dentro de la Caja y por deep link). Badge redondo con el numero de pendientes por QR (tope 9+) en la tarjeta de la Caja (Herramientas y categoria), en el icono de Herramientas de la barra inferior y en el boton Mis mensajes. Una sola fuente compartida del conteo.",
+                         "acceptance": [
+                             "Herramientas ya no muestra la tarjeta de escribir a otro",
+                             "El badge muestra el numero y 9+, y se oculta en 0",
+                             "No se consulta sin tool.caja ni como invitado",
+                             "Ante errores se conserva el ultimo conteo; se actualiza al aceptar o rechazar; vuelve a 0 al cerrar sesion",
+                             "init.ps1 en verde"
+                         ],
+                         "priority": "media",
+                         "status": "done"
                      }
                  ]
 }

@@ -70,6 +70,11 @@
 - Valores legados en claro se leen tal cual y se cifran en el siguiente guardado; los backups anteriores pueden contener teléfonos en claro.
 - Deuda M4: el SQLite local de la App NO está cifrado (no cubierto por este cambio).
 - Nombre y textos de los pasos no se cifran en esta iteración (decisión de alcance: solo el teléfono, identificador directo de terceros).
+
+### Caja de mensajes (Feature 113)
+- Texto y nombre del autor se cifran con AES-256-GCM (`Backend/src/utils/field-encryption.ts`) usando una clave propia, `CAJA_ENCRYPTION_KEY` (32 bytes, base64 o hex), independiente de `SAFETY_PLAN_ENCRYPTION_KEY`. Generar con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Nunca en el repo.
+- Fail-closed: sin clave válida no se guarda ni se lee nada; un valor cifrado con otra clave no se descifra. Rotación mínima: `CAJA_ENCRYPTION_KEY_PREVIOUS` solo descifra; no hay re-cifrado masivo. Perder la clave implica perder los mensajes.
+- Nunca se loggea el texto ni el nombre, ni en claro ni cifrados.
 - Paso 3 (desde la migración 028, 2026-10-30): pasa a texto libre (`paso3_actividades_texto`) y va en claro como los Pasos 1, 2, 6 y 7, aunque la persona escriba teléfonos. La columna JSONB antigua (`paso3_actividades_personas`, con teléfonos cifrados) se lee y se convierte a texto si la nueva está vacía, y se vacía en el siguiente guardado.
 
 ## Checklist rápido (para auditoría)

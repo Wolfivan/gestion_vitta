@@ -26,7 +26,7 @@ haya pasado un tiempo configurable.
 | # | Decisión |
 |---|----------|
 | D1 | Hay cuatro orígenes de mensaje: `propio`, `mismo_celular`, `qr` y `ejemplo` (§4). |
-| D2 | **Mismo celular:** antes de guardar, la app le pregunta a la dueña: *"¿Quieres leerlo antes de guardarlo o lo guardas como sorpresa?"*. Si elige leerlo, ve el texto y decide si entra o no. Si elige sorpresa, entra a la bolsa sin leerlo. |
+| D2 | **Mismo celular** (cambiado el 2026-11-17 a pedido de la usuaria): no se pregunta nada, porque quien escribe suele ser quien guarda. El mensaje se guarda directo como **sorpresa** (la dueña no lo ha leído) y se muestra solo una confirmación sin el texto. Antes el diseño preguntaba "¿Quieres leerlo antes de guardarlo o lo guardas como sorpresa?". |
 | D3 | **QR:** el mensaje llega como `pendiente` y **siempre** se aprueba viendo el texto completo y el nombre. Rechazar lo borra. |
 | D4 | Al escribir para otra persona se pide **mensaje + nombre**. El nombre es texto libre y es lo único que identifica al autor. No se guarda la cuenta del autor. |
 | D5 | Los **mensajes de ejemplo** los sirve el Backend (contenido dinámico, editable por el psicólogo). Cada uno sale **una sola vez** por usuaria y después desaparece. Solo se usan mientras la usuaria tiene menos de 3 mensajes aceptados (de cualquier origen). |
@@ -57,10 +57,9 @@ haya pasado un tiempo configurable.
 ### 3.2 Escribir un mensaje
 - **Lo escribo yo:** un campo de texto (1 a 500 caracteres). Se guarda con origen `propio`.
 - **Lo escribe alguien más (mismo celular):** aparecen el campo de texto y el campo **"¿Quién lo
-  escribe?"** (nombre, de 1 a 40 caracteres). Se le indica a la otra persona que devuelva el celular.
-  Al tocar Guardar aparece el diálogo de D2:
-  - **"Leerlo primero"**: muestra el texto y el nombre, con los botones *Dejar entrar* y *No guardar*.
-  - **"Guardarlo como sorpresa"**: entra sin mostrarse.
+  escribe?"** (nombre, de 1 a 40 caracteres). Al tocar Guardar el mensaje entra a la caja como
+  sorpresa (D2) y la pantalla muestra solo "Mensaje de {nombre} guardado", sin el texto, con un botón
+  para volver a la caja.
 
 ### 3.3 Mis mensajes
 - Lista de los mensajes aceptados, agrupados por nombre del autor ("Yo", "Ana", ...).
@@ -103,7 +102,7 @@ Estados: `pendiente` → `aceptado`, o `pendiente` → borrado (rechazo). Borrar
 **borrado físico** en el servidor y en el dispositivo. No hay papelera, porque el caso de uso
 (una ruptura) pide que el mensaje desaparezca de verdad.
 
-Campo `sorpresa` (boolean): es `true` en `mismo_celular` cuando se eligió "Guardarlo como sorpresa".
+Campo `sorpresa` (boolean): es `true` en todo mensaje `mismo_celular` (D2).
 Pasa a `false` la primera vez que el mensaje sale de la caja. A partir de ahí el texto ya es visible en
 "Mis mensajes".
 

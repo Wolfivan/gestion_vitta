@@ -2,6 +2,7 @@
 
 > **Para agentes:** sub-skill obligatoria: `superpowers:subagent-driven-development` (recomendada) o
 > `superpowers:executing-plans`. Los pasos usan casillas (`- [ ]`) para el seguimiento.
+> **Método elegido por la usuaria (2026-11-12): subagentes.**
 > **En este repo no se hace commit nunca** (`CLAUDE.md`): donde la skill diría "commit", aquí se
 > actualiza `progress/current.md`.
 
@@ -51,10 +52,11 @@ este plan.
 Fallos que la spec implica y que ningún test de las tareas cubriría por sí solo. Cada uno tiene su
 test en la tarea indicada.
 
-1. **Cerrar sesión en un celular compartido.** Hoy `logout` en `use-auth.ts` solo borra la caché del
-   plan de seguridad. Si no se hace nada, los mensajes de una usuaria quedarían visibles para la
-   siguiente cuenta que entre en ese celular. Hay que vaciar las tablas `caja_*` y las ops `caja` al
-   cerrar sesión → Tarea 10.
+1. **Cerrar sesión en un celular compartido, o entrar con otra cuenta sin cerrarla.**
+   `App/src/services/personal-data.ts` ya resuelve esto para la gratitud y la línea del tiempo:
+   `clearPersonalLocalData` se llama en el logout, y `ensurePersonalDataOwner` borra los datos si
+   cambia la cuenta. Si la caja no se agrega ahí, sus mensajes quedarían para la siguiente cuenta.
+   Hay que agregar las tablas `caja_*`, sus claves y las ops `caja` a esas dos funciones → Tarea 10.
 2. **Crear y borrar sin conexión.** Si se escribe un mensaje offline y se borra antes de sincronizar,
    no debe llegar al servidor ni quedar una op huérfana. Se usa `cancelPendingCreate` → Tarea 10.
 3. **Borrar por autor con variantes del nombre.** "Ana", "ana " y "ANA" son la misma persona para la
@@ -86,7 +88,7 @@ test en la tarea indicada.
 | `src/constants/access-features.ts` | `TOOL_CAJA: 'tool.caja'` |
 | `tests/caja-*.test.ts` | Tests por capa |
 
-### Tarea 1: migración 037
+### Task 1 (Tarea 1): migración 037
 
 **Archivos:**
 - Crear: `Backend/src/database/migrations/037_caja_mensajes.sql`
@@ -126,7 +128,7 @@ test en la tarea indicada.
   comprobar `SELECT count(*) FROM caja_ejemplos` = 10 después de la segunda.
 - [ ] **Paso 5:** anotar en `progress/current.md`.
 
-### Tarea 2: cifrado con clave por dominio y limitador genérico
+### Task 2 (Tarea 2): cifrado con clave por dominio y limitador genérico
 
 **Archivos:**
 - Modificar: `Backend/src/utils/field-encryption.ts`, `Backend/src/utils/redeem-limiter.ts`
@@ -159,7 +161,7 @@ test en la tarea indicada.
   a `Backend/.env.example`, y un párrafo a `docs/entornos-dev-produccion.md` y
   `docs/security-guidelines.md`, como el de `SAFETY_PLAN_ENCRYPTION_KEY`. Anotar el progreso.
 
-### Tarea 3: validación de entrada y modelo
+### Task 3 (Tarea 3): validación de entrada y modelo
 
 **Archivos:** crear `Backend/src/utils/caja-input.ts` y `Backend/src/models/caja.ts`; test
 `Backend/tests/caja-input.test.ts`.
@@ -188,7 +190,7 @@ test en la tarea indicada.
 - [ ] **Paso 3:** implementar.
 - [ ] **Paso 4:** el mismo comando → PASS. Anotar el progreso.
 
-### Tarea 4: repositorio
+### Task 4 (Tarea 4): repositorio
 
 **Archivos:** crear `Backend/src/services/caja-repository.ts`; test
 `Backend/tests/caja-repository.test.ts`, que mockea `pool` como hace `psychoeducation-repository.test.ts`.
@@ -220,7 +222,7 @@ Todas las consultas de la dueña llevan `WHERE id_anonimo = $1`.
 - [ ] **Paso 3:** implementar. Probar a mano el SQL de `acceptPendiente` en Docker con `ROLLBACK`.
 - [ ] **Paso 4:** → PASS. Anotar el progreso.
 
-### Tarea 5: servicio de la dueña (mensajes, ejemplos, config)
+### Task 5 (Tarea 5): servicio de la dueña (mensajes, ejemplos, config)
 
 **Archivos:** crear `Backend/src/services/caja-service.ts`; test `Backend/tests/caja-service.test.ts`,
 que mockea el repositorio y fija `CAJA_ENCRYPTION_KEY` en `beforeAll`.
@@ -251,7 +253,7 @@ que mockea el repositorio y fija `CAJA_ENCRYPTION_KEY` en `beforeAll`.
 - [ ] **Paso 3:** implementar con `encryptField(x, CAJA_KEY_ENV)` y `decryptField(x, CAJA_KEY_ENV)`.
 - [ ] **Paso 4:** → PASS. Anotar el progreso.
 
-### Tarea 6: servicio de invitación, escritura por QR y pendientes
+### Task 6 (Tarea 6): servicio de invitación, escritura por QR y pendientes
 
 **Archivos:** modificar `Backend/src/services/caja-service.ts`; test
 `Backend/tests/caja-invitacion.test.ts`.
@@ -290,7 +292,7 @@ que mockea el repositorio y fija `CAJA_ENCRYPTION_KEY` en `beforeAll`.
 - [ ] **Paso 3:** implementar.
 - [ ] **Paso 4:** → PASS. Anotar el progreso.
 
-### Tarea 7: controlador, rutas, admin y cierre de la 113
+### Task 7 (Tarea 7): controlador, rutas, admin y cierre de la 113
 
 **Archivos:**
 - Crear: `Backend/src/controllers/caja-controller.ts`, `Backend/src/routes/caja.ts`,
@@ -353,7 +355,7 @@ Cada ruta lleva su bloque swagger, como en `routes/home.ts`.
 | `App/src/screens/caja-messages-screen.tsx` | "Mis mensajes", agrupados por autor |
 | `App/src/constants/access-keys.ts`, `tool-catalog.ts`, `navigation/app-navigator.tsx` | Registro de la herramienta y de las rutas |
 
-### Tarea 8: prototipo de la animación (puerta de aprobación)
+### Task 8 (Tarea 8): prototipo de la animación (puerta de aprobación)
 
 **Archivos:** crear `docs/prototipos/caja-animacion.html`.
 
@@ -366,7 +368,7 @@ Cada ruta lleva su bloque swagger, como en `routes/home.ts`.
 - [ ] **Paso 3:** **parar y pedir la aprobación de la usuaria.** Anotar en `progress/current.md` los
   tiempos y curvas aprobados. Sin esa aprobación no se empieza la Tarea 11.
 
-### Tarea 9: algoritmo de la bolsa
+### Task 9 (Tarea 9): algoritmo de la bolsa
 
 **Archivos:** crear `App/src/utils/caja-bag.ts` y `App/src/utils/caja-input.ts`; tests
 `App/__tests__/caja-bag.test.ts` y `App/__tests__/caja-input.test.ts`.
@@ -413,13 +415,13 @@ no choquen con los `client_uuid`. Al elegir un mensaje con `sorpresa`, `abrirCaj
 - [ ] **Paso 3:** implementar.
 - [ ] **Paso 4:** → PASS. Anotar el progreso.
 
-### Tarea 10: servicio local y sincronización
+### Task 10 (Tarea 10): servicio local y sincronización
 
 **Archivos:**
 - Crear: `App/src/services/caja-service.ts`
-- Modificar: `App/src/services/db.ts`, `App/src/services/sync-manager.ts`, `App/src/hooks/use-auth.ts`
-  (`logout`), `App/src/constants/access-keys.ts` (`TOOL_CAJA: 'tool.caja'`)
-- Tests: `App/__tests__/caja-service.test.ts` y un caso nuevo en `App/__tests__/use-auth-logout.test.tsx`
+- Modificar: `App/src/services/db.ts`, `App/src/services/sync-manager.ts`,
+  `App/src/services/personal-data.ts`, `App/src/constants/access-keys.ts` (`TOOL_CAJA: 'tool.caja'`)
+- Tests: `App/__tests__/caja-service.test.ts` y casos nuevos en los tests de `personal-data`
 
 **Tablas SQLite** (en `nonCacheTables`):
 - `caja_mensajes (client_uuid TEXT PK, texto TEXT NOT NULL, autor_nombre TEXT, origen TEXT NOT NULL, sorpresa INTEGER DEFAULT 0, ultimo_mostrado_at INTEGER, en_bolsa INTEGER DEFAULT 1, synced INTEGER DEFAULT 0, created_at INTEGER NOT NULL)`
@@ -442,8 +444,10 @@ no choquen con los `client_uuid`. Al elegir un mensaje con `sorpresa`, `abrirCaj
 - `refreshFromServer(): Promise<void>`: carga `GET /caja/mensajes`, `GET /caja/config` y
   `GET /caja/ejemplos`. Conserva las filas con `synced = 0` y reconstruye `en_bolsa` según el
   enfriamiento.
-- `clearCajaLocal(): Promise<void>`: borra `caja_mensajes`, `caja_ejemplos`, las claves `caja_*` y
-  `DELETE FROM pending_ops WHERE entity = 'caja'`.
+- No hay una función de limpieza propia. `clearPersonalLocalData` (en `personal-data.ts`) borra
+  además `caja_mensajes` y `caja_ejemplos`, las claves `caja_*` de `app_config` y las ops `caja` de
+  `pending_ops`. `ensurePersonalDataOwner`, en el caso sin dueño guardado, borra
+  `caja_mensajes WHERE synced = 1`.
 
 **Sincronización** (en `sync-manager.ts`):
 - `ENTITY_FEATURE.caja = ACCESS_FEATURES.TOOL_CAJA`.
@@ -467,13 +471,14 @@ no choquen con los `client_uuid`. Al elegir un mensaje con `sorpresa`, `abrirCaj
   - `'refreshFromServer conserva los no sincronizados'`.
   - `'un 404 en mostrado retira la op'`.
   - `'sin tool.caja las ops quedan en pausa'`, siguiendo `sync-feature-gating.test.ts`.
-  - En `use-auth-logout.test.tsx`: `'logout vacia la caja local y sus ops'` (Foco 1).
-- [ ] **Paso 2:** `npx jest __tests__/caja-service.test.ts __tests__/use-auth-logout.test.tsx` → FAIL.
-- [ ] **Paso 3:** implementar y llamar a `clearCajaLocal()` en `logout`, junto a `clearSafetyPlanCache`
-  y con el mismo `.catch`.
+  - En los tests de `personal-data` (Foco 1):
+    - `'clearPersonalLocalData vacia la caja local y sus ops'`;
+    - `'otra cuenta en el mismo celular no ve los mensajes de la caja'`.
+- [ ] **Paso 2:** `npx jest __tests__/caja-service.test.ts` más los tests de `personal-data` → FAIL.
+- [ ] **Paso 3:** implementar, extendiendo `personal-data.ts`.
 - [ ] **Paso 4:** → PASS, y `sync-manager.test.ts` sigue verde. Anotar el progreso.
 
-### Tarea 11: animación en Reanimated
+### Task 11 (Tarea 11): animación en Reanimated
 
 **Archivos:** crear `App/src/components/caja/caja-animation.tsx`; test
 `App/__tests__/caja-animation.test.tsx`, siguiendo `gratitude-flower-animation.test.tsx`.
@@ -492,7 +497,7 @@ la fase de la tarjeta. Con `reduceMotion` llama a `onRevealed` sin la secuencia.
   `withTiming` y `Easing`. Los tiempos se exportan como `CAJA_TIMINGS`.
 - [ ] **Paso 4:** → PASS. Anotar el progreso.
 
-### Tarea 12: pantallas y registro de la herramienta
+### Task 12 (Tarea 12): pantallas y registro de la herramienta
 
 **Archivos:**
 - Crear: `App/src/hooks/use-caja.ts`, `App/src/components/caja/caja-message-card.tsx`,
@@ -548,7 +553,7 @@ la fase de la tarjeta. Con `reduceMotion` llama a `onRevealed` sin la secuencia.
 
 # Feature 115: `caja_qr`
 
-### Tarea 13: Invitar a escribirme
+### Task 13 (Tarea 13): Invitar a escribirme
 
 **Archivos:**
 - Crear: `App/src/screens/caja-invite-screen.tsx`
@@ -560,7 +565,7 @@ la fase de la tarjeta. Con `reduceMotion` llama a `onRevealed` sin la secuencia.
 - `crearInvitacion(): Promise<{ url: string; png: string }>` llama a `POST /caja/invitacion` y guarda
   `{ url, png }` en `app_config` (`caja_invitacion`), para poder mostrar el QR sin conexión.
 - `getInvitacionCache(): Promise<{ url: string; png: string } | null>`.
-- `clearCajaLocal` también borra `caja_invitacion`.
+- `clearPersonalLocalData` también borra la clave `caja_invitacion`.
 
 **Pantalla:** muestra el QR como `<Image source={{ uri: 'data:image/png;base64,' + png }} />`, sin
 añadir una librería de QR a la App. Tiene el botón "Generar un QR nuevo", con la confirmación
@@ -574,7 +579,7 @@ añadir una librería de QR a la App. Tiene el botón "Generar un QR nuevo", con
 - [ ] **Paso 3:** implementar.
 - [ ] **Paso 4:** → PASS. Anotar el progreso.
 
-### Tarea 14: Escríbele a alguien más
+### Task 14 (Tarea 14): Escríbele a alguien más
 
 **Archivos:**
 - Crear: `App/src/utils/caja-link.ts`, `App/src/screens/caja-write-other-screen.tsx` y
@@ -618,7 +623,7 @@ añadir una librería de QR a la App. Tiene el botón "Generar un QR nuevo", con
 - [ ] **Paso 3:** implementar.
 - [ ] **Paso 4:** → PASS. Anotar el progreso.
 
-### Tarea 15: pendientes por aprobar
+### Task 15 (Tarea 15): pendientes por aprobar
 
 **Archivos:**
 - Modificar: `App/src/services/caja-service.ts`, `App/src/hooks/use-caja.ts`, `caja-screen.tsx`

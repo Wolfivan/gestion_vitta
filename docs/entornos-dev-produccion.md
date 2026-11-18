@@ -152,6 +152,10 @@ El backend exige `SAFETY_PLAN_ENCRYPTION_KEY` (32 bytes, base64 o hex de 64 cara
 - Los datos legados en claro se cifran en el siguiente guardado; los backups previos pueden contener teléfonos en claro.
 - El cifrado del SQLite local de la App **no** está cubierto (deuda M4).
 
+### 4.2 Cifrado de la caja de mensajes (Feature 113)
+
+La caja de mensajes cifra texto y nombre con su **propia** clave, `CAJA_ENCRYPTION_KEY` (32 bytes, base64 o hex de 64 caracteres), distinta de `SAFETY_PLAN_ENCRYPTION_KEY`. Hace falta en cada entorno que use la caja, incluido el panel de Hostinger; sin ella los endpoints de la caja responden 500 (fail-closed). Se genera, guarda y rota igual que la del plan de seguridad (`CAJA_ENCRYPTION_KEY_PREVIOUS` solo descifra; no hay re-cifrado masivo). `CAJA_COOLDOWN_DAYS` (entero >= 0, por defecto 7) fija los días de espera entre mensajes.
+
 ---
 
 ## 5. Procedimiento de release

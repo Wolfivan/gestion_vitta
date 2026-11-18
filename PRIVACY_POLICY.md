@@ -60,6 +60,22 @@ Para crear tu cuenta podemos recopilar:
   desde los ajustes del sistema operativo. Al cerrar sesión, el
   dispositivo se desvincula.
 
+### 1.6 Caja de mensajes
+- La herramienta **Caja de mensajes** guarda los mensajes que tú escribes
+  para ti o que otra persona te deja (texto de hasta 500 caracteres y, si
+  corresponde, el nombre que esa persona escribió). Se asocian únicamente a
+  tu `id_anonimo`.
+- El texto y el nombre se guardan **cifrados** en nuestros servidores y solo
+  se descifran para mostrártelos a ti.
+- Puedes **borrar** un mensaje, o todos los de un autor, cuando quieras; el
+  borrado es definitivo. Si alguien te escribe mediante tu código QR, el
+  mensaje queda pendiente hasta que lo aceptes o lo rechaces.
+- La **cuenta de quien te escribe por QR no se guarda** junto al mensaje: no
+  sabemos ni conservamos quién lo envió. Solo se usa de forma temporal, en
+  memoria, para limitar el abuso, y no se registra. Lo mismo ocurre con la
+  **dirección IP** de quien escribe: se usa solo en memoria para limitar el
+  abuso y no se guarda.
+
 ## 2. Cómo usamos tu información
 
 - Para autenticarte y mantener tu sesión activa.
