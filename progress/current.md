@@ -518,3 +518,12 @@
 2. Ejecutar `.\init.ps1` completo tras el pull de imágenes de seguridad.
 3. Commitear por separado en los 3 repos: raíz (harness), `Backend/` (eslint config, sonar properties, fixes) y `App/` (eslint config, sonar properties, fixes).
 4. Mover este resumen a `progress/history.md` al cerrar.
+
+## Release de la caja a main — en curso (2026-11-17)
+- Commits en `desarrollo`: Backend `c0c89d4` + `c843433` (falso positivo de gitleaks en `.env.example`), App `ede248f`; raíz `2078aea` en `development`.
+- `init.ps1` verde; `npm run build` (Backend) y `tsc --noEmit` (App) sin errores; hooks pre-push instalados.
+- Auditoría de seguridad manual del diff `main..desarrollo`: OK con notas (`security-reports/SECURITY_AUDIT_caja_release_2026-11-17.md`).
+- `quality-release.ps1`: quality-lite PASS, gitleaks y semgrep limpios. **Bloquea trivy**: `CVE-2026-112366` (picomatch 2.3.2 / 4.0.7, HIGH, sin versión corregida) en `App/package-lock.json`. Solo entra por Expo CLI y Metro (build), no va en el binario; Backend no lo tiene en prod. SonarQube no llegó a correr.
+- 2026-11-18: el usuario acepta la excepción. `.trivyignore` con `CVE-2026-112366` (caduca 2027-01-31). `CAJA_ENCRYPTION_KEY` real generada en `docs/secretos/.env.production` y `produccion.local.md` (ignorados por git).
+- Pendiente: gate completo en PASS, merge a `main` y push (con confirmación del usuario).
+- Fuera de los commits: `plugins/vittalmind-notificaciones.zip` (no es de la caja). El texto de `templates/tools.html` se commitea por pedido del usuario.

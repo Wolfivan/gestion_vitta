@@ -1,0 +1,8 @@
+# Excepciones de trivy (scripts/security-scan.*). Cada entrada lleva motivo, fecha y caducidad:
+# al vencer `exp`, trivy vuelve a bloquear y hay que revisar si ya hay parche.
+
+# picomatch 2.3.2 / 4.0.7 (App/package-lock.json): DoS con patrones extglob repetidos.
+# Sin version corregida al 2026-11-18. Solo entra por Expo CLI y Metro (herramientas de
+# compilacion, nunca reciben patrones de usuarios) y no viaja en el binario de la app.
+# Backend no lo tiene en produccion. Aceptada por el usuario el 2026-11-18 para el release de la caja.
+CVE-2026-112366 exp:2027-01-31
